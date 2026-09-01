@@ -105,6 +105,47 @@ async def get_aa_account(wallet_address: str = Depends(require_wallet_address)) 
     return JSONResponse({"address": address})
 
 
+class BuildUserOpRequest(BaseModel):
+    calls: list[dict]
+
+
+@app.post("/aa/test-userop/build")
+async def post_test_userop_build(
+    body: BuildUserOpRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    try:
+        result = await aa.build_user_op(wallet_address, body.calls, base_url=AA_SERVICE_URL)
+    except aa.AAServiceError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return JSONResponse(result)
+
+
+class SubmitUserOpRequest(BaseModel):
+    userOp: dict
+
+
+@app.post("/aa/test-userop/submit")
+async def post_test_userop_submit(
+    body: SubmitUserOpRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    try:
+        result = await aa.submit_user_op(body.userOp, base_url=AA_SERVICE_URL)
+    except aa.AAServiceError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return JSONResponse(result)
+
+
+@app.get("/aa/test-userop/{user_op_hash}/status")
+async def get_test_userop_status(
+    user_op_hash: str, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    try:
+        result = await aa.get_user_op_status(user_op_hash, base_url=AA_SERVICE_URL)
+    except aa.AAServiceError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return JSONResponse(result)
+
+
 @app.websocket("/ws")
 async def ws_endpoint(
     websocket: WebSocket,

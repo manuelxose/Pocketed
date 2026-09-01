@@ -74,3 +74,30 @@ def test_aa_account_route_returns_address(client):
 
     assert resp.status_code == 200
     assert resp.json() == {"address": "0xDEADBEEF"}
+
+
+@respx.mock
+def test_build_submit_status_userop_flow(client):
+    _wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    respx.post(f"{main_module.AA_SERVICE_URL}/userop/build").mock(
+        return_value=httpx.Response(200, json={"userOp": {"sender": "0x1"}, "userOpHash": "0x1"})
+    )
+    respx.post(f"{main_module.AA_SERVICE_URL}/userop/submit").mock(
+        return_value=httpx.Response(200, json={"userOpHash": "0x1"})
+    )
+    respx.get(f"{main_module.AA_SERVICE_URL}/userop/0x1/status").mock(
+        return_value=httpx.Response(200, json={"status": "pending"})
+    )
+
+    build_resp = client.post("/aa/test-userop/build", json={"calls": [{"to": "0x1", "value": "0", "data": "0x"}]})
+    assert build_resp.status_code == 200
+    assert build_resp.json()["userOpHash"] == "0x1"
+
+    submit_resp = client.post("/aa/test-userop/submit", json={"userOp": {"sender": "0x1", "signature": "0xsig"}})
+    assert submit_resp.status_code == 200
+    assert submit_resp.json()["userOpHash"] == "0x1"
+
+    status_resp = client.get("/aa/test-userop/0x1/status")
+    assert status_resp.status_code == 200
+    assert status_resp.json()["status"] == "pending"

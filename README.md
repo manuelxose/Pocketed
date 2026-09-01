@@ -111,13 +111,17 @@ Run it locally (three processes):
 # 1. bundler
 cd infra/bundler && docker compose up -d
 
-# 2. aa-service (all four env vars below are required — aa-service refuses
+# 2. aa-service (the four env vars below are required — aa-service refuses
 #    to start without them; POLYGON_RPC_URL/BUNDLER_RPC_URL below point at
 #    Polygon Amoy testnet, swap for your own RPC provider; PAYMASTER_PRIVATE_KEY
-#    is the aa-service's own operational signing key, never a user's wallet key)
+#    is the aa-service's own operational signing key, never a user's wallet key.
+#    CHAIN_ID defaults to 137 (Polygon mainnet, the real-deploy target) —
+#    override it to 80002 here since the RPC/bundler above point at Amoy;
+#    aa-service refuses to start on a chain-id mismatch against the bundler)
 cd aa-service && npm install
 POLYGON_RPC_URL=https://rpc-amoy.polygon.technology \
   BUNDLER_RPC_URL=http://localhost:4337 \
+  CHAIN_ID=80002 \
   PAYMASTER_PRIVATE_KEY=0xyour_aa_service_operational_private_key \
   PAYMASTER_DAILY_GAS_CAP_WEI=1000000000000000000 \
   npm run dev

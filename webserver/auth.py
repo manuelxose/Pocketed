@@ -55,6 +55,11 @@ def verify_siwe(message: str, signature: str) -> str:
         siwe_message.verify(signature)
     except VerificationError as e:
         raise AuthError(f"signature verification failed: {e}") from e
+    except Exception as e:
+        # siwe/eth_account can raise other exception types (e.g.
+        # eth_keys.exceptions.BadSignature) for a malformed-but-not-quite
+        # VerificationError signature — treat all of them as auth failure.
+        raise AuthError(f"signature verification failed: {e}") from e
 
     return siwe_message.address
 

@@ -52,6 +52,15 @@ def test_verify_siwe_rejects_unknown_nonce():
         auth.verify_siwe(message, signature)
 
 
+def test_verify_siwe_rejects_garbage_signature():
+    account = Account.create()
+    nonce = auth.generate_nonce()
+    message, _ = _build_signed_message(account, nonce)
+
+    with pytest.raises(auth.AuthError):
+        auth.verify_siwe(message, "0x" + "00" * 65)
+
+
 def test_verify_siwe_rejects_wrong_signer():
     account = Account.create()
     other = Account.create()

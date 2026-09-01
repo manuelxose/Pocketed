@@ -68,6 +68,33 @@ The renderer never talks to Polymarket directly — only through `window.krypt.*
 the scanners and trading engine, signs Polymarket CLOB orders locally with your wallet key (EIP-712),
 and persists to a local SQLite DB.
 
+## Webapp (Fase 1, in progress)
+
+Krypt PolyBot is being migrated from an Electron desktop app to a hosted,
+multi-user webapp. Fase 1 (this repo state) adds a `webserver/` FastAPI
+gateway that authenticates users by wallet signature (SIWE / EIP-4361,
+no passwords) and gives each logged-in wallet its own isolated
+`python/service.py` backend worker — the same trading engine the desktop
+app uses, unmodified, just proxied over a WebSocket instead of Electron's
+stdio bridge.
+
+**Not yet enabled in the webapp:** placing or signing any order. Wallet
+key custody for actual trading arrives in Fase 2 (client-side signing —
+no private key ever reaches the server). Until then, `setCredentials`,
+`clearCredentials`, `testCredentials`, `cancelAllOpen`, and `flatten` are
+refused by the gateway.
+
+Run it locally:
+```bash
+cd webserver
+python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+KRYPT_POLYBOT_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload
+```
+
+(Run uvicorn from the repo root, not from inside `webserver/`, so the
+`webserver` package resolves — see `webserver/tests/manual_client.py` for
+a runnable end-to-end smoke test against a live instance.)
+
 ## Custom strategy scripts
 
 The **Scripts** tab lets you write a strategy in plain Python, backtest it on the ticks the app has

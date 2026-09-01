@@ -1,0 +1,12 @@
+services:
+  alto:
+    image: pimlico/alto:latest
+    restart: unless-stopped
+    ports:
+      - "4337:4337"
+    environment:
+      - RPC_URL=${POLYGON_RPC_URL}
+      - ENTRYPOINTS=0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789
+      - EXECUTOR_PRIVATE_KEYS=${BUNDLER_EXECUTOR_PRIVATE_KEY}
+      - UTILITY_PRIVATE_KEY=${BUNDLER_UTILITY_PRIVATE_KEY}
+    command: ["--port", "4337"]

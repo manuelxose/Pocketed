@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PolyBot Webapp Smoke Test Harness</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1 { margin: 20px 0 10px; font-size: 28px; }
+    h2 { margin: 30px 0 15px; font-size: 20px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+    section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    button { background: #007bff; color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 8px; margin-bottom: 8px; }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    input { border: 1px solid #ddd; padding: 8px 12px; border-radius: 4px; font-size: 14px; width: 100%; margin-bottom: 12px; }
+    p { margin: 10px 0; font-size: 14px; }
+    pre { background: #f8f8f8; border: 1px solid #ddd; padding: 12px; border-radius: 4px; overflow-x: auto; margin: 10px 0; font-size: 12px; white-space: pre-wrap; word-wrap: break-word; }
+    .status { padding: 12px; border-radius: 4px; margin: 10px 0; }
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.pending { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PolyBot Webapp Smoke Test Harness</h1>
+    <p>A minimal UI to test Fase 1 (SIWE login) and Fase 2a (ERC-4337 smart account) flows locally.</p>
+
+    <!-- Fase 1: SIWE Login -->
+    <section id="siwe-section">
+      <h2>Fase 1 — Sign-in with Ethereum (SIWE)</h2>
+      <button id="btn-connect">1. Connect wallet</button>
+      <button id="btn-sign-in">2. Sign in with SIWE</button>
+      <pre id="log"></pre>
+      <div id="wallet-info"></div>
+    </section>
+
+    <!-- Fase 2a: Smart Account Infrastructure -->
+    <section id="aa-section">
+      <h2>Fase 2a — Smart account infra smoke test</h2>
+      <button id="btn-compute-address">1. Compute my smart account address</button>
+      <p id="aa-address"></p>
+      <p>Deposit a small amount of test USDC to that address on Polygon Amoy, then:</p>
+      <button id="btn-build-userop">2. Build test UserOp (self-transfer)</button>
+      <button id="btn-submit-userop">3. Sign + submit</button>
+      <button id="btn-check-status">4. Check status</button>
+      <pre id="aa-log"></pre>
+    </section>
+  </div>
+
+  <script>
+    const log = (msg) => {
+      document.getElementById("log").textContent += msg + "\n";
+      console.log(msg);
+    };
+
+    const aaLog = (msg) => {
+      document.getElementById("aa-log").textContent += msg + "\n";
+      console.log("[AA]", msg);
+    };
+
+    // Fase 1: SIWE Login
+    document.getElementById("btn-connect").onclick = async () => {
+      if (!window.ethereum) {
+        return log("error: window.ethereum not found — install MetaMask or similar");
+      }
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        const account = accounts[0];
+        log(`connected: ${account}`);
+        document.getElementById("wallet-info").innerHTML = `<p><strong>Connected:</strong> ${account}</p>`;
+      } catch (e) {
+        log(`error: ${e.message}`);
+      }
+    };
+
+    document.getElementById("btn-sign-in").onclick = async () => {
+      if (!window.ethereum) {
+        return log("error: window.ethereum not found");
+      }
+      if (!window.ethereum.selectedAddress) {
+        return log("error: connect wallet first");
+      }
+      try {
+        // 1. Get nonce from /auth/nonce
+        const nonceResp = await fetch("/auth/nonce", { method: "POST", credentials: "include" });
+        if (!nonceResp.ok) {
+          return log(`error: nonce request failed: ${nonceResp.status}`);
+        }
+        const { nonce } = await nonceResp.json();
+        log(`got nonce: ${nonce}`);
+
+        // 2. Construct SIWE message
+        const message = `127.0.0.1 wants you to sign in with your Ethereum account:\n${window.ethereum.selectedAddress}\n\nClick to sign in and accept the Terms of Service.\n\nURI: http://127.0.0.1:8000\nVersion: 1\nChain ID: 80002\nNonce: ${nonce}\nIssued At: ${new Date().toISOString()}`;
+        log(`signing message with ${window.ethereum.selectedAddress}`);
+
+        // 3. Sign the message
+        const signature = await window.ethereum.request({
+          method: "personal_sign",
+          params: [message, window.ethereum.selectedAddress],
+        });
+        log(`got signature: ${signature.slice(0, 20)}...`);
+
+        // 4. Verify signature at /auth/verify
+        const verifyResp = await fetch("/auth/verify", {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ message, signature }),
+        });
+
+        if (!verifyResp.ok) {
+          const err = await verifyResp.json();
+          return log(`error: verification failed: ${err.detail || verifyResp.status}`);
+        }
+
+        const { walletAddress } = await verifyResp.json();
+        log(`✓ logged in as ${walletAddress}`);
+        document.getElementById("wallet-info").innerHTML += `<p><strong>Logged in:</strong> ${walletAddress}</p>`;
+      } catch (e) {
+        log(`error: ${e.message}`);
+      }
+    };
+
+    // Fase 2a: Smart Account
+    let lastUserOp = null;
+    let lastUserOpHash = null;
+
+    document.getElementById("btn-compute-address").onclick = async () => {
+      try {
+        const resp = await fetch("/aa/account", { credentials: "include" });
+        const body = await resp.json();
+        if (!resp.ok) return aaLog("error: " + JSON.stringify(body));
+        document.getElementById("aa-address").textContent = "Account: " + body.address;
+        aaLog("computed address: " + body.address);
+      } catch (e) {
+        aaLog(`error: ${e.message}`);
+      }
+    };
+
+    document.getElementById("btn-build-userop").onclick = async () => {
+      if (!window.ethereum) {
+        return aaLog("error: wallet not connected");
+      }
+      if (!window.ethereum.selectedAddress) {
+        return aaLog("error: wallet not connected");
+      }
+      try {
+        const resp = await fetch("/aa/test-userop/build", {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ calls: [{ to: window.ethereum.selectedAddress, value: "0", data: "0x" }] }),
+        });
+        const body = await resp.json();
+        if (!resp.ok) return aaLog("error: " + JSON.stringify(body));
+        lastUserOp = body.userOp;
+        lastUserOpHash = body.userOpHash;
+        aaLog("built UserOp, hash to sign: " + lastUserOpHash);
+      } catch (e) {
+        aaLog(`error: ${e.message}`);
+      }
+    };
+
+    document.getElementById("btn-submit-userop").onclick = async () => {
+      if (!lastUserOp || !lastUserOpHash) return aaLog("build a UserOp first");
+      if (!window.ethereum) return aaLog("error: wallet not connected");
+      try {
+        const signature = await window.ethereum.request({
+          method: "personal_sign",
+          params: [lastUserOpHash, window.ethereum.selectedAddress],
+        });
+        const resp = await fetch("/aa/test-userop/submit", {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ userOp: { ...lastUserOp, signature } }),
+        });
+        const body = await resp.json();
+        aaLog(resp.ok ? "submitted: " + body.userOpHash : "error: " + JSON.stringify(body));
+      } catch (e) {
+        aaLog(`error: ${e.message}`);
+      }
+    };
+
+    document.getElementById("btn-check-status").onclick = async () => {
+      if (!lastUserOpHash) return aaLog("submit a UserOp first");
+      try {
+        const resp = await fetch(`/aa/test-userop/${lastUserOpHash}/status`, { credentials: "include" });
+        const body = await resp.json();
+        aaLog("status: " + JSON.stringify(body));
+      } catch (e) {
+        aaLog(`error: ${e.message}`);
+      }
+    };
+
+    // Log initial state
+    log("harness loaded — connect wallet to begin");
+  </script>
+</body>
+</html>

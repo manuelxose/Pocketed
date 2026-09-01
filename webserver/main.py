@@ -9,6 +9,7 @@ from pathlib import Path
 
 from fastapi import Cookie, Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from webserver import aa, auth
@@ -56,6 +57,8 @@ async def _lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Krypt PolyBot webapp gateway", lifespan=_lifespan)
+
+app.mount("/static", StaticFiles(directory=Path(__file__).resolve().parent / "static"), name="static")
 
 
 class NonceResponse(BaseModel):

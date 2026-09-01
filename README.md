@@ -95,6 +95,31 @@ KRYPT_POLYBOT_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserve
 `webserver` package resolves — see `webserver/tests/manual_client.py` for
 a runnable end-to-end smoke test against a live instance.)
 
+## Webapp Fase 2a (in progress) — smart account infra
+
+Adds an ERC-4337 smart-account layer for the webapp: each logged-in
+wallet gets a Kernel (ZeroDev) smart account, deployed counterfactually,
+with gas sponsored by our own paymaster and submitted through our own
+self-hosted bundler (Alto) — no session-keys or Polymarket trading yet
+(that's Fase 2b). See
+[docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md](docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md).
+
+Run it locally (three processes):
+```bash
+# 1. bundler
+cd infra/bundler && docker compose up -d
+
+# 2. aa-service
+cd aa-service && npm install && npm run dev
+
+# 3. gateway (Fase 1 + Fase 2a routes)
+cd webserver && KRYPT_POLYBOT_SESSION_SECRET=dev-secret \
+  KRYPT_POLYBOT_AA_SERVICE_URL=http://localhost:4001 \
+  .venv/Scripts/python -m uvicorn webserver.main:app --reload
+```
+
+Open `http://127.0.0.1:8000/static/signer.html` for the smoke-test harness.
+
 ## Custom strategy scripts
 
 The **Scripts** tab lets you write a strategy in plain Python, backtest it on the ticks the app has

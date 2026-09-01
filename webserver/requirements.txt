@@ -1,0 +1,13 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+websockets>=12,<14
+siwe>=4.2.0
+# siwe's ABNF grammar module is broken on abnf>=2.3 (a core-rule redefinition
+# error at import time — 'ALPHA' is a core rule from RFC 5234...). Pin to the
+# last known-good release until upstream siwe fixes its constraint.
+abnf==2.2.0
+pyjwt>=2.9.0
+eth-account>=0.13.0
+pytest>=8.0
+pytest-asyncio>=0.24
+httpx>=0.28.0

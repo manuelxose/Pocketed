@@ -40,5 +40,25 @@ export function createApp() {
     }
   });
 
+  app.post("/userop/submit", async (req, res) => {
+    try {
+      const { submitUserOp } = await import("./bundlerClient.js");
+      const result = await submitUserOp(req.body.userOp);
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get("/userop/:hash/status", async (req, res) => {
+    try {
+      const { getUserOpStatus } = await import("./bundlerClient.js");
+      const result = await getUserOpStatus(req.params.hash);
+      res.json(result);
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
   return app;
 }

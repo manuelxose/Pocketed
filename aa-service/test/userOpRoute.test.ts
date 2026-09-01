@@ -13,12 +13,18 @@ let createApp: typeof import("../src/app.js").createApp;
 beforeAll(async () => {
   ({ createApp } = await import("../src/app.js"));
   app = createApp();
+  // Warm the route's lazy `await import("./userOp.js")` here, outside any
+  // single test's clock. userOp.js pulls in @zerodev/sdk + viem, which is
+  // slow to load the first time — under full-suite load that first-request
+  // import was blowing past vitest's default 5s per-test timeout even
+  // though the route itself is fast once its dependencies are cached.
+  await import("../src/userOp.js");
 });
 
 const OWNER = "0x4444444444444444444444444444444444444444" as const;
 
 describe("POST /userop/build", () => {
-  it("returns 200 with the userOp's bigint gas/nonce fields serialized as strings", async () => {
+  it("returns 200 with the userOp's bigint gas/nonce fields serialized as 0x-hex strings", async () => {
     // Regression test for a bug found during manual verification: plain
     // `res.json({ userOp, userOpHash })` throws "Do not know how to
     // serialize a BigInt" (express/JSON.stringify can't handle bigint),
@@ -35,8 +41,11 @@ describe("POST /userop/build", () => {
     expect(res.body.userOp).toBeTruthy();
     expect(res.body.userOp.sender).toMatch(/^0x[0-9a-fA-F]{40}$/);
 
-    // bigint fields must arrive as JSON strings, not raw bigints (which
-    // JSON can't represent) and not silently dropped/coerced to number.
+    // bigint fields must arrive as 0x-prefixed hex JSON strings — the format
+    // ERC-4337's eth_sendUserOperation (and viem's own
+    // formatUserOperationRequest) expect — not decimal strings, not raw
+    // bigints (which JSON can't represent), and not silently dropped/coerced
+    // to number.
     for (const field of [
       "nonce",
       "callGasLimit",
@@ -46,7 +55,7 @@ describe("POST /userop/build", () => {
       "maxPriorityFeePerGas",
     ] as const) {
       expect(typeof res.body.userOp[field]).toBe("string");
-      expect(res.body.userOp[field]).toMatch(/^\d+$/);
+      expect(res.body.userOp[field]).toMatch(/^0x[0-9a-f]+$/i);
     }
   });
 });

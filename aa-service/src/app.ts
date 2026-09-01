@@ -30,10 +30,17 @@ export function createApp() {
       const { userOp, userOpHash } = await buildUserOp(owner, parsedCalls);
       // userOp's gas/nonce fields are bigint, which JSON.stringify (and thus
       // express's res.json) cannot serialize on its own — stringify them
-      // explicitly here.
+      // explicitly here. ERC-4337's eth_sendUserOperation (and viem's own
+      // formatUserOperationRequest) expect these fields as 0x-prefixed hex
+      // strings, not decimal, so match that convention rather than plain
+      // `.toString()`.
       res
         .type("application/json")
-        .send(JSON.stringify({ userOp, userOpHash }, (_key, v) => (typeof v === "bigint" ? v.toString() : v)));
+        .send(
+          JSON.stringify({ userOp, userOpHash }, (_key, v) =>
+            typeof v === "bigint" ? "0x" + v.toString(16) : v
+          )
+        );
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       res.status(400).json({ error: message });

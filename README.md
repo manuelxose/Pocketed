@@ -98,10 +98,12 @@ a runnable end-to-end smoke test against a live instance.)
 ## Webapp Fase 2a (in progress) — smart account infra
 
 Adds an ERC-4337 smart-account layer for the webapp: each logged-in
-wallet gets a Kernel (ZeroDev) smart account, deployed counterfactually,
-with gas sponsored by our own paymaster and submitted through our own
-self-hosted bundler (Alto) — no session-keys or Polymarket trading yet
-(that's Fase 2b). See
+wallet gets a Kernel (ZeroDev) smart account address, computed
+counterfactually and submitted through our own self-hosted bundler (Alto).
+The daily gas-cap tracking infra exists (`aa-service/src/paymaster.ts`),
+but real paymaster signing/sponsorship and gas estimation are not yet
+wired into UserOp submission — tracked as follow-up work. No
+session-keys or Polymarket trading yet either (that's Fase 2b). See
 [docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md](docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md).
 
 Run it locally (three processes):
@@ -109,8 +111,16 @@ Run it locally (three processes):
 # 1. bundler
 cd infra/bundler && docker compose up -d
 
-# 2. aa-service
-cd aa-service && npm install && npm run dev
+# 2. aa-service (all four env vars below are required — aa-service refuses
+#    to start without them; POLYGON_RPC_URL/BUNDLER_RPC_URL below point at
+#    Polygon Amoy testnet, swap for your own RPC provider; PAYMASTER_PRIVATE_KEY
+#    is the aa-service's own operational signing key, never a user's wallet key)
+cd aa-service && npm install
+POLYGON_RPC_URL=https://rpc-amoy.polygon.technology \
+  BUNDLER_RPC_URL=http://localhost:4337 \
+  PAYMASTER_PRIVATE_KEY=0xyour_aa_service_operational_private_key \
+  PAYMASTER_DAILY_GAS_CAP_WEI=1000000000000000000 \
+  npm run dev
 
 # 3. gateway (Fase 1 + Fase 2a routes)
 cd webserver && KRYPT_POLYBOT_SESSION_SECRET=dev-secret \

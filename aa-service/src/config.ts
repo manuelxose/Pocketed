@@ -10,5 +10,5 @@ export const config = {
   bundlerRpcUrl: requireEnv("BUNDLER_RPC_URL"),
   chainId: Number(process.env.CHAIN_ID ?? 137),
   paymasterPrivateKey: requireEnv("PAYMASTER_PRIVATE_KEY"),
-  paymasterDailyGasCapWei: BigInt(process.env.PAYMASTER_DAILY_GAS_CAP_WEI ?? "0"),
+  paymasterDailyGasCapWei: BigInt(requireEnv("PAYMASTER_DAILY_GAS_CAP_WEI")),
 };

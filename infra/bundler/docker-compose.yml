@@ -6,7 +6,10 @@ services:
       - "4337:4337"
     environment:
       - RPC_URL=${POLYGON_RPC_URL}
-      - ENTRYPOINTS=0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789
+      # EntryPoint v0.7 (canonical address), matching aa-service/src/userOp.ts
+      # and aa-service/src/bundlerClient.ts — a v0.6 address here would send
+      # v0.7-shaped UserOps to the wrong contract.
+      - ENTRYPOINTS=0x0000000071727De22E5E9d8BAf0edAc6f37da032
       - EXECUTOR_PRIVATE_KEYS=${BUNDLER_EXECUTOR_PRIVATE_KEY}
       - UTILITY_PRIVATE_KEY=${BUNDLER_UTILITY_PRIVATE_KEY}
     command: ["--port", "4337"]

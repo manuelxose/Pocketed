@@ -168,6 +168,11 @@
       if (!lastUserOp || !lastUserOpHash) return aaLog("build a UserOp first");
       if (!window.ethereum) return aaLog("error: wallet not connected");
       try {
+        // NOTE: real UserOp signing is typically eth_signTypedData_v4 over
+        // the EntryPoint's typed UserOp struct, not personal_sign over the
+        // raw hash — confirm the exact signing method the installed
+        // @zerodev/sdk expects (Task 1 Step 1) and adjust this call before
+        // trusting a real submission.
         const signature = await window.ethereum.request({
           method: "personal_sign",
           params: [lastUserOpHash, window.ethereum.selectedAddress],

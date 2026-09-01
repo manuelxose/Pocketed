@@ -99,12 +99,29 @@ async def require_wallet_address(kpb_session: str | None = Cookie(default=None))
         raise HTTPException(status_code=401, detail=str(e)) from e
 
 
+def _gateway_status_for_aa_error(e: aa.AAServiceError) -> int:
+    """Map an AAServiceError onto the gateway's own HTTP response status.
+
+    - aa-service unreachable (status_code is None, a connection/timeout
+      failure) -> 503: the gateway couldn't reach its own backend.
+    - aa-service itself returned 402 or 403 (e.g. the paymaster declined the
+      request) -> mirror that status verbatim so the client sees the real
+      reason, not a generic gateway error.
+    - anything else aa-service returned -> 502, a generic upstream error.
+    """
+    if e.status_code is None:
+        return 503
+    if e.status_code in (402, 403):
+        return e.status_code
+    return 502
+
+
 @app.get("/aa/account")
 async def get_aa_account(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
     try:
         address = await aa.compute_account_address(wallet_address, base_url=AA_SERVICE_URL)
     except aa.AAServiceError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
+        raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
     return JSONResponse({"address": address})
 
 
@@ -119,7 +136,7 @@ async def post_test_userop_build(
     try:
         result = await aa.build_user_op(wallet_address, body.calls, base_url=AA_SERVICE_URL)
     except aa.AAServiceError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
+        raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
     return JSONResponse(result)
 
 
@@ -132,9 +149,21 @@ async def post_test_userop_submit(
     body: SubmitUserOpRequest, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
     try:
+        expected_sender = await aa.compute_account_address(wallet_address, base_url=AA_SERVICE_URL)
+    except aa.AAServiceError as e:
+        raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
+
+    submitted_sender = body.userOp.get("sender")
+    if not submitted_sender or submitted_sender.lower() != expected_sender.lower():
+        raise HTTPException(
+            status_code=403,
+            detail="userOp.sender does not match the smart account for this session",
+        )
+
+    try:
         result = await aa.submit_user_op(body.userOp, base_url=AA_SERVICE_URL)
     except aa.AAServiceError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
+        raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
     return JSONResponse(result)
 
 
@@ -145,7 +174,7 @@ async def get_test_userop_status(
     try:
         result = await aa.get_user_op_status(user_op_hash, base_url=AA_SERVICE_URL)
     except aa.AAServiceError as e:
-        raise HTTPException(status_code=502, detail=str(e)) from e
+        raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
     return JSONResponse(result)
 
 

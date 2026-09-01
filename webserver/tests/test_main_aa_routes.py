@@ -78,8 +78,11 @@ def test_aa_account_route_returns_address(client):
 
 @respx.mock
 def test_build_submit_status_userop_flow(client):
-    _wallet_address, session_cookie = _login(client)
+    wallet_address, session_cookie = _login(client)
     client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    respx.get(f"{main_module.AA_SERVICE_URL}/account/{wallet_address}").mock(
+        return_value=httpx.Response(200, json={"address": "0x1"})
+    )
     respx.post(f"{main_module.AA_SERVICE_URL}/userop/build").mock(
         return_value=httpx.Response(200, json={"userOp": {"sender": "0x1"}, "userOpHash": "0x1"})
     )
@@ -94,6 +97,9 @@ def test_build_submit_status_userop_flow(client):
     assert build_resp.status_code == 200
     assert build_resp.json()["userOpHash"] == "0x1"
 
+    # sender "0x1" matches the /account/{wallet_address} mock above
+    # (case-insensitively) — submit is only forwarded to aa-service when the
+    # ownership check in main.py passes.
     submit_resp = client.post("/aa/test-userop/submit", json={"userOp": {"sender": "0x1", "signature": "0xsig"}})
     assert submit_resp.status_code == 200
     assert submit_resp.json()["userOpHash"] == "0x1"
@@ -101,3 +107,55 @@ def test_build_submit_status_userop_flow(client):
     status_resp = client.get("/aa/test-userop/0x1/status")
     assert status_resp.status_code == 200
     assert status_resp.json()["status"] == "pending"
+
+
+@respx.mock
+def test_submit_userop_rejects_sender_mismatch(client):
+    """A userOp whose sender isn't this session's smart account gets 403,
+    and is never forwarded to aa-service's /userop/submit."""
+    wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    respx.get(f"{main_module.AA_SERVICE_URL}/account/{wallet_address}").mock(
+        return_value=httpx.Response(200, json={"address": "0xAAAA000000000000000000000000000000AAAA"})
+    )
+    submit_route = respx.post(f"{main_module.AA_SERVICE_URL}/userop/submit").mock(
+        return_value=httpx.Response(200, json={"userOpHash": "0x1"})
+    )
+
+    resp = client.post(
+        "/aa/test-userop/submit",
+        json={"userOp": {"sender": "0xBBBB000000000000000000000000000000BBBB", "signature": "0xsig"}},
+    )
+
+    assert resp.status_code == 403
+    assert not submit_route.called
+
+
+@respx.mock
+def test_aa_account_route_maps_paymaster_declined_to_402(client):
+    """aa-service's own 402 (paymaster declined) propagates as 402, not the
+    generic 502."""
+    wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    respx.get(f"{main_module.AA_SERVICE_URL}/account/{wallet_address}").mock(
+        return_value=httpx.Response(402, json={"error": "daily gas cap exceeded"})
+    )
+
+    resp = client.get("/aa/account")
+
+    assert resp.status_code == 402
+
+
+@respx.mock
+def test_aa_account_route_maps_unreachable_aa_service_to_503(client):
+    """A connection failure talking to aa-service propagates as 503, not the
+    generic 502."""
+    _wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    respx.get(f"{main_module.AA_SERVICE_URL}/account/{_wallet_address}").mock(
+        side_effect=httpx.ConnectError("connection refused")
+    )
+
+    resp = client.get("/aa/account")
+
+    assert resp.status_code == 503

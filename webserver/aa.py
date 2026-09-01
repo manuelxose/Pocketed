@@ -8,7 +8,18 @@ AA_SERVICE_URL_ENV = "KRYPT_POLYBOT_AA_SERVICE_URL"
 
 
 class AAServiceError(Exception):
-    """Raised when aa-service returns an error or is unreachable."""
+    """Raised when aa-service returns an error or is unreachable.
+
+    `status_code` is the HTTP status aa-service itself responded with (e.g.
+    402 when the paymaster declines a request), or `None` when aa-service
+    could not be reached at all (connection/timeout failure) rather than
+    returning an error response. Callers use this to decide what status the
+    gateway should return, instead of re-parsing it out of the message.
+    """
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def _resolve_base_url(base_url: str | None) -> str:
@@ -31,7 +42,7 @@ async def compute_account_address(owner: str, *, base_url: str | None = None) ->
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
         detail = resp.json().get("error", resp.text) if resp.content else resp.text
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}", status_code=resp.status_code)
     return resp.json()["address"]
 
 
@@ -44,7 +55,7 @@ async def build_user_op(owner: str, calls: list[dict], *, base_url: str | None =
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
         detail = resp.json().get("error", resp.text) if resp.content else resp.text
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}", status_code=resp.status_code)
     return resp.json()
 
 
@@ -57,7 +68,7 @@ async def submit_user_op(user_op: dict, *, base_url: str | None = None) -> dict:
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
         detail = resp.json().get("error", resp.text) if resp.content else resp.text
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}", status_code=resp.status_code)
     return resp.json()
 
 
@@ -70,5 +81,5 @@ async def get_user_op_status(user_op_hash: str, *, base_url: str | None = None) 
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
         detail = resp.json().get("error", resp.text) if resp.content else resp.text
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}", status_code=resp.status_code)
     return resp.json()

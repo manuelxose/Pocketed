@@ -43,7 +43,8 @@ async def build_user_op(owner: str, calls: list[dict], *, base_url: str | None =
         except httpx.HTTPError as e:
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {resp.json().get('error', resp.text)}")
+        detail = resp.json().get("error", resp.text) if resp.content else resp.text
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
     return resp.json()
 
 
@@ -55,7 +56,8 @@ async def submit_user_op(user_op: dict, *, base_url: str | None = None) -> dict:
         except httpx.HTTPError as e:
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {resp.json().get('error', resp.text)}")
+        detail = resp.json().get("error", resp.text) if resp.content else resp.text
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
     return resp.json()
 
 
@@ -67,5 +69,6 @@ async def get_user_op_status(user_op_hash: str, *, base_url: str | None = None) 
         except httpx.HTTPError as e:
             raise AAServiceError(f"aa-service unreachable: {e}") from e
     if resp.status_code != 200:
-        raise AAServiceError(f"aa-service error ({resp.status_code}): {resp.json().get('error', resp.text)}")
+        detail = resp.json().get("error", resp.text) if resp.content else resp.text
+        raise AAServiceError(f"aa-service error ({resp.status_code}): {detail}")
     return resp.json()

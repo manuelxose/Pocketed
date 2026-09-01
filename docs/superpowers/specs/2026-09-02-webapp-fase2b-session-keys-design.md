@@ -92,6 +92,20 @@ requisito de que el auto-trader nunca pare por infra propia caída.
 
 ### Arquitectura
 
+**Corrección post-spike de implementación (importante):** el spec de
+Fase 2 original (`build_order_typed_data`/`finalize_signed_order`) quedó
+SUPERSEDIDO **antes de implementarse** — esas funciones no existen hoy en
+`python/polymarket_auth.py`. Este spec las crea desde cero (ver
+Componentes). Además, el punto de integración real no es un RPC nuevo de
+"submit" — es `polymarket_auth.create_signed_order()`, la única función
+que ya llama `polymarket_api.place_limit_order()` (línea 1566 hoy), que a
+su vez es lo que el scanner/whale-tracker/trader dispara sin usuario
+presente. Enganchar ahí (en vez de un RPC `submitSignedOrder` separado)
+significa que **todo el motor de trading existente queda sin tocar** —
+solo cambia, dentro de `create_signed_order`, quién produce la firma
+cuando hay una session key activa. Los únicos RPC nuevos son de
+setup (mint/activate/revoke), no de cada orden.
+
 ```
 Browser (webserver/static/signer.html, extiende harness de 2a)
   │ 1. GET /aa/account → address Kernel (ya existe, 2a)
@@ -111,23 +125,30 @@ FastAPI gateway (webserver/) — solo relay + sesión SIWE, nunca ve la
   session key ni la enableSignature en claro más de lo necesario para
   el relay
   ▼
-python/service.py worker (por-usuario) — RPC nuevos:
+python/service.py worker (por-usuario) — RPC nuevos, solo de setup:
   mintSessionKey, activateSessionKey, revokeSessionKey
   │
-  │ orden disparada por scanner/whale-tracker (sin usuario presente):
-  │   1. build_order_typed_data() — ya existe (Fase 2 original, sin
-  │      cambios de lógica)
-  │   2. session_key.sign_order_as_session_key(typed_data, session_key):
-  │      wrap Kernel (equivalente Python de eip712WrapHash) + encoding
-  │      de firma permission-validator (sessionKeyAddr + policyId +
-  │      validUntil + firma ECDSA cruda sobre el digest ya wrapeado)
-  │   3. la key se descifra en memoria solo durante la firma, igual que
-  │      _load_private_key hoy — nunca se persiste en claro
-  │   4. finalize_signed_order() → POST /order al CLOB,
-  │      signatureType=POLY_1271, maker=address Kernel — sin llamar a
-  │      aa-service
+  │ orden disparada por scanner/whale-tracker (sin usuario presente,
+  │ camino ya existente — trader → polymarket_api.place_limit_order →
+  │ polymarket_auth.create_signed_order, sin cambios de firma en esos
+  │ dos primeros):
+  │   dentro de create_signed_order(), si get_signature_type() ==
+  │   SIGNATURE_TYPE_POLY_1271 y hay session key activa
+  │   (session_key.load_active_session_key()):
+  │     1. arma el mismo Order typed-data que ya arma el camino EOA de
+  │        create_signed_order (líneas 790-820 hoy) pero con
+  │        maker=signer=address Kernel
+  │     2. session_key.sign_order_as_session_key(typed_data, session_key):
+  │        wrap Kernel (equivalente Python de eip712WrapHash) + encoding
+  │        de firma permission-validator (sessionKeyAddr + policyId +
+  │        validUntil + firma ECDSA cruda sobre el digest ya wrapeado)
+  │     3. la key se descifra en memoria solo durante la firma, igual
+  │        que _load_private_key hoy — nunca se persiste en claro
+  │   si no hay session key activa, cae al camino POLY_1271 actual
+  │   (_create_signed_order_1271, sin cambios) — comportamiento hoy
   ▼
-Polymarket CLOB API — sin cambios
+Polymarket CLOB API — sin cambios (place_limit_order ya hace el POST
+  /order tal cual, sin importar quién firmó)
 ```
 
 ### Componentes nuevos/modificados
@@ -145,23 +166,46 @@ Polymarket CLOB API — sin cambios
     software además del contract-enforced).
   - `sign_order_as_session_key(typed_data: dict, session_key: dict) -> str`
     — implementa el wrap Kernel + encoding permission-validator; devuelve
-    la firma final en el formato que espera `finalize_signed_order`.
+    la firma final en el formato `signature` que ya espera el dict de
+    retorno de `create_signed_order` (hex string `0x...`).
   - `revoke_session_key_soft(env=NETWORK) -> None` — marca inactiva
     localmente (kill-switch), no toca on-chain (eso es Fase 2c).
-- **`python/polymarket_auth.py`** — sin cambios a funciones existentes;
-  reusa `SIGNATURE_TYPE_POLY_1271`, `build_order_typed_data`,
-  `finalize_signed_order` (ya definidas en el spec de Fase 2 original).
+  - **Cómo se deriva el wrap/encoding exactos (sin adivinar el layout de
+    bytes a mano):** se genera un fixture "golden" con el SDK real de
+    ZeroDev — un script en `aa-service/` (dev-only, no un endpoint HTTP
+    nuevo) que instala `@zerodev/permissions`, arma un
+    `toPermissionValidator` con un `toECDSASigner` de address/clave
+    conocida y `toSignatureCallerPolicy`/`validUntil` fijos, llama
+    `account.signMessage`/`signTypedData` sobre un hash de orden
+    determinístico, y vuelca `{sessionKeyPriv, policy, digest,
+    signature}` a `python/tests/fixtures/session_key_golden.json`.
+    `sign_order_as_session_key` se implementa para reproducir ese mismo
+    `signature` byte a byte dado el mismo input — el cross-check test
+    (ver Testing) falla hasta que coincida exacto. Esto reemplaza a
+    "derivar el wrap leyendo el bytecode/ABI a mano", que es el enfoque
+    de mayor riesgo de error silencioso.
+- **`python/polymarket_auth.py`** — modificado: dentro de
+  `create_signed_order()`, agrega una rama antes del chequeo actual de
+  `get_signature_type() == SIGNATURE_TYPE_POLY_1271` — si además hay una
+  session key activa (`session_key.load_active_session_key()` no es
+  `None`), arma el mismo `Order` typed-data que ya arma el camino EOA
+  (líneas 790-820 hoy) con `maker=signer=<address Kernel>`, firma con
+  `session_key.sign_order_as_session_key(...)` en vez de `_eip712_sign`,
+  y devuelve el mismo shape de dict que ya devuelve hoy. Sin session key
+  activa, cae exactamente al camino `_create_signed_order_1271` actual
+  — cero cambio de comportamiento para desktop/Electron.
 - **`webserver/main.py`** — rutas nuevas detrás de la sesión SIWE:
   - `POST /session-key/init` → `{sessionKeyAddress, enableTypedData}`
   - `POST /session-key/activate` `{signature}` → relay a worker
     `activateSessionKey`, `{ok: true}` o 400
   - `POST /session-key/revoke` → relay a worker `revokeSessionKey`
     (revocación blanda/local; ver Fuera de alcance)
-- **`python/service.py`** — RPC nuevos `_h_mintSessionKey`,
-  `_h_activateSessionKey`, `_h_revokeSessionKey`; el path de
-  `_h_submitSignedOrder` (ya definido en Fase 2 original) pasa a usar
-  `session_key.sign_order_as_session_key` cuando hay session key activa,
-  en vez de rechazar con "Fase 2".
+- **`python/service.py`** — RPC nuevos, de setup únicamente:
+  `_h_mintSessionKey`, `_h_activateSessionKey`, `_h_revokeSessionKey`.
+  No hay RPC nuevo por-orden — `create_signed_order` (arriba) es
+  transparente para todo el motor de trading existente
+  (`polymarket_api.place_limit_order` y todo lo que lo llama, sin
+  cambios).
 - **`webserver/static/signer.html`** — se extiende: botón "activar
   auto-trading" que dispara init→firma→activate, muestra estado de la
   session key (activa/vencida/revocada) y el `dailyUsdCap` configurado.
@@ -195,8 +239,10 @@ de Polymarket).
 
 ### Manejo de errores
 
-- Session key nunca activada → `_h_submitSignedOrder` responde error
-  explícito "session key not active", no intenta firmar con nada.
+- Session key nunca activada → `create_signed_order` cae al camino
+  `_create_signed_order_1271` actual sin session key (comportamiento hoy,
+  no un error nuevo) — solo aplica el camino de session key cuando una
+  está activa.
 - `dailyUsdCap` excedido → rechazo antes de firmar, no dispara ni loggea
   como fallo de Polymarket.
 - Firma de `/session-key/activate` inválida o de address distinto al
@@ -225,13 +271,11 @@ de Polymarket).
 ## Testing
 
 - **Cross-check crítico (cubre el riesgo validado en el spike):** test
-  en `python/tests/` que arma el mismo order typed-data
-  (`build_order_typed_data`), computa a mano en el test el wrap Kernel +
-  encoding permission-validator (valores fijos determinísticos: mismo
-  salt/timestamp/policy-id), firma con `eth_account` localmente, y
-  compara contra lo que devuelve `session_key.sign_order_as_session_key`
-  para el mismo input. Sin este test no se puede confiar en que el CLOB
-  vaya a aceptar la firma real.
+  en `python/tests/` que carga `session_key_golden.json` (fixture
+  generado con el SDK real de ZeroDev, ver Componentes) y verifica que
+  `session_key.sign_order_as_session_key` reproduce exactamente el mismo
+  `signature` para el mismo digest/policy/key. Sin este test no se puede
+  confiar en que el CLOB vaya a aceptar la firma real.
 - **Flujo init→activate:** test de `/session-key/init` → firma →
   `/session-key/activate`, sobre `dummy_worker.py` extendido con los 3
   RPC nuevos (mismo patrón que Fase 1/2a).
@@ -250,12 +294,15 @@ de Polymarket).
 
 ## Archivos críticos
 
-- Nuevo: `python/session_key.py`
+- Nuevo: `python/session_key.py`,
+  `python/tests/fixtures/session_key_golden.json` (generado por un
+  script dev-only en `aa-service/`, ej. `aa-service/scripts/gen-session-key-fixture.ts`)
 - Modificar: `webserver/main.py`, `python/service.py`,
+  `python/polymarket_auth.py` (`create_signed_order`, rama nueva antes
+  del camino `_create_signed_order_1271` existente),
   `webserver/static/signer.html`
-- Reusado sin cambios: `python/polymarket_auth.py`
-  (`build_order_typed_data`, `finalize_signed_order`,
-  `SIGNATURE_TYPE_POLY_1271`), `webserver/aa.py` /
+- Reusado sin cambios: `SIGNATURE_TYPE_POLY_1271`,
+  `_create_signed_order_1271`, `webserver/aa.py` /
   `aa-service` (`GET /account/:owner`)
 - Referencia (wrap EIP-712 de Kernel a replicar en Python):
   `aa-service/node_modules/@zerodev/sdk/_cjs/accounts/kernel/utils/common/eip712WrapHash.js`,

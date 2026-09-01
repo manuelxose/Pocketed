@@ -5,7 +5,6 @@ export class DailyGasCap {
   private capWei: bigint;
   private spentWei = 0n;
   private day: string;
-  private lastReserved = 0n;
 
   constructor(capWei: bigint) {
     this.capWei = capWei;
@@ -26,14 +25,12 @@ export class DailyGasCap {
       return false;
     }
     this.spentWei += estimatedGasWei;
-    this.lastReserved = estimatedGasWei;
     return true;
   }
 
-  release(_sender: string, actualSpentWei: bigint): void {
+  release(_sender: string, giveBackWei: bigint): void {
     this.rollIfNewDay();
-    const toGiveBack = this.lastReserved > actualSpentWei ? this.lastReserved - actualSpentWei : 0n;
-    this.spentWei -= toGiveBack;
+    this.spentWei -= giveBackWei > this.spentWei ? this.spentWei : giveBackWei;
   }
 }
 

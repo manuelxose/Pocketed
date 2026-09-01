@@ -25,7 +25,7 @@ describe("DailyGasCap", () => {
 
   it("release lowers reserved-but-unused gas back into the pool", () => {
     cap.tryReserve("0xUser1", 700n);
-    cap.release("0xUser1", 200n); // only 200 actually spent, not the reserved 700
+    cap.release("0xUser1", 500n); // give back 500 (reserved 700, only 200 actually spent)
     expect(cap.tryReserve("0xUser2", 750n)).toBe(true);
   });
 

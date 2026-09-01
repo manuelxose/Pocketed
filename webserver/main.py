@@ -7,11 +7,11 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Cookie, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Cookie, Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from webserver import auth
+from webserver import aa, auth
 from webserver.supervisor import Supervisor, WorkerStartError
 
 logger = logging.getLogger("webserver.main")
@@ -30,6 +30,13 @@ DATA_ROOT = Path(
         str(Path(__file__).resolve().parent.parent / "python" / "data" / "webapp"),
     )
 )
+
+AA_SERVICE_URL = os.environ.get(aa.AA_SERVICE_URL_ENV)
+if not AA_SERVICE_URL:
+    raise RuntimeError(
+        f"{aa.AA_SERVICE_URL_ENV} must be set — refusing to start without the "
+        "ERC-4337 sidecar configured"
+    )
 
 # Fase 1 explicitly excludes order signing/execution (see spec). Any RPC
 # method that touches credentials or live trading is refused at the
@@ -80,6 +87,22 @@ async def verify(body: VerifyRequest) -> JSONResponse:
         max_age=auth.SESSION_TTL_SECONDS,
     )
     return response
+
+
+async def require_wallet_address(kpb_session: str | None = Cookie(default=None)) -> str:
+    try:
+        return auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
+    except auth.AuthError as e:
+        raise HTTPException(status_code=401, detail=str(e)) from e
+
+
+@app.get("/aa/account")
+async def get_aa_account(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
+    try:
+        address = await aa.compute_account_address(wallet_address, base_url=AA_SERVICE_URL)
+    except aa.AAServiceError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return JSONResponse({"address": address})
 
 
 @app.websocket("/ws")

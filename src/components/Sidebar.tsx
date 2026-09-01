@@ -1,0 +1,141 @@
+import { useEffect, useState } from 'react';
+import {
+  Activity, BarChart3, Bitcoin, BookOpen, Briefcase, Code2, Copy, FlaskConical, Folder,
+  Info, LayoutDashboard, ListChecks, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
+} from 'lucide-react';
+import { useApp } from '../state/AppStateProvider';
+import { cls, fmtUsd } from '../utils/format';
+import { KryptSprite } from './KryptSprite';
+import { FlexStatsCard } from './FlexStatsCard';
+import type { PageId } from '../App';
+
+const NAV: { id: PageId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'main', label: 'Main Engine', icon: Sparkles },
+  { id: 'positions', label: 'Positions', icon: Briefcase },
+  { id: 'signals', label: 'Signals', icon: Activity },
+  { id: 'crypto15m', label: 'Crypto', icon: Bitcoin },
+  { id: 'terminal', label: 'Terminal', icon: SquareTerminal },
+  { id: 'copy', label: 'Copy Trading', icon: Copy },
+  { id: 'scripts', label: 'Scripts', icon: Code2 },
+  { id: 'backtest', label: 'Backtest', icon: FlaskConical },
+  { id: 'history', label: 'History', icon: BarChart3 },
+  { id: 'profiles', label: 'Profiles', icon: Folder },
+  { id: 'accounts', label: 'Accounts', icon: Users },
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'api', label: 'Wallet', icon: Wallet },
+  { id: 'logs', label: 'Logs', icon: ListChecks },
+  { id: 'guide', label: 'Guide', icon: BookOpen },
+  { id: 'about', label: 'About', icon: Info },
+];
+
+interface SidebarProps {
+  page: PageId;
+  setPage: (p: PageId) => void;
+}
+
+export function Sidebar({ page, setPage }: SidebarProps) {
+  const { config, account, backend } = useApp();
+  const [acct, setAcct] = useState('Default');
+  const [showStats, setShowStats] = useState(false);
+  useEffect(() => { window.krypt.accounts.current().then(setAcct).catch(() => {}); }, []);
+
+  return (
+    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-krypt-border bg-krypt-void/40">
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-2">
+          <KryptSprite size={38} title="Krypt" />
+          <div>
+            <div className="font-pixel text-[10px] uppercase tracking-[0.18em] text-white/90">
+              Krypt
+            </div>
+            <button
+              onClick={() => setShowStats(true)}
+              className="group flex items-center gap-1 text-xs text-krypt-muted transition-colors hover:text-white"
+              title="Open your shareable stats card"
+            >
+              <Share2 className="h-3 w-3 text-krypt-purple opacity-80 transition-opacity group-hover:opacity-100" />
+              <span className="underline-offset-2 group-hover:underline">
+                {acct === 'Default' ? 'Krypt Stats' : `${acct} · Stats`}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-0.5 px-2">
+        {NAV.map(({ id, label, icon: Icon }) => {
+          const active = page === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setPage(id)}
+              className={cls(
+                'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                active
+                  ? 'bg-white/[0.06] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                  : 'text-krypt-muted hover:bg-white/[0.03] hover:text-white',
+              )}
+            >
+              <Icon className={cls('h-4 w-4', active && 'text-krypt-purple')} />
+              <span>{label}</span>
+              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-krypt-purple shadow-[0_0_8px_currentColor]" />}
+            </button>
+          );
+        })}
+
+        <div className="relative flex min-h-0 flex-1 select-none items-end justify-center pb-3 pt-2">
+          <div className="pointer-events-none absolute bottom-2 h-3 w-16 rounded-[100%] bg-krypt-pink/25 blur-md" />
+          <KryptSprite size={72} pet title="krypt" className="relative" />
+        </div>
+      </nav>
+
+      <div className="border-t border-krypt-border px-3 pt-3">
+        <button
+          onClick={() => setPage('visualizer')}
+          className={cls(
+            'group relative flex w-full items-center gap-2 overflow-hidden rounded-lg border px-3 py-2 text-sm transition-all',
+            page === 'visualizer'
+              ? 'border-krypt-purple/60 bg-krypt-purple/15 text-white shadow-[0_0_18px_rgba(59,130,246,0.25)]'
+              : 'border-krypt-border bg-gradient-to-r from-krypt-purple/10 via-krypt-pink/5 to-transparent text-white hover:border-krypt-purple/40',
+          )}
+          title="Open the live trade visualizer"
+        >
+          <span className="relative grid h-7 w-7 place-items-center">
+            <span className="absolute inset-0 rounded-full bg-krypt-purple/30 blur-md transition-opacity group-hover:opacity-80" />
+            <Orbit className="relative h-4 w-4 text-krypt-purple animate-[spin_20s_linear_infinite]" />
+          </span>
+          <span className="text-xs font-medium uppercase tracking-wider">Live Visualizer</span>
+          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-krypt-purple shadow-[0_0_8px_currentColor]" />
+        </button>
+      </div>
+
+      <div className="px-3 py-3">
+        <div className="rounded-lg border border-krypt-border bg-krypt-surface p-3">
+          <div className="flex items-center gap-2 text-xs text-krypt-muted">
+            <Wallet className="h-3.5 w-3.5" />
+            <span className="uppercase tracking-wider">Wallet</span>
+            <span className="ml-auto rounded-full border border-krypt-purple/40 bg-krypt-purple/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-krypt-purple">
+              {config?.network ?? 'mainnet'}
+            </span>
+          </div>
+          <div className="mt-1 font-mono text-lg text-white">
+            {fmtUsd(account?.totalUsd)}
+          </div>
+          <div className="text-[11px] text-krypt-dim">
+            cash {fmtUsd(account?.cashUsd)} · port {fmtUsd(account?.portfolioUsd)}
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-krypt-muted">
+            <span>{config?.enableTrading ? 'LIVE' : 'PAUSED'}</span>
+            <span className={cls(
+              'h-1.5 w-1.5 rounded-full',
+              backend.status === 'running' ? 'bg-krypt-win' : 'bg-krypt-warn',
+            )} />
+          </div>
+        </div>
+      </div>
+
+      {showStats && <FlexStatsCard onClose={() => setShowStats(false)} />}
+    </aside>
+  );
+}

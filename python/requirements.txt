@@ -1,0 +1,12 @@
+httpx>=0.28.0
+cryptography>=42.0.0
+eth-account>=0.13.0
+# Official Polymarket V2 CLOB client — signs deposit-wallet (POLY_1271) orders.
+# Pulls poly_eip712_structs, py-order-utils, eth-abi, pycryptodome.
+py_clob_client_v2>=1.0.1
+# Real-time CLOB market-data feed (public WebSocket) — clob_ws.py.
+websockets>=12,<14
+# OS keychain access for at-rest credential encryption on macOS/Linux
+# (polymarket_auth). Pulls SecretStorage + jeepney on Linux automatically (env
+# markers); on Windows DPAPI is used instead so keyring is unused there.
+keyring>=24

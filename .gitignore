@@ -79,3 +79,7 @@ simulation/
 # Machine-specific: settings.local.json holds absolute paths from whichever
 # machine ran the tool (including references to a private sibling project).
 .claude/
+
+# ── aa-service (Node.js sidecar) ────────────────────────────────────
+aa-service/node_modules/
+aa-service/dist/

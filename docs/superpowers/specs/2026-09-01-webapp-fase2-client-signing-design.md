@@ -1,3 +1,17 @@
+> **SUPERSEDIDO.** Este spec asumía firma EIP-712 directa desde una wallet
+> conectada en el browser (WalletConnect v2/injected), por-orden. Se
+> descartó tras revisar el requisito real de auto-trading desatendido: una
+> wallet no-custodial solo puede firmar con el navegador abierto, lo que
+> rompe el auto-trader (ver README: scanners/whale-tracker disparan
+> órdenes sin usuario presente). Reemplazado por un diseño de account
+> abstraction (ERC-4337 + Kernel + session-keys), partido en sub-fases.
+> Ver [2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md](2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md)
+> (primera sub-fase, la única detallada hasta ahora). El análisis técnico
+> de este documento (schema EIP-712 exacto de `py_clob_client_v2`, el
+> detalle del wrapper POLY_1271/Solady) sigue siendo válido y se reusa —
+> solo cambia quién produce la firma final (session key server-side, no
+> el browser por-orden).
+
 # Webapp Fase 2: Custodia no-custodial — firma client-side (EIP-712)
 
 ## Contexto

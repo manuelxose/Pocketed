@@ -8,7 +8,9 @@ import pytest
 # webserver.main reads this at import time and refuses to import without
 # it. Set a test default here (module-level, so it runs during conftest
 # collection) — before any test module does `import webserver.main`.
-os.environ.setdefault("KRYPT_POLYBOT_SESSION_SECRET", "test-secret")
+os.environ.setdefault(
+    "KRYPT_POLYBOT_SESSION_SECRET", "test-secret-at-least-32-bytes-long-for-hs256"
+)
 
 
 @pytest.fixture(scope="session", autouse=True)

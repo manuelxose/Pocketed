@@ -2099,11 +2099,19 @@ git commit -m "feat(frontend): trading/backend domain over WS RPC + config"
 **Files:**
 - Create: `src/hooks/useAccountData.ts`
 - Test: `src/hooks/useAccountData.test.ts`
-- Modify: `src/state/AppStateProvider.tsx` (final removal), every file found in Step 1
+- Modify: `src/state/AppStateProvider.tsx` (final removal), every file found in Step 1, `webserver/config_store.py`, `webserver/main.py`, `src/hooks/useProfiles.ts`, `src/pages/Profiles.tsx` (Task 8 gap fix — see below)
+- Test: `webserver/tests/test_config_store.py`, `webserver/tests/test_main_config_routes.py`, `src/hooks/useProfiles.test.ts` (Task 8 gap fix)
 
 **Interfaces:**
 - Consumes: `useWsClient()`; push-events `account:update`, `position:new`, `position:update`, `signal:new` already routed by `WsProvider` (Task 5) into `['account']`/`['positions']`/`['signals']` cache keys.
 - Produces: `useAccountQuery()`, `usePnlSeriesQuery(sinceHours?)`, `usePositionsQuery(filter?)`, `useSignalsQuery(filter?)`, `useScannerStatsQuery()`, `useBotRunsQuery(env?, limit?)`.
+
+**Carried-forward gap from Task 8 (ruled and parked, fix due here):** `webserver/config_store.py` tracks `activeProfileId`/`activeCryptoProfileId`/`activeCopyProfileId` per user (set by `apply_strategy`/`apply_profile`), but no REST route ever returns them — `GET /config` returns only the config dict. Task 8 rewired `src/pages/Profiles.tsx`'s profile mutations onto the REST hooks, but its "Active" badge (`activeFor()`) still reads `activeProfileId`/etc. off `AppStateProvider`'s Electron-IPC-backed `state`, which nothing updates anymore — the badge is now permanently frozen (display-only staleness, confirmed no data loss: the actual applied config is correct, only the profile-page's checkmark is wrong). Fix as part of this task's `AppStateProvider` retirement:
+1. Add `active_profile_ids(user_id) -> dict` to `webserver/config_store.py` returning `{"main": ..., "crypto": ..., "copy": ...}` from the same state file `get_config`/`apply_profile` already read/write (`activeProfileId`/`activeCryptoProfileId`/`activeCopyProfileId` — reuse those exact keys internally, just expose them).
+2. Add `GET /profiles/active` to `webserver/main.py` (same `require_wallet_address` pattern as every other route in this domain) returning that dict.
+3. Add `useActiveProfilesQuery()` to `src/hooks/useProfiles.ts` (`{queryKey: ['activeProfiles'], queryFn: () => fetchJson('/profiles/active')}`), and invalidate `['activeProfiles']` alongside `['config']` in `useApplyProfileMutation`'s `onSuccess` (`src/hooks/useProfiles.ts`, Task 8).
+4. Update `Profiles.tsx`'s `activeFor()` to read from `useActiveProfilesQuery().data` instead of `AppStateProvider`'s `state.active*ProfileId`.
+Write backend tests for `active_profile_ids`/`GET /profiles/active` and a frontend test for `useActiveProfilesQuery()` following this plan's established TDD pattern for each layer.
 
 - [ ] **Step 1: Find every current call site**
 

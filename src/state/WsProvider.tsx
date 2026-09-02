@@ -15,12 +15,17 @@ export function useWsClient(): WsClient {
 // into the existing array instead of replacing it wholesale.
 const EVENT_QUERY_KEYS: Record<string, unknown[]> = {
   'account:update': ['account'],
-  'credentials:changed': ['credentialsStatus'],
   'backend:authChanged': ['authStatus'],
   'backend:reconciled': ['backendReconciled'],
   'backend:loopStalled': ['backendLoopStalled'],
   'crypto15m:autoOff': ['crypto15mAutoOff'],
   'data:reset': ['dataReset'],
+};
+
+// Events whose push payload is not a drop-in cache value — invalidate the
+// affected queries instead so they refetch from the source of truth.
+const EVENT_INVALIDATE_KEYS: Record<string, unknown[][]> = {
+  'credentials:changed': [['credentialsStatus'], ['credentialsStatusAll']],
 };
 
 export function WsProvider({ url, children }: { url: string; children: React.ReactNode }) {
@@ -34,6 +39,11 @@ export function WsProvider({ url, children }: { url: string; children: React.Rea
 
     const unsubs = Object.entries(EVENT_QUERY_KEYS).map(([event, key]) =>
       client.on(event, (data) => queryClient.setQueryData(key, data)),
+    );
+    const unsubsInvalidate = Object.entries(EVENT_INVALIDATE_KEYS).map(([event, keys]) =>
+      client.on(event, () => {
+        for (const key of keys) queryClient.invalidateQueries({ queryKey: key });
+      }),
     );
 
     const unsubPosition = client.on('position:new', (data) => {
@@ -50,6 +60,7 @@ export function WsProvider({ url, children }: { url: string; children: React.Rea
 
     return () => {
       unsubs.forEach((u) => u());
+      unsubsInvalidate.forEach((u) => u());
       unsubPosition();
       unsubPositionUpdate();
       unsubSignal();

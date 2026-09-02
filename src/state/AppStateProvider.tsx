@@ -2,8 +2,7 @@ import {
   createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
 import type {
-  AccountSnapshot, AppState, BackendInfo, BotPosition, CredentialsState,
-  CredentialsStatusAll,
+  AccountSnapshot, AppState, BackendInfo, BotPosition,
   LogEntry, ScannerStats, SignalRow,
 } from '@shared/types';
 import { useToast } from './ToastProvider';
@@ -16,8 +15,6 @@ interface AppStateApi {
   positions: BotPosition[];
   signals: SignalRow[];
   logs: LogEntry[];
-  credentials: CredentialsState | null;
-  credentialsAll: CredentialsStatusAll | null;
   appVersion: string;
   refresh: {
     state: () => Promise<void>;
@@ -25,7 +22,6 @@ interface AppStateApi {
     positions: () => Promise<void>;
     signals: () => Promise<void>;
     scannerStats: () => Promise<void>;
-    credentials: () => Promise<void>;
     backend: () => Promise<void>;
   };
 }
@@ -63,8 +59,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [positions, setPositions] = useState<BotPosition[]>([]);
   const [signals, setSignals] = useState<SignalRow[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [credentials, setCredentials] = useState<CredentialsState | null>(null);
-  const [credentialsAll, setCredentialsAll] = useState<CredentialsStatusAll | null>(null);
   const [appVersion, setAppVersion] = useState('1.0.0');
 
   const positionsByIdRef = useRef<Map<number, BotPosition>>(new Map());
@@ -170,17 +164,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     } catch {}
   };
 
-  const refreshCredentials = async (): Promise<void> => {
-    try {
-      const [c, all] = await Promise.all([
-        window.krypt.credentials.status(),
-        window.krypt.credentials.statusAll().catch(() => null),
-      ]);
-      setCredentials(c);
-      setCredentialsAll(all);
-    } catch {}
-  };
-
   const refreshBackend = async (): Promise<void> => {
     try {
       const b = await window.krypt.backend.info();
@@ -191,11 +174,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     const init = async () => {
-      const [s, b, a, c, ss, pos, sig, ls, ver] = await Promise.all([
+      const [s, b, a, ss, pos, sig, ls, ver] = await Promise.all([
         window.krypt.state.get(),
         window.krypt.backend.info(),
         window.krypt.data.account(),
-        window.krypt.credentials.status().catch(() => null),
         window.krypt.data.scannerStats(),
         window.krypt.data.positions({ limit: 500 }),
         window.krypt.data.signals({ limit: 300 }),
@@ -206,9 +188,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setState(s);
       setBackend(b);
       setAccount(a);
-      setCredentials(c);
-
-      void window.krypt.credentials.statusAll().then(setCredentialsAll).catch(() => null);
       setScannerStats(ss);
       const pmap = new Map<number, BotPosition>();
       for (const r of pos) pmap.set(r.id, r);
@@ -249,10 +228,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       scheduleFlushLogs();
     });
 
-    const offCreds = window.krypt.credentials.onChanged(() => {
-      void refreshCredentials();
-    });
-
     const offAutoOff = window.krypt.crypto15m.onAutoOff((d) => {
       const gained = typeof d?.gained === 'number' ? d.gained : 0;
       const target = typeof d?.target === 'number' ? d.target : 0;
@@ -282,7 +257,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         void fn().finally(() => { busy = false; });
       };
     };
-    intervals.push(window.setInterval(guarded(refreshCredentials), 6000));
     intervals.push(window.setInterval(guarded(refreshScannerStats), 8000));
     intervals.push(window.setInterval(guarded(refreshSignals), 12000));
     intervals.push(window.setInterval(guarded(refreshPositions), 12000));
@@ -295,7 +269,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       offPos();
       offSig();
       offLog();
-      offCreds();
       offAutoOff();
       offReset();
       if (flushPosTimer.current != null) window.clearTimeout(flushPosTimer.current);
@@ -314,8 +287,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       positions,
       signals,
       logs,
-      credentials,
-      credentialsAll,
       appVersion,
       refresh: {
         state: refreshState,
@@ -323,13 +294,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         positions: refreshPositions,
         signals: refreshSignals,
         scannerStats: refreshScannerStats,
-        credentials: refreshCredentials,
         backend: refreshBackend,
       },
     }),
     [
       state, backend, account, scannerStats, positions, signals,
-      logs, credentials, appVersion,
+      logs, appVersion,
     ],
   );
 

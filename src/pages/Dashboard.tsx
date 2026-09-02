@@ -9,14 +9,16 @@ import { cls, fmtPct, fmtRelative, fmtUsd } from '../utils/format';
 import { WhyNotTrading } from '../components/WhyNotTrading';
 import type { PageId } from '../App';
 import { useConfigQuery } from '../hooks/useConfig';
+import { useCredentialsStatusQuery } from '../hooks/useCredentials';
 
 interface DashboardProps {
   onNav: (p: PageId) => void;
 }
 
 export function DashboardPage({ onNav }: DashboardProps) {
-  const { account, scannerStats, signals, positions, backend, credentials, refresh } = useApp();
+  const { account, scannerStats, signals, positions, backend, refresh } = useApp();
   const { data: config } = useConfigQuery();
+  const { data: credentials } = useCredentialsStatusQuery();
   const toast = useToast();
   const [series, setSeries] = useState<PnlPoint[]>([]);
   const [restarting, setRestarting] = useState(false);

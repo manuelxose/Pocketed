@@ -3,12 +3,16 @@ import {
   ExternalLink, Eye, EyeOff, Gift, KeyRound, RefreshCcw,
   Save, ShieldAlert, ShieldCheck, Trash2, Wallet, Wifi, WifiOff,
 } from 'lucide-react';
-import type { CredentialsState, CredentialsStatusAll } from '@shared/types';
+import type { CredentialsState } from '@shared/types';
 import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, Page, Section } from '../components/common';
 import { cls } from '../utils/format';
 import { POLYMARKET_REFERRAL_URL } from '../utils/links';
+import {
+  useCredentialsStatusAllQuery, useSaveCredentialsMutation, useTestCredentialsMutation,
+  useClearCredentialsMutation,
+} from '../hooks/useCredentials';
 
 const SIGNATURE_TYPE_LABELS: Record<number, string> = {
   0: 'EOA',
@@ -19,19 +23,7 @@ const SIGNATURE_TYPE_LABELS: Record<number, string> = {
 
 export function ApiKeysPage() {
   const { backend, refresh } = useApp();
-  const toast = useToast();
-  const [statusAll, setStatusAll] = useState<CredentialsStatusAll | null>(null);
-
-  const reload = async (): Promise<void> => {
-    try {
-      const all = await window.krypt.credentials.statusAll();
-      setStatusAll(all);
-    } catch {}
-  };
-
-  useEffect(() => {
-    void reload();
-  }, [backend.authOk]);
+  const { data: statusAll, refetch } = useCredentialsStatusAllQuery();
 
   const cred: CredentialsState | undefined = statusAll?.mainnet;
 
@@ -40,7 +32,7 @@ export function ApiKeysPage() {
       title="Wallet"
       subtitle="Connect a Polygon wallet to trade on Polymarket. Your private key is stored locally (encrypted with your Windows account) under %APPDATA%/Krypt PolyBot/credentials and never sent off-machine."
       actions={
-        <button onClick={() => void reload()} className="krypt-btn-default" title="Re-read credential status from disk">
+        <button onClick={() => void refetch()} className="krypt-btn-default" title="Re-read credential status from disk">
           <RefreshCcw className="h-4 w-4" /> Refresh
         </button>
       }
@@ -72,7 +64,7 @@ export function ApiKeysPage() {
 
       <WalletSlot
         status={cred}
-        onSaved={async () => { await reload(); await refresh.credentials(); await refresh.account(); await refresh.backend(); }}
+        onSaved={async () => { await refetch(); await refresh.account(); await refresh.backend(); }}
       />
 
       <Section title="Security notes">
@@ -122,9 +114,13 @@ function WalletSlot({ status, onSaved }: SlotProps) {
   const toast = useToast();
   const [privateKey, setPrivateKey] = useState('');
   const [showKey, setShowKey] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [funder, setFunder] = useState('');
   useEffect(() => { setFunder(status?.funder || ''); }, [status?.funder]);
+
+  const saveMutation = useSaveCredentialsMutation();
+  const testMutation = useTestCredentialsMutation();
+  const clearMutation = useClearCredentialsMutation();
+  const busy = saveMutation.isPending || testMutation.isPending || clearMutation.isPending;
 
   const has = !!status?.hasWalletKey;
 
@@ -155,21 +151,22 @@ function WalletSlot({ status, onSaved }: SlotProps) {
         toast.error('Nothing to update — paste a new private key to replace the wallet, change the deposit wallet, or click Delete to remove it.');
         return;
       }
-      setBusy(true);
       try {
-        const r = await window.krypt.credentials.save({
+        await saveMutation.mutateAsync({
           funder: fund || undefined,
           signatureType: fund ? 3 : 0,
           env: 'mainnet',
         });
-        if (!r.ok) { toast.error(r.message || 'Update failed'); return; }
         toast.success(fund ? 'Deposit wallet updated. Verifying…' : 'Deposit wallet cleared. Verifying…');
-        const t = await window.krypt.credentials.test('mainnet');
-        if (t.ok) reportTest(t.data);
-        else toast.error(t.message || 'Could not connect to Polymarket');
+        try {
+          const data = await testMutation.mutateAsync('mainnet');
+          reportTest(data as { balanceUsd?: number; ready?: boolean; issues?: string[] });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : 'Could not connect to Polymarket');
+        }
         await onSaved();
-      } finally {
-        setBusy(false);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Update failed');
       }
       return;
     }
@@ -179,46 +176,44 @@ function WalletSlot({ status, onSaved }: SlotProps) {
       toast.error('Paste a 64-character hex private key (optionally 0x-prefixed).');
       return;
     }
-    setBusy(true);
     try {
-      const r = await window.krypt.credentials.save({
+      await saveMutation.mutateAsync({
         privateKey: pk,
         funder: fund || undefined,
         signatureType: fund ? 3 : 0,
         env: 'mainnet',
       });
-      if (!r.ok) { toast.error(r.message || 'Save failed'); return; }
       toast.success('Wallet saved. Verifying…');
-      const t = await window.krypt.credentials.test('mainnet');
-      if (t.ok) reportTest(t.data);
-      else toast.error(t.message || 'Could not connect to Polymarket');
+      try {
+        const data = await testMutation.mutateAsync('mainnet');
+        reportTest(data as { balanceUsd?: number; ready?: boolean; issues?: string[] });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Could not connect to Polymarket');
+      }
       setPrivateKey('');
       await onSaved();
-    } finally {
-      setBusy(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Save failed');
     }
   };
 
   const test = async (): Promise<void> => {
-    setBusy(true);
     try {
-      const r = await window.krypt.credentials.test('mainnet');
-      if (r.ok) reportTest(r.data);
-      else toast.error(r.message || 'Test failed');
-    } finally {
-      setBusy(false);
+      const data = await testMutation.mutateAsync('mainnet');
+      reportTest(data as { balanceUsd?: number; ready?: boolean; issues?: string[] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Test failed');
     }
   };
 
   const clear = async (): Promise<void> => {
     if (!window.confirm('Delete the saved wallet key from disk?')) return;
-    setBusy(true);
     try {
-      const r = await window.krypt.credentials.clear('mainnet');
-      if (r.ok) { toast.success('Wallet removed'); await onSaved(); }
-      else toast.error(r.message || 'Failed');
-    } finally {
-      setBusy(false);
+      await clearMutation.mutateAsync('mainnet');
+      toast.success('Wallet removed');
+      await onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed');
     }
   };
 

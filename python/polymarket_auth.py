@@ -746,6 +746,10 @@ def _create_signed_order_via_session_key(
     import session_key as _session_key_mod
     from eth_account.messages import encode_typed_data, _hash_eip191_message
 
+    notional_usd = price * size
+    if not _session_key_mod.reserve_daily_usd(notional_usd):
+        raise RuntimeError("daily USD cap exceeded for session key")
+
     kernel_address = session_key_record["policy"]["kernelAddress"]
     side_u = side.upper()
     side_int = 0 if side_u == "BUY" else 1

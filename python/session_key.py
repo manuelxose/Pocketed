@@ -352,6 +352,27 @@ def load_active_session_key(env: str = _auth.NETWORK) -> Optional[dict]:
     return record
 
 
+def reserve_daily_usd(amount_usd: float, env: str = _auth.NETWORK) -> bool:
+    """Atomically checks and reserves `amount_usd` against the session
+    key's policy['dailyUsdCap'] for the current UTC day. Returns False
+    (and reserves nothing) if the cap would be exceeded; True and records
+    the spend otherwise. The counter resets when the UTC day changes."""
+    record = load_session_key_record(env)
+    if record is None:
+        return False
+    today = time.strftime("%Y-%m-%d", time.gmtime(_auth.now_ts()))
+    spend = record.get("dailySpend") or {}
+    if spend.get("day") != today:
+        spend = {"day": today, "usedUsd": 0.0}
+    cap = float(record.get("policy", {}).get("dailyUsdCap") or 0.0)
+    if cap and spend["usedUsd"] + amount_usd > cap:
+        return False
+    spend["usedUsd"] = spend["usedUsd"] + amount_usd
+    record["dailySpend"] = spend
+    _auth._write_secret_bytes(session_key_file(env), json.dumps(record).encode("utf-8"))
+    return True
+
+
 def revoke_session_key_soft(env: str = _auth.NETWORK) -> None:
     record = load_session_key_record(env)
     if record is None:

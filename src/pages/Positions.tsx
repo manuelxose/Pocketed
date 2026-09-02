@@ -6,6 +6,7 @@ import { useToast } from '../state/ToastProvider';
 import { Empty, Page } from '../components/common';
 import { TickerLink } from '../components/PolymarketTicker';
 import { cls, fmtCents, fmtRelative, fmtUsd } from '../utils/format';
+import { useCancelAllOpenMutation, useRunOnceMutation } from '../hooks/useTrading';
 
 const STATUS_COLORS: Record<string, string> = {
   submitted: 'bg-krypt-warn/15 text-krypt-warn border-krypt-warn/30',
@@ -23,6 +24,8 @@ type Tab = 'open' | 'pending' | 'won' | 'lost' | 'errors' | 'all';
 export function PositionsPage() {
   const { positions, refresh } = useApp();
   const toast = useToast();
+  const cancelAllOpen = useCancelAllOpenMutation();
+  const runOnce = useRunOnceMutation();
   const [tab, setTab] = useState<Tab>('open');
   const [src, setSrc] = useState<'all' | 'whale' | 'momentum'>('all');
   const [busy, setBusy] = useState<string | null>(null);
@@ -64,9 +67,10 @@ export function PositionsPage() {
     if (!window.confirm('Cancel ALL open orders on Polymarket?')) return;
     setBusy('cancel');
     try {
-      const r = await window.krypt.trading.cancelAllOpen();
-      if (r.ok) toast.success(r.message || 'All open orders canceled');
-      else toast.error(r.message || 'Failed');
+      const r = await cancelAllOpen.mutateAsync();
+      toast.success(`Canceled ${r.canceled} open order${r.canceled === 1 ? '' : 's'}`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to cancel open orders');
     } finally {
       setBusy(null);
     }
@@ -75,13 +79,11 @@ export function PositionsPage() {
   const syncPositions = async (): Promise<void> => {
     setBusy('sync');
     try {
-      const r = await window.krypt.backend.runOnce('syncPositions');
-      if (r.ok) {
-        await refresh.positions();
-        toast.success(r.data?.summary || r.message || 'Positions synced');
-      } else {
-        toast.error(r.message || 'Sync failed');
-      }
+      const r = await runOnce.mutateAsync('syncPositions');
+      await refresh.positions();
+      toast.success(r.summary || 'Positions synced');
+    } catch (e: any) {
+      toast.error(e?.message || 'Sync failed');
     } finally {
       setBusy(null);
     }

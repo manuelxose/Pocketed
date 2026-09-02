@@ -1,22 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { TradingStatus } from '@shared/types';
 import { cls } from '../utils/format';
+import { useTradingStatusQuery } from '../hooks/useTrading';
 
 export function WhyNotTrading() {
-  const [st, setSt] = useState<TradingStatus | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    const pull = async () => {
-      try {
-        const s = await window.krypt.trading.status();
-        if (alive) setSt(s);
-      } catch {}
-    };
-    void pull();
-    const t = setInterval(pull, 5000);
-    return () => { alive = false; clearInterval(t); };
-  }, []);
+  const { data: st } = useTradingStatusQuery();
 
   if (!st) return null;
 

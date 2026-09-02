@@ -11,6 +11,7 @@ import { cls, fmtPct, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation, useResetConfigMutation } from '../hooks/useConfig';
 import { useStrategiesQuery, useApplyStrategyMutation } from '../hooks/useStrategies';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
+import { useSetTradingEnabledMutation } from '../hooks/useTrading';
 
 const KRYPT_CATEGORIES: { id: string; label: string; Icon: typeof Trophy }[] = [
   { id: 'sports', label: 'Sports', Icon: Trophy },
@@ -46,6 +47,7 @@ export function MainEnginePage() {
   const { data: config } = useConfigQuery();
   const { data: strategies = [] } = useStrategiesQuery();
   const patchConfig = usePatchConfigMutation();
+  const setTradingEnabled = useSetTradingEnabledMutation();
   const applyStrategy = useApplyStrategyMutation();
   const resetConfig = useResetConfigMutation();
   const saveProfile = useSaveProfileMutation();
@@ -66,12 +68,12 @@ export function MainEnginePage() {
       + 'simulation.\n\nThe Crypto, Copy Trading and Scripts engines are '
       + 'separate and are not affected.',
     )) return;
-    const r = await window.krypt.trading.setEnabled(next);
-    if (!r.ok) {
-      toast.error(r.message || 'Failed to toggle the main engine');
-      return;
+    try {
+      await setTradingEnabled.mutateAsync(next);
+      toast.success(next ? 'Main engine started' : 'Main engine paused');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to toggle the main engine');
     }
-    toast.success(next ? 'Main engine started' : 'Main engine paused');
   };
 
   const update = async <K extends keyof TraderConfig>(key: K, value: TraderConfig[K]): Promise<void> => {

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Activity, AlertTriangle, ArrowRight, CheckCircle2, RefreshCw, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { PnlPoint } from '@shared/types';
 import { useApp } from '../state/AppStateProvider';
-import { useToast } from '../state/ToastProvider';
 import { Card, Empty, Page, ShareableStat, StatCard } from '../components/common';
 import { cls, fmtPct, fmtRelative, fmtUsd } from '../utils/format';
 import { WhyNotTrading } from '../components/WhyNotTrading';
@@ -16,28 +15,12 @@ interface DashboardProps {
 }
 
 export function DashboardPage({ onNav }: DashboardProps) {
-  const { account, scannerStats, signals, positions, backend, refresh } = useApp();
+  const { account, scannerStats, signals, positions, backend } = useApp();
   const { data: config } = useConfigQuery();
   const { data: credentials } = useCredentialsStatusQuery();
-  const toast = useToast();
   const [series, setSeries] = useState<PnlPoint[]>([]);
-  const [restarting, setRestarting] = useState(false);
 
   const engineDown = backend.status === 'crashed' || backend.status === 'stopped';
-
-  const restartEngine = async (): Promise<void> => {
-    setRestarting(true);
-    toast.info('Restarting engine…');
-    try {
-      await window.krypt.backend.restart();
-
-      window.setTimeout(() => { void refresh.backend(); }, 1200);
-    } catch (e: any) {
-      toast.error(`Restart failed: ${e?.message || e}`);
-    } finally {
-      window.setTimeout(() => setRestarting(false), 1200);
-    }
-  };
 
   useEffect(() => {
     let mounted = true;
@@ -119,14 +102,6 @@ export function DashboardPage({ onNav }: DashboardProps) {
               {backend.lastError ? ` Last error: ${backend.lastError}` : ''}
             </div>
           </div>
-          <button
-            onClick={restartEngine}
-            disabled={restarting}
-            className="krypt-btn-primary shrink-0 disabled:opacity-50"
-          >
-            <RefreshCw className={cls('h-4 w-4', restarting && 'animate-spin')} />
-            {restarting ? 'Restarting…' : 'Restart engine'}
-          </button>
         </div>
       )}
       {account?.tradingGeoblocked && (

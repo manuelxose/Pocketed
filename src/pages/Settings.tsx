@@ -1,23 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { RefreshCw, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import type { TraderConfig } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, Page, Section, Switch } from '../components/common';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 
 export function SettingsPage() {
-  const { refresh, backend } = useApp();
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-
-  const restartBackend = async (): Promise<void> => {
-    toast.info('Restarting backend — every engine stops and restarts…');
-    await window.krypt.backend.restart();
-    setTimeout(() => void refresh.backend(), 1000);
-  };
 
   if (!config) return <Page title="Settings"><div className="text-krypt-muted">Loading…</div></Page>;
 
@@ -34,28 +26,6 @@ export function SettingsPage() {
       title="Settings"
       subtitle="App-level preferences: startup behavior, notifications, and data. Each trading engine has its own page and its own on/off switch — Main Engine (whales + momentum), Crypto, Copy Trading, and Scripts."
     >
-      <Section
-        title="Backend"
-        description="The Python process every engine runs inside. Restarting it stops and restarts ALL of them — it is not scoped to any single engine, which is why it lives here rather than on an engine page."
-      >
-        <Card>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <button onClick={() => void restartBackend()} className="krypt-btn-default">
-              <RefreshCw className="h-4 w-4" /> Restart backend
-            </button>
-            <div className="text-[11px] text-krypt-dim">
-              Status:{' '}
-              <span className={backend.status === 'running' ? 'text-krypt-win' : 'text-krypt-warn'}>
-                {backend.status}
-              </span>
-              {backend.status === 'running'
-                ? ' — open positions keep their management passes; a restart briefly interrupts them.'
-                : ' — a restart usually clears a stuck backend.'}
-            </div>
-          </div>
-        </Card>
-      </Section>
-
       <Section
         title="Discord webhooks (optional)"
         description="Drop your channel webhook URLs to mirror events to Discord."

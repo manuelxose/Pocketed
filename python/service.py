@@ -46,7 +46,7 @@ class _StdoutHandler(logging.Handler):
 
 
 def _setup_logging() -> None:
-    log_dir_base = os.environ.get("KRYPT_POLYBOT_USERDATA")
+    log_dir_base = os.environ.get("POCKETED_USERDATA")
     if log_dir_base:
         log_dir = Path(log_dir_base) / "logs"
     else:
@@ -2387,7 +2387,7 @@ async def _main() -> None:
     db.init_db()
     crypto15m_trader.set_auto_off_callback(_on_crypto15m_auto_off)
     script_engine.set_event_callback(emit_event)
-    logger.info("Krypt PolyBot backend starting")
+    logger.info("Pocketed backend starting")
 
     stdin_task = asyncio.create_task(_stdin_reader(), name="stdin_reader")
 

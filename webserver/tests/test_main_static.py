@@ -24,9 +24,9 @@ def test_import_does_not_crash_when_dist_missing(tmp_path):
     """
     missing_dir = tmp_path / "does-not-exist"
     env = {
-        "KRYPT_POLYBOT_SESSION_SECRET": "test-secret-at-least-32-bytes-long-for-hs256",
-        "KRYPT_POLYBOT_AA_SERVICE_URL": "http://aa-service.test",
-        "KRYPT_POLYBOT_WEBAPP_DIST": str(missing_dir),
+        "POCKETED_SESSION_SECRET": "test-secret-at-least-32-bytes-long-for-hs256",
+        "POCKETED_AA_SERVICE_URL": "http://aa-service.test",
+        "POCKETED_WEBAPP_DIST": str(missing_dir),
         "SYSTEMROOT": os.environ.get("SYSTEMROOT", ""),
         "PATH": os.environ.get("PATH", ""),
     }

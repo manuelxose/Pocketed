@@ -1,10 +1,10 @@
 import {
   Activity, AlertTriangle, BarChart3, BookOpen, Briefcase, CheckCircle2,
   Code2, ExternalLink, Eye, FlaskConical, Gift, KeyRound, Layers, Sparkles,
-  Shield, ShieldAlert, Target, Twitter, Wallet, Youtube, Zap,
+  Shield, ShieldAlert, Target, Twitter, Wallet, Zap,
 } from 'lucide-react';
 import { Card, Page, Section } from '../components/common';
-import { POLYMARKET_REFERRAL_URL, KRYPT_YOUTUBE_GUIDE } from '../utils/links';
+import { POLYMARKET_REFERRAL_URL } from '../utils/links';
 import { followYuhgo, X_PROFILE } from '../utils/share';
 
 export function GuidePage() {
@@ -13,40 +13,19 @@ export function GuidePage() {
   return (
     <Page
       title="Guide"
-      subtitle="How Krypt PolyBot works, what each setting does, and the trading edge it tries to capture."
+      subtitle="How Pocketed works, what each setting does, and the trading edge it tries to capture."
     >
-      <Card className="mb-6 border-krypt-loss/30 bg-gradient-to-br from-krypt-loss/15 via-krypt-glow/15 to-transparent">
+      <Card className="mb-6 border-pocketed-purple/30 bg-gradient-to-br from-pocketed-purple/15 via-pocketed-glow/20 to-transparent">
         <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-krypt-loss/20 text-krypt-loss shadow-krypt-strong">
-            <Youtube className="h-7 w-7" />
-          </div>
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-white">
-              Watch the full setup &amp; strategy guide
-            </div>
-            <p className="mt-1 text-xs text-krypt-muted">
-              A step-by-step walkthrough — creating your Polymarket account through our link,
-              connecting your wallet, picking a strategy, and reading the dashboard. The fastest
-              way to get up and running.
-            </p>
-          </div>
-          <button onClick={open(KRYPT_YOUTUBE_GUIDE)} className="krypt-btn-primary shrink-0">
-            <Youtube className="h-4 w-4" /> Watch on YouTube <ExternalLink className="h-3 w-3" />
-          </button>
-        </div>
-      </Card>
-
-      <Card className="mb-6 border-krypt-purple/30 bg-gradient-to-br from-krypt-purple/15 via-krypt-glow/20 to-transparent">
-        <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-krypt-glow shadow-krypt-strong">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-pocketed-glow shadow-pocketed-strong">
             <Gift className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
             <div className="text-sm font-semibold text-white">
               New to Polymarket? Get up to $50 in trading credits.
             </div>
-            <p className="mt-1 text-xs text-krypt-muted">
-              Sign up via the Krypt link (our referral), then deposit $20 and place
+            <p className="mt-1 text-xs text-pocketed-muted">
+              Sign up via our referral link, then deposit $20 and place
               your first trade — Polymarket&apos;s current offer is up to $50 in trading
               credits for new users (trading credit, not instant cash; terms set by
               Polymarket). Do it before connecting your wallet to maximize your
@@ -54,12 +33,12 @@ export function GuidePage() {
             </p>
           </div>
           <div className="flex flex-col gap-2 shrink-0">
-            <button onClick={open(POLYMARKET_REFERRAL_URL)} className="krypt-btn-primary">
+            <button onClick={open(POLYMARKET_REFERRAL_URL)} className="pocketed-btn-primary">
               <Gift className="h-4 w-4" /> Sign up on Polymarket <ExternalLink className="h-3 w-3" />
             </button>
             <button
               onClick={() => void followYuhgo()}
-              className="krypt-btn-default"
+              className="pocketed-btn-default"
               title={`Open ${X_PROFILE} on X`}
             >
               <Twitter className="h-4 w-4" /> Follow {X_PROFILE} <ExternalLink className="h-3 w-3" />
@@ -159,12 +138,12 @@ export function GuidePage() {
       </Section>
 
       <Section title="Test safely before risking real money">
-        <Card className="border-krypt-win/25 bg-krypt-win/[0.03]">
+        <Card className="border-pocketed-win/25 bg-pocketed-win/[0.03]">
           <div className="mb-4 flex items-start gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-krypt-win/15 text-krypt-win">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-pocketed-win/15 text-pocketed-win">
               <Shield className="h-5 w-5" />
             </div>
-            <p className="text-sm text-krypt-muted">
+            <p className="text-sm text-pocketed-muted">
               Polymarket is <span className="text-white">mainnet-only, real USDC</span> — there's no
               play-money exchange. So test the bot without risking funds in one of these ways:
             </p>
@@ -186,7 +165,7 @@ export function GuidePage() {
               </>
             } />
           </ol>
-          <div className="mt-3 text-[11px] text-krypt-dim">
+          <div className="mt-3 text-[11px] text-pocketed-dim">
             Never paste a private key for a wallet holding funds you can't afford to lose. The bot's
             strategies are heuristics with no proven edge.
           </div>
@@ -196,7 +175,7 @@ export function GuidePage() {
       <Section title="How a trade flows">
         <Card>
           <FlowDiagram />
-          <div className="mt-4 grid gap-3 text-xs text-krypt-muted md:grid-cols-3">
+          <div className="mt-4 grid gap-3 text-xs text-pocketed-muted md:grid-cols-3">
             <div>
               <div className="text-[11px] uppercase tracking-wider text-white">
                 1. Scan
@@ -274,7 +253,7 @@ export function GuidePage() {
 
       <Section title="Reading the dashboard">
         <Card>
-          <ul className="space-y-2 text-sm text-krypt-muted">
+          <ul className="space-y-2 text-sm text-pocketed-muted">
             <Row
               icon={BarChart3}
               label="Total Balance"
@@ -306,9 +285,9 @@ export function GuidePage() {
 
       <Section title="When P&amp;L looks weird">
         <Card>
-          <div className="mb-3 flex items-start gap-3 rounded-lg border border-krypt-warn/30 bg-krypt-warn/5 p-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-krypt-warn" />
-            <div className="text-xs text-krypt-muted">
+          <div className="mb-3 flex items-start gap-3 rounded-lg border border-pocketed-warn/30 bg-pocketed-warn/5 p-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-pocketed-warn" />
+            <div className="text-xs text-pocketed-muted">
               <span className="text-white">Today P&L can be negative while your balance climbs.</span>
               {' '}Realized P&L only counts <span className="text-white">settled</span> bets.
               If your open positions are appreciating, your total balance goes up
@@ -316,10 +295,10 @@ export function GuidePage() {
               resolved. That's normal — wait for settlement.
             </div>
           </div>
-          <div className="text-sm text-krypt-muted">
+          <div className="text-sm text-pocketed-muted">
             If something looks broken (wrong wins/losses, stuck positions, etc.):
           </div>
-          <ul className="mt-2 space-y-1.5 text-sm text-krypt-muted">
+          <ul className="mt-2 space-y-1.5 text-sm text-pocketed-muted">
             <li>
               <span className="text-white">Positions → Reconcile</span> — re-syncs
               local rows with Polymarket's live position list.
@@ -364,7 +343,7 @@ export function GuidePage() {
               body="Confidence ≥ 78, edge ≥ 8pts, smaller sizing, tight per-event dedupe. Fewer trades but higher hit-rate. Best when you want to ride out long stretches."
             />
           </div>
-          <div className="mt-4 text-xs text-krypt-dim">
+          <div className="mt-4 text-xs text-pocketed-dim">
             All three are starting points — clone any of them into a Profile and
             adjust. Track outcomes via the History page over a few days before you
             commit real capital.
@@ -374,7 +353,7 @@ export function GuidePage() {
 
       <Section title="Writing your own strategy (Scripts)">
         <Card>
-          <p className="text-sm text-krypt-muted">
+          <p className="text-sm text-pocketed-muted">
             The <span className="text-white">Scripts</span> page runs your own Python strategy
             alongside the built-in engines. You write one or more hooks, backtest them against the
             ticks this app has already recorded, then arm the script to trade under caps you set.
@@ -411,7 +390,7 @@ export function GuidePage() {
             />
           </div>
 
-          <div className="mt-4 text-xs text-krypt-muted">
+          <div className="mt-4 text-xs text-pocketed-muted">
             <span className="text-white">ctx</span> carries around 40 fields per tick: real order-book
             asks and bids, the underlying's spot price and realized volatility, MACD / RSI / VWAP /
             EMA / SMA, the model's probability and fee-net edge, minutes left in the window, and your
@@ -456,10 +435,10 @@ export function GuidePage() {
           </ul>
         </Card>
 
-        <Card className="mt-4 border-krypt-loss/30 bg-krypt-loss/5">
+        <Card className="mt-4 border-pocketed-loss/30 bg-pocketed-loss/5">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-krypt-loss" />
-            <div className="text-xs leading-relaxed text-krypt-muted">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-pocketed-loss" />
+            <div className="text-xs leading-relaxed text-pocketed-muted">
               <div className="text-sm font-medium text-white">Read any script you did not write</div>
               <p className="mt-1">
                 Scripts run as <span className="text-white">full Python</span>, with the same
@@ -488,7 +467,7 @@ export function GuidePage() {
 
       <Section title="Tips">
         <Card>
-          <ul className="space-y-2 text-sm text-krypt-muted">
+          <ul className="space-y-2 text-sm text-pocketed-muted">
             <li>
               <BookOpen className="mr-2 inline h-3.5 w-3.5" />
               Run the bot on a small balance for at least a few hundred resolved signals
@@ -522,12 +501,12 @@ function FeatureCard({
   return (
     <Card>
       <div className="flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-krypt-purple/15 text-krypt-purple">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-pocketed-purple/15 text-pocketed-purple">
           <Icon className="h-4 w-4" />
         </div>
         <div className="text-sm font-semibold text-white">{title}</div>
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-krypt-muted">{body}</p>
+      <p className="mt-3 text-xs leading-relaxed text-pocketed-muted">{body}</p>
     </Card>
   );
 }
@@ -537,12 +516,12 @@ function Step({
 }: { n: number; title: string; body: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3">
-      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-krypt-purple/40 bg-krypt-purple/10 text-xs font-semibold text-krypt-purple">
+      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-pocketed-purple/40 bg-pocketed-purple/10 text-xs font-semibold text-pocketed-purple">
         {n}
       </div>
       <div>
         <div className="text-sm font-medium text-white">{title}</div>
-        <p className="mt-0.5 text-xs leading-relaxed text-krypt-muted">{body}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-pocketed-muted">{body}</p>
       </div>
     </li>
   );
@@ -551,8 +530,8 @@ function Step({
 function SettingRow({ label, hint }: { label: string; hint: string }) {
   return (
     <div>
-      <div className="font-mono text-[11px] text-krypt-purple">{label}</div>
-      <div className="mt-0.5 text-xs leading-relaxed text-krypt-muted">{hint}</div>
+      <div className="font-mono text-[11px] text-pocketed-purple">{label}</div>
+      <div className="mt-0.5 text-xs leading-relaxed text-pocketed-muted">{hint}</div>
     </div>
   );
 }
@@ -562,10 +541,10 @@ function Row({
 }: { icon: React.ComponentType<{ className?: string }>; label: string; body: string }) {
   return (
     <li className="flex items-start gap-3">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-krypt-purple" />
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-pocketed-purple" />
       <div className="text-xs">
         <span className="text-white">{label}</span>
-        <span className="ml-2 text-krypt-muted">{body}</span>
+        <span className="ml-2 text-pocketed-muted">{body}</span>
       </div>
     </li>
   );
@@ -580,9 +559,9 @@ function StratBlock({
   body: string;
 }) {
   const toneClasses = {
-    win: 'border-krypt-win/30 bg-krypt-win/5 text-krypt-win',
-    loss: 'border-krypt-loss/30 bg-krypt-loss/5 text-krypt-loss',
-    purple: 'border-krypt-purple/30 bg-krypt-purple/5 text-krypt-purple',
+    win: 'border-pocketed-win/30 bg-pocketed-win/5 text-pocketed-win',
+    loss: 'border-pocketed-loss/30 bg-pocketed-loss/5 text-pocketed-loss',
+    purple: 'border-pocketed-purple/30 bg-pocketed-purple/5 text-pocketed-purple',
   }[tone];
   return (
     <div className={`rounded-xl border p-4 ${toneClasses}`}>
@@ -590,14 +569,14 @@ function StratBlock({
         <Icon className="h-4 w-4" />
         <div className="text-sm font-semibold">{title}</div>
       </div>
-      <p className="mt-2 text-xs leading-relaxed text-krypt-muted">{body}</p>
+      <p className="mt-2 text-xs leading-relaxed text-pocketed-muted">{body}</p>
     </div>
   );
 }
 
 function FlowDiagram() {
   return (
-    <svg viewBox="0 0 720 130" className="w-full text-krypt-muted">
+    <svg viewBox="0 0 720 130" className="w-full text-pocketed-muted">
       {[
         { x: 20, label: 'Polymarket API', sub: 'markets · fills' },
         { x: 175, label: 'Scanner', sub: 'whale + momentum' },
@@ -608,12 +587,12 @@ function FlowDiagram() {
         <g key={i}>
           <rect
             x={n.x} y={35} width={90} height={60} rx={10}
-            className="fill-krypt-surface2 stroke-krypt-border" strokeWidth={1}
+            className="fill-pocketed-surface2 stroke-pocketed-border" strokeWidth={1}
           />
           <text x={n.x + 45} y={62} textAnchor="middle" className="fill-white text-[11px] font-semibold">
             {n.label}
           </text>
-          <text x={n.x + 45} y={78} textAnchor="middle" className="fill-krypt-muted text-[10px]">
+          <text x={n.x + 45} y={78} textAnchor="middle" className="fill-pocketed-muted text-[10px]">
             {n.sub}
           </text>
         </g>

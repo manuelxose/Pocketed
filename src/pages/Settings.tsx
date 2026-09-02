@@ -9,7 +9,7 @@ export function SettingsPage() {
   const patchConfig = usePatchConfigMutation();
   const toast = useToast();
 
-  if (!config) return <Page title="Settings"><div className="text-krypt-muted">Loading…</div></Page>;
+  if (!config) return <Page title="Settings"><div className="text-pocketed-muted">Loading…</div></Page>;
 
   const update = async <K extends keyof TraderConfig>(key: K, value: TraderConfig[K]): Promise<void> => {
     try {
@@ -59,10 +59,10 @@ function UrlField({
   useEffect(() => { if (!focused.current) setText(value); }, [value]);
   return (
     <div>
-      <label className="krypt-label">{label} webhook</label>
+      <label className="pocketed-label">{label} webhook</label>
       <input
         type="text"
-        className="krypt-input font-mono text-xs"
+        className="pocketed-input font-mono text-xs"
         value={text}
         placeholder="https://discord.com/api/webhooks/…"
         onFocus={() => { focused.current = true; }}

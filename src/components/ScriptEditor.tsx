@@ -268,7 +268,7 @@ export function ScriptEditor({
   return (
     <div
       ref={hostRef}
-      className="h-full min-h-[280px] overflow-auto rounded-lg border border-krypt-border bg-krypt-void/50 [&_.cm-editor]:h-full"
+      className="h-full min-h-[280px] overflow-auto rounded-lg border border-pocketed-border bg-pocketed-void/50 [&_.cm-editor]:h-full"
     />
   );
 }

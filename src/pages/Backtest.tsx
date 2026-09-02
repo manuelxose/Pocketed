@@ -133,7 +133,7 @@ export function BacktestPage() {
       title="Backtest"
       subtitle="While the bot runs it records every crypto up/down window (whichever interval you watch — 5m, 15m, or hourly) and every whale/momentum signal it sees, with outcomes. Test any strategy against that collected history — same entry gates as live, real Polymarket fees — and see WHEN the profit happens, not just how much."
     >
-      <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">Setup</div>}>
+      <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">Setup</div>}>
         <div className="flex flex-wrap items-end gap-4">
           <Field label="Engine">
             <Chips
@@ -147,7 +147,7 @@ export function BacktestPage() {
               <select
                 value={stratSel}
                 onChange={(e) => setStratSel(e.target.value)}
-                className="rounded-md border border-krypt-border bg-krypt-surface2 px-2.5 py-1.5 text-xs text-white outline-none focus:border-krypt-purple/60"
+                className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1.5 text-xs text-white outline-none focus:border-pocketed-purple/60"
               >
                 <option value="current">Current settings</option>
                 <optgroup label="Presets">
@@ -170,7 +170,7 @@ export function BacktestPage() {
               <select
                 value={mainSel}
                 onChange={(e) => setMainSel(e.target.value)}
-                className="rounded-md border border-krypt-border bg-krypt-surface2 px-2.5 py-1.5 text-xs text-white outline-none focus:border-krypt-purple/60"
+                className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1.5 text-xs text-white outline-none focus:border-pocketed-purple/60"
               >
                 <option value="current">Current settings (Strategies-page gates)</option>
                 {profiles.some((pr) => isMainProfile(pr.scope)) && (
@@ -193,38 +193,38 @@ export function BacktestPage() {
           <button
             onClick={() => void run()}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-md border border-krypt-purple/40 bg-krypt-purple/10 px-4 py-2 text-xs font-semibold text-krypt-purple transition-colors hover:bg-krypt-purple/20 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md border border-pocketed-purple/40 bg-pocketed-purple/10 px-4 py-2 text-xs font-semibold text-pocketed-purple transition-colors hover:bg-pocketed-purple/20 disabled:opacity-50"
           >
             {busy ? <FlaskConical className="h-3.5 w-3.5 animate-pulse" /> : <Play className="h-3.5 w-3.5" />}
             {busy ? 'Replaying…' : 'Run backtest'}
           </button>
         </div>
-        {err && <p className="mt-2 text-xs text-krypt-loss">{err}</p>}
+        {err && <p className="mt-2 text-xs text-pocketed-loss">{err}</p>}
       </Card>
 
       <div className="mt-4">
-        <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">Data collection</div>}>
+        <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">Data collection</div>}>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg bg-krypt-surface2/50 p-3">
+            <div className="rounded-lg bg-pocketed-surface2/50 p-3">
               <Switch
                 checked={config?.crypto15mRecordSignals ?? true}
                 onChange={(v) => void toggleC15Collection(v)}
                 label="Collect crypto up/down data"
                 description="Records every watched window's ticks and outcome while the app is open — no trading, no orders, works with the crypto executor fully off. This is the dataset crypto backtests run on."
               />
-              <p className="mt-1.5 text-[11px] text-krypt-dim">
+              <p className="mt-1.5 text-[11px] text-pocketed-dim">
                 {coll ? `${coll.c15.windows.toLocaleString()} windows · ${coll.c15.ticks.toLocaleString()} ticks` : '…'}
                 {coll?.c15.lastAt ? ` · last ${coll.c15.lastAt.slice(5, 16)} UTC` : ''}
               </p>
             </div>
-            <div className="rounded-lg bg-krypt-surface2/50 p-3">
+            <div className="rounded-lg bg-pocketed-surface2/50 p-3">
               <Switch
                 checked={config?.mainRecordSignals ?? true}
                 onChange={(v) => void toggleMainCollection(v)}
                 label="Collect whale + momentum signals"
                 description="Records whale prints and momentum clusters while the app is open — nothing is bought. Note: if trading is ON, scanning stays on regardless (the engine can't follow signals it never sees)."
               />
-              <p className="mt-1.5 text-[11px] text-krypt-dim">
+              <p className="mt-1.5 text-[11px] text-pocketed-dim">
                 {coll ? `${coll.main.whales.toLocaleString()} whale signals · ${coll.main.alerts.toLocaleString()} momentum` : '…'}
                 {coll?.main.lastAt ? ` · last ${coll.main.lastAt.slice(5, 16)} UTC` : ''}
               </p>
@@ -233,22 +233,22 @@ export function BacktestPage() {
           <button
             onClick={() => void exportData()}
             disabled={exporting}
-            className="mr-2 mt-3 rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-1.5 text-xs text-krypt-dim transition-colors hover:text-white disabled:opacity-50"
+            className="mr-2 mt-3 rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-1.5 text-xs text-pocketed-dim transition-colors hover:text-white disabled:opacity-50"
           >
             {exporting ? 'Exporting…' : 'Export CSV (all collected data)'}
           </button>
           <button
             onClick={() => setShowData((v) => !v)}
-            className="mt-3 rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-1.5 text-xs text-krypt-dim transition-colors hover:text-white"
+            className="mt-3 rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-1.5 text-xs text-pocketed-dim transition-colors hover:text-white"
           >
             {showData ? 'Hide collected data' : 'View collected data'}
           </button>
           {showData && coll && (
             <div className="mt-3 grid gap-4 lg:grid-cols-2">
               <div>
-                <div className="mb-1 text-[10px] uppercase tracking-wide text-krypt-dim">Latest crypto windows</div>
+                <div className="mb-1 text-[10px] uppercase tracking-wide text-pocketed-dim">Latest crypto windows</div>
                 <table className="w-full text-[11px]">
-                  <thead><tr className="text-left text-krypt-dim">
+                  <thead><tr className="text-left text-pocketed-dim">
                     <th className="py-0.5 pr-2 font-normal">Asset</th>
                     <th className="py-0.5 pr-2 font-normal">Closes</th>
                     <th className="py-0.5 pr-2 font-normal">Favorite</th>
@@ -256,29 +256,29 @@ export function BacktestPage() {
                   </tr></thead>
                   <tbody>
                     {coll.c15.recent.map((r) => (
-                      <tr key={r.ticker} className="border-t border-krypt-border/50">
+                      <tr key={r.ticker} className="border-t border-pocketed-border/50">
                         <td className="py-1 pr-2 font-mono text-white">{r.asset}</td>
-                        <td className="py-1 pr-2 text-krypt-dim">{r.close_time?.slice(5, 16)}</td>
-                        <td className="py-1 pr-2 text-krypt-dim">
+                        <td className="py-1 pr-2 text-pocketed-dim">{r.close_time?.slice(5, 16)}</td>
+                        <td className="py-1 pr-2 text-pocketed-dim">
                           {r.favorite ?? '—'}{r.favorite_price != null ? ` @ ${Math.round(r.favorite_price * 100)}¢` : ''}
                         </td>
                         <td className="py-1">
-                          {!r.resolved ? <span className="text-krypt-dim">open</span>
-                            : r.up_won ? <span className="text-krypt-win">UP won</span>
-                              : <span className="text-krypt-loss">DOWN won</span>}
+                          {!r.resolved ? <span className="text-pocketed-dim">open</span>
+                            : r.up_won ? <span className="text-pocketed-win">UP won</span>
+                              : <span className="text-pocketed-loss">DOWN won</span>}
                         </td>
                       </tr>
                     ))}
                     {coll.c15.recent.length === 0 && (
-                      <tr><td colSpan={4} className="py-2 text-krypt-dim">Nothing yet — leave the app open with collection on.</td></tr>
+                      <tr><td colSpan={4} className="py-2 text-pocketed-dim">Nothing yet — leave the app open with collection on.</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
               <div>
-                <div className="mb-1 text-[10px] uppercase tracking-wide text-krypt-dim">Latest whale signals</div>
+                <div className="mb-1 text-[10px] uppercase tracking-wide text-pocketed-dim">Latest whale signals</div>
                 <table className="w-full text-[11px]">
-                  <thead><tr className="text-left text-krypt-dim">
+                  <thead><tr className="text-left text-pocketed-dim">
                     <th className="py-0.5 pr-2 font-normal">Category</th>
                     <th className="py-0.5 pr-2 font-normal">Side</th>
                     <th className="py-0.5 pr-2 font-normal">Price</th>
@@ -287,20 +287,20 @@ export function BacktestPage() {
                   </tr></thead>
                   <tbody>
                     {coll.main.recent.map((r, i) => (
-                      <tr key={`${r.ticker}-${i}`} className="border-t border-krypt-border/50">
+                      <tr key={`${r.ticker}-${i}`} className="border-t border-pocketed-border/50">
                         <td className="py-1 pr-2 text-white">{r.category}</td>
-                        <td className="py-1 pr-2 font-mono text-krypt-dim">{r.taker_side}</td>
-                        <td className="py-1 pr-2 text-krypt-dim">{Math.round((r.price ?? 0) * 100)}¢</td>
-                        <td className="py-1 pr-2 text-krypt-dim">${Math.round(r.dollar_value ?? 0).toLocaleString()}</td>
+                        <td className="py-1 pr-2 font-mono text-pocketed-dim">{r.taker_side}</td>
+                        <td className="py-1 pr-2 text-pocketed-dim">{Math.round((r.price ?? 0) * 100)}¢</td>
+                        <td className="py-1 pr-2 text-pocketed-dim">${Math.round(r.dollar_value ?? 0).toLocaleString()}</td>
                         <td className="py-1">
-                          {!r.resolved ? <span className="text-krypt-dim">open</span>
-                            : r.outcome_correct ? <span className="text-krypt-win">won</span>
-                              : <span className="text-krypt-loss">lost</span>}
+                          {!r.resolved ? <span className="text-pocketed-dim">open</span>
+                            : r.outcome_correct ? <span className="text-pocketed-win">won</span>
+                              : <span className="text-pocketed-loss">lost</span>}
                         </td>
                       </tr>
                     ))}
                     {coll.main.recent.length === 0 && (
-                      <tr><td colSpan={5} className="py-2 text-krypt-dim">Nothing yet — signals record while the app is open.</td></tr>
+                      <tr><td colSpan={5} className="py-2 text-pocketed-dim">Nothing yet — signals record while the app is open.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -315,9 +315,9 @@ export function BacktestPage() {
           <div className="py-4 text-center">
             <div className="text-sm font-semibold text-white">No collected data yet</div>
             {res.caveats?.length ? (
-              <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-krypt-dim">{res.caveats[0]}</p>
+              <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-pocketed-dim">{res.caveats[0]}</p>
             ) : (
-              <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-krypt-dim">
+              <p className="mx-auto mt-1 max-w-md text-xs leading-relaxed text-pocketed-dim">
                 This backtest runs on history YOUR bot collects while it runs. Leave the app open
                 (monitor mode is enough — no live trading needed) and it records every
                 {engine === 'crypto15m'
@@ -334,12 +334,12 @@ export function BacktestPage() {
           {engine === 'crypto15m' && (
             res.interval ? (
               <div className="mt-4">
-                <span className="rounded bg-krypt-surface2 px-1.5 py-0.5 font-mono text-[10px] text-krypt-dim">
+                <span className="rounded bg-pocketed-surface2 px-1.5 py-0.5 font-mono text-[10px] text-pocketed-dim">
                   replayed {res.interval} windows
                 </span>
               </div>
             ) : (
-              <p className="mt-4 text-[10px] text-krypt-warn/80">
+              <p className="mt-4 text-[10px] text-pocketed-warn/80">
                 backend predates per-interval backtests — update/rebuild the app
               </p>
             )
@@ -413,8 +413,8 @@ export function BacktestPage() {
           {Object.keys(res.byAsset).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {Object.entries(res.byAsset).map(([a, st]) => (
-                <span key={a} className="rounded bg-krypt-surface2 px-1.5 py-0.5 font-mono text-[10px] text-krypt-dim">
-                  {a} {st.wins}/{st.n} <span className={st.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>{fmtUsd(st.pnlUsd, { sign: true })}</span>
+                <span key={a} className="rounded bg-pocketed-surface2 px-1.5 py-0.5 font-mono text-[10px] text-pocketed-dim">
+                  {a} {st.wins}/{st.n} <span className={st.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>{fmtUsd(st.pnlUsd, { sign: true })}</span>
                 </span>
               ))}
             </div>
@@ -422,7 +422,7 @@ export function BacktestPage() {
 
           <ul className="mt-3 space-y-0.5">
             {res.caveats.map((c, i) => (
-              <li key={i} className="text-[10px] leading-relaxed text-krypt-warn/80">⚠ {c}</li>
+              <li key={i} className="text-[10px] leading-relaxed text-pocketed-warn/80">⚠ {c}</li>
             ))}
           </ul>
         </>
@@ -434,7 +434,7 @@ export function BacktestPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-1 text-[10px] uppercase tracking-wide text-krypt-dim">{label}</div>
+      <div className="mb-1 text-[10px] uppercase tracking-wide text-pocketed-dim">{label}</div>
       {children}
     </div>
   );
@@ -452,8 +452,8 @@ function Chips({ options, value, onPick }: {
           className={cls(
             'rounded-md border px-2.5 py-1 text-xs transition-colors',
             v === value
-              ? 'border-krypt-purple/60 bg-krypt-purple/15 text-krypt-purple'
-              : 'border-krypt-border bg-krypt-surface2 text-krypt-dim hover:text-white',
+              ? 'border-pocketed-purple/60 bg-pocketed-purple/15 text-pocketed-purple'
+              : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-dim hover:text-white',
           )}
         >
           {label}
@@ -465,10 +465,10 @@ function Chips({ options, value, onPick }: {
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'good' | 'bad' }) {
   return (
-    <div className="rounded-lg bg-krypt-surface2/60 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-krypt-dim">{label}</div>
-      <div className={cls('font-mono text-sm', tone === 'good' ? 'text-krypt-win' : tone === 'bad' ? 'text-krypt-loss' : 'text-white')}>{value}</div>
-      {sub && <div className="text-[10px] text-krypt-dim">{sub}</div>}
+    <div className="rounded-lg bg-pocketed-surface2/60 p-2">
+      <div className="text-[10px] uppercase tracking-wide text-pocketed-dim">{label}</div>
+      <div className={cls('font-mono text-sm', tone === 'good' ? 'text-pocketed-win' : tone === 'bad' ? 'text-pocketed-loss' : 'text-white')}>{value}</div>
+      {sub && <div className="text-[10px] text-pocketed-dim">{sub}</div>}
     </div>
   );
 }
@@ -476,8 +476,8 @@ function Stat({ label, value, sub, tone }: { label: string; value: string; sub?:
 function ChartHead({ title, hint }: { title: string; hint: string }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wider text-krypt-muted">{title}</div>
-      <div className="mt-0.5 text-[10px] normal-case tracking-normal text-krypt-dim">{hint}</div>
+      <div className="text-xs uppercase tracking-wider text-pocketed-muted">{title}</div>
+      <div className="mt-0.5 text-[10px] normal-case tracking-normal text-pocketed-dim">{hint}</div>
     </div>
   );
 }

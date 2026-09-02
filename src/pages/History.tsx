@@ -48,14 +48,14 @@ export function HistoryPage() {
       title="History"
       subtitle="Per-run rollups (the bot's session diary) and the full settled trade ledger."
     >
-      <div className="mb-4 inline-flex rounded-md border border-krypt-border bg-krypt-surface2 p-0.5">
+      <div className="mb-4 inline-flex rounded-md border border-pocketed-border bg-pocketed-surface2 p-0.5">
         <TabButton active={tab === 'runs'} onClick={() => setTab('runs')} icon={<HistoryIcon className="h-3.5 w-3.5" />}>
           Run history
-          <span className="ml-1.5 rounded bg-krypt-surface px-1.5 py-0.5 text-[10px]">{runs.length}</span>
+          <span className="ml-1.5 rounded bg-pocketed-surface px-1.5 py-0.5 text-[10px]">{runs.length}</span>
         </TabButton>
         <TabButton active={tab === 'trades'} onClick={() => setTab('trades')} icon={<Receipt className="h-3.5 w-3.5" />}>
           Trade history
-          <span className="ml-1.5 rounded bg-krypt-surface px-1.5 py-0.5 text-[10px]">{resolved.length}</span>
+          <span className="ml-1.5 rounded bg-pocketed-surface px-1.5 py-0.5 text-[10px]">{resolved.length}</span>
         </TabButton>
         <TabButton active={tab === 'crypto15m'} onClick={() => setTab('crypto15m')} icon={<Timer className="h-3.5 w-3.5" />}>
           15m trades
@@ -77,15 +77,15 @@ function Crypto15mHistory({ rows }: { rows: Crypto15mPosition[] }) {
   }
   return (
     <Card>
-      <div className="mb-3 flex flex-wrap gap-4 text-xs text-krypt-dim">
+      <div className="mb-3 flex flex-wrap gap-4 text-xs text-pocketed-dim">
         <span>{rows.length} trades</span>
         <span>{wins}W / {rows.length - wins}L</span>
-        <span>P&L <span className={cls('font-mono', total >= 0 ? 'text-krypt-win' : 'text-krypt-loss')}>{fmtUsd(total, { sign: true })}</span></span>
+        <span>P&L <span className={cls('font-mono', total >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss')}>{fmtUsd(total, { sign: true })}</span></span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-krypt-dim">
+            <tr className="text-left text-pocketed-dim">
               <th className="py-1 pr-3 font-normal">When</th>
               <th className="py-1 pr-3 font-normal">Asset</th>
               <th className="py-1 pr-3 font-normal">Side</th>
@@ -98,15 +98,15 @@ function Crypto15mHistory({ rows }: { rows: Crypto15mPosition[] }) {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-t border-krypt-border/50">
-                <td className="py-1.5 pr-3 text-krypt-dim">{fmtDateTime(r.resolvedAt ?? r.createdAt)}</td>
+              <tr key={r.id} className="border-t border-pocketed-border/50">
+                <td className="py-1.5 pr-3 text-pocketed-dim">{fmtDateTime(r.resolvedAt ?? r.createdAt)}</td>
                 <td className="py-1.5 pr-3 font-mono text-white">{r.asset}</td>
-                <td className="py-1.5 pr-3 text-krypt-dim">{r.side}</td>
-                <td className="py-1.5 pr-3 text-krypt-dim">{r.strategy || 'directional'}</td>
-                <td className="py-1.5 pr-3 font-mono text-krypt-dim">{r.filledContracts}</td>
-                <td className="py-1.5 pr-3 font-mono text-krypt-dim">{r.avgEntryCents != null ? `${Math.round(r.avgEntryCents)}¢` : '—'}</td>
-                <td className="py-1.5 pr-3 text-krypt-dim">{r.exitReason || r.status}</td>
-                <td className={cls('py-1.5 font-mono', (r.pnlUsd ?? 0) >= 0 ? 'text-krypt-win' : 'text-krypt-loss')}>
+                <td className="py-1.5 pr-3 text-pocketed-dim">{r.side}</td>
+                <td className="py-1.5 pr-3 text-pocketed-dim">{r.strategy || 'directional'}</td>
+                <td className="py-1.5 pr-3 font-mono text-pocketed-dim">{r.filledContracts}</td>
+                <td className="py-1.5 pr-3 font-mono text-pocketed-dim">{r.avgEntryCents != null ? `${Math.round(r.avgEntryCents)}¢` : '—'}</td>
+                <td className="py-1.5 pr-3 text-pocketed-dim">{r.exitReason || r.status}</td>
+                <td className={cls('py-1.5 font-mono', (r.pnlUsd ?? 0) >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss')}>
                   {fmtUsd(r.pnlUsd ?? 0, { sign: true })}
                 </td>
               </tr>
@@ -131,7 +131,7 @@ function TabButton({
       onClick={onClick}
       className={cls(
         'inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-xs font-medium transition-colors',
-        active ? 'bg-krypt-purple/15 text-krypt-purple' : 'text-krypt-muted hover:text-white',
+        active ? 'bg-pocketed-purple/15 text-pocketed-purple' : 'text-pocketed-muted hover:text-white',
       )}
     >
       {icon}
@@ -175,17 +175,17 @@ function RunHistory({ runs, env }: { runs: BotRun[]; env?: string }) {
           value={fmtUsd(totals.pnl, { sign: true })}
           accent={totals.pnl >= 0 ? 'good' : 'bad'}
           hint={`${runs.length} run${runs.length === 1 ? '' : 's'} · ${env ?? 'all envs'}`}
-          shareText={`Krypt PolyBot has run ${runs.length}× and netted ${fmtUsd(totals.pnl, { sign: true })} `
+          shareText={`Pocketed has run ${runs.length}× and netted ${fmtUsd(totals.pnl, { sign: true })} `
             + `(${totals.wins}W / ${totals.losses}L). `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <ShareableStat
           label="Run win rate"
           value={fmtPct(totals.completed.length ? (totals.winningRuns / totals.completed.length) * 100 : 0)}
           hint={`${totals.winningRuns} green of ${totals.completed.length} finished`}
           accent={totals.winningRuns >= totals.completed.length / 2 ? 'good' : 'warn'}
-          shareText={`${totals.winningRuns} out of ${totals.completed.length} Krypt PolyBot sessions ended green. `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+          shareText={`${totals.winningRuns} out of ${totals.completed.length} Pocketed sessions ended green. `
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <StatCard
           label="Trades opened (total)"
@@ -204,11 +204,11 @@ function RunHistory({ runs, env }: { runs: BotRun[]; env?: string }) {
         <Card className="lg:col-span-2" header={
           <div className="flex items-center justify-between">
             <div className="text-sm text-white">P&amp;L per run</div>
-            <div className="text-xs text-krypt-muted">{runs.length} runs</div>
+            <div className="text-xs text-pocketed-muted">{runs.length} runs</div>
           </div>
         }>
           {runs.length === 0 ? (
-            <Empty title="No runs yet" description="A new run starts every time you launch Krypt PolyBot." />
+            <Empty title="No runs yet" description="A new run starts every time you launch Pocketed." />
           ) : (
             <div className="h-56">
               <ResponsiveContainer>
@@ -237,7 +237,7 @@ function RunHistory({ runs, env }: { runs: BotRun[]; env?: string }) {
         </Card>
         <Card>
           <div className="flex items-center gap-2 text-sm text-white">
-            <Trophy className="h-4 w-4 text-krypt-warn" />
+            <Trophy className="h-4 w-4 text-pocketed-warn" />
             Standout runs
           </div>
           <div className="mt-3 space-y-2 text-xs">
@@ -247,8 +247,8 @@ function RunHistory({ runs, env }: { runs: BotRun[]; env?: string }) {
         </Card>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-krypt-border">
-        <table className="krypt-table">
+      <div className="mt-6 overflow-hidden rounded-xl border border-pocketed-border">
+        <table className="pocketed-table">
           <thead>
             <tr>
               <th>Started</th>
@@ -262,46 +262,46 @@ function RunHistory({ runs, env }: { runs: BotRun[]; env?: string }) {
           </thead>
           <tbody>
             {runs.map((r) => (
-              <tr key={r.id} className={cls(r.isActive && 'bg-krypt-purple/5')}>
-                <td className="text-xs text-krypt-muted">
+              <tr key={r.id} className={cls(r.isActive && 'bg-pocketed-purple/5')}>
+                <td className="text-xs text-pocketed-muted">
                   <span className="inline-flex items-center gap-1.5">
                     {r.isActive
-                      ? <Play className="h-3 w-3 text-krypt-purple" />
-                      : <Square className="h-3 w-3 text-krypt-muted" />}
+                      ? <Play className="h-3 w-3 text-pocketed-purple" />
+                      : <Square className="h-3 w-3 text-pocketed-muted" />}
                     {fmtDateTime(r.startedAt)}
                   </span>
                 </td>
-                <td className="text-xs text-krypt-muted">
+                <td className="text-xs text-pocketed-muted">
                   {r.isActive
-                    ? <span className="text-krypt-purple">running</span>
+                    ? <span className="text-pocketed-purple">running</span>
                     : fmtDateTime(r.endedAt || '')}
                 </td>
                 <td>
-                  <span className="rounded-md bg-krypt-purple/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-krypt-purple">
+                  <span className="rounded-md bg-pocketed-purple/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-pocketed-purple">
                     {r.network || 'mainnet'}
                   </span>
                 </td>
-                <td className="font-mono text-xs text-krypt-muted">
-                  {fmtUsd(r.startTotalUsd)} <span className="text-krypt-dim">→</span> {fmtUsd(r.endTotalUsd ?? r.startTotalUsd)}
+                <td className="font-mono text-xs text-pocketed-muted">
+                  {fmtUsd(r.startTotalUsd)} <span className="text-pocketed-dim">→</span> {fmtUsd(r.endTotalUsd ?? r.startTotalUsd)}
                 </td>
                 <td className={cls(
                   'font-mono text-xs',
-                  r.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+                  r.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
                 )}>
                   {fmtUsd(r.pnlUsd, { sign: true })}
                 </td>
                 <td className="font-mono text-xs">{r.tradesOpened}</td>
                 <td className="font-mono text-xs">
-                  <span className="text-krypt-win">{r.tradesWon}</span>
-                  <span className="mx-0.5 text-krypt-dim">/</span>
-                  <span className="text-krypt-loss">{r.tradesLost}</span>
+                  <span className="text-pocketed-win">{r.tradesWon}</span>
+                  <span className="mx-0.5 text-pocketed-dim">/</span>
+                  <span className="text-pocketed-loss">{r.tradesLost}</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
         {runs.length === 0 && (
-          <div className="border-t border-krypt-border bg-krypt-surface2/40 px-5 py-6 text-center text-xs text-krypt-muted">
+          <div className="border-t border-pocketed-border bg-pocketed-surface2/40 px-5 py-6 text-center text-xs text-pocketed-muted">
             No bot runs recorded yet. They&apos;ll start showing up once you launch the bot.
           </div>
         )}
@@ -318,21 +318,21 @@ function RunStandout({
   accent: 'good' | 'bad';
 }) {
   if (!run) {
-    return <div className="text-krypt-muted">{label}: —</div>;
+    return <div className="text-pocketed-muted">{label}: —</div>;
   }
   return (
-    <div className="rounded-lg border border-krypt-border bg-krypt-surface2 p-2">
-      <div className="text-[11px] uppercase tracking-wider text-krypt-muted">{label}</div>
+    <div className="rounded-lg border border-pocketed-border bg-pocketed-surface2 p-2">
+      <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">{label}</div>
       <div className="mt-1 flex items-baseline justify-between">
         <span className="font-mono text-sm">{shortDate(run.startedAt)}</span>
         <span className={cls(
           'font-mono text-sm',
-          accent === 'good' ? 'text-krypt-win' : 'text-krypt-loss',
+          accent === 'good' ? 'text-pocketed-win' : 'text-pocketed-loss',
         )}>
           {fmtUsd(run.pnlUsd, { sign: true })}
         </span>
       </div>
-      <div className="mt-0.5 text-[11px] text-krypt-dim">
+      <div className="mt-0.5 text-[11px] text-pocketed-dim">
         {run.tradesOpened} trades · {run.tradesWon}W/{run.tradesLost}L
       </div>
     </div>
@@ -388,18 +388,18 @@ function TradeHistory({ resolved, account }: {
           value={fmtUsd(totals.realized, { sign: true })}
           accent={totals.realized >= 0 ? 'good' : 'bad'}
           hint={`${resolved.length} resolved trades`}
-          shareText={`My Krypt PolyBot history: ${fmtUsd(totals.realized, { sign: true })} `
+          shareText={`My Pocketed history: ${fmtUsd(totals.realized, { sign: true })} `
             + `realized over ${resolved.length} trades · ${fmtPct(totals.wr)} win rate. `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <ShareableStat
           label="Win Rate"
           value={totals.wins + totals.losses > 0 ? fmtPct(totals.wr) : '—'}
           hint={`${totals.wins}W · ${totals.losses}L`}
           accent={totals.wr >= 50 ? 'good' : 'warn'}
-          shareText={`Krypt PolyBot hit rate: ${fmtPct(totals.wr)} `
+          shareText={`Pocketed hit rate: ${fmtPct(totals.wr)} `
             + `(${totals.wins}W / ${totals.losses}L). `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <StatCard
           label="Total Risked"
@@ -410,10 +410,10 @@ function TradeHistory({ resolved, account }: {
           label="ROI on Capital"
           value={fmtPct(totals.cost > 0 ? (totals.realized / totals.cost) * 100 : 0)}
           accent={totals.realized >= 0 ? 'good' : 'bad'}
-          shareText={`Krypt PolyBot ROI on capital: `
+          shareText={`Pocketed ROI on capital: `
             + `${fmtPct(totals.cost > 0 ? (totals.realized / totals.cost) * 100 : 0)} `
             + `over ${resolved.length} trades. `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
       </div>
 
@@ -421,7 +421,7 @@ function TradeHistory({ resolved, account }: {
         <Card className="lg:col-span-2" header={
           <div className="flex items-center justify-between">
             <div className="text-sm text-white">Daily P&amp;L</div>
-            <div className="text-xs text-krypt-muted">{byDay.length} days</div>
+            <div className="text-xs text-pocketed-muted">{byDay.length} days</div>
           </div>
         }>
           {byDay.length === 0 ? (
@@ -451,15 +451,15 @@ function TradeHistory({ resolved, account }: {
 
         <Card>
           <div className="flex items-center gap-2 text-sm text-white">
-            <Trophy className="h-4 w-4 text-krypt-warn" />
+            <Trophy className="h-4 w-4 text-pocketed-warn" />
             Standout days
           </div>
           <div className="mt-3 space-y-2 text-xs">
             <Standout label="Best day" day={bestDay} accent="good" />
             <Standout label="Worst day" day={worstDay} accent="bad" />
           </div>
-          <div className="mt-4 border-t border-krypt-border pt-3">
-            <div className="text-[11px] uppercase tracking-wider text-krypt-muted">Network</div>
+          <div className="mt-4 border-t border-pocketed-border pt-3">
+            <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">Network</div>
             <div className="mt-2 grid grid-cols-1 gap-2 text-xs">
               <EnvStat env="MAINNET" v={(account as any)?.byNetwork?.mainnet} />
             </div>
@@ -467,8 +467,8 @@ function TradeHistory({ resolved, account }: {
         </Card>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-krypt-border">
-        <table className="krypt-table">
+      <div className="mt-6 overflow-hidden rounded-xl border border-pocketed-border">
+        <table className="pocketed-table">
           <thead>
             <tr>
               <th>Resolved</th>
@@ -484,23 +484,23 @@ function TradeHistory({ resolved, account }: {
           <tbody>
             {resolved.slice(0, 200).map((p: any) => (
               <tr key={p.id}>
-                <td className="text-xs text-krypt-muted">{fmtDateTime(p.resolvedAt || p.lastUpdated)}</td>
+                <td className="text-xs text-pocketed-muted">{fmtDateTime(p.resolvedAt || p.lastUpdated)}</td>
                 <td>
                   <span className={cls(
                     'inline-flex rounded-md px-1.5 py-0.5 text-[10px] uppercase',
                     p.signalSource === 'whale'
-                      ? 'bg-krypt-purple/15 text-krypt-purple'
-                      : 'bg-krypt-pink/15 text-krypt-pink',
+                      ? 'bg-pocketed-purple/15 text-pocketed-purple'
+                      : 'bg-pocketed-pink/15 text-pocketed-pink',
                   )}>
                     {p.signalSource}
                   </span>
                 </td>
                 <td><TickerLink ticker={p.ticker} eventTicker={p.eventTicker} env={p.network} /></td>
-                <td className="max-w-[260px] truncate text-xs text-krypt-muted">{p.title}</td>
+                <td className="max-w-[260px] truncate text-xs text-pocketed-muted">{p.title}</td>
                 <td>
                   <span className={cls(
                     'rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase',
-                    p.direction === 'yes' ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
+                    p.direction === 'yes' ? 'bg-pocketed-win/10 text-pocketed-win' : 'bg-pocketed-loss/10 text-pocketed-loss',
                   )}>
                     {p.direction}
                   </span>
@@ -508,16 +508,16 @@ function TradeHistory({ resolved, account }: {
                 <td className="font-mono text-xs">{fmtUsd(p.costUsd)}</td>
                 <td>
                   {p.outcomeCorrect === 1 ? (
-                    <span className="krypt-pill border-krypt-win/40 bg-krypt-win/10 text-krypt-win">won</span>
+                    <span className="pocketed-pill border-pocketed-win/40 bg-pocketed-win/10 text-pocketed-win">won</span>
                   ) : p.outcomeCorrect === 0 ? (
-                    <span className="krypt-pill border-krypt-loss/40 bg-krypt-loss/10 text-krypt-loss">lost</span>
+                    <span className="pocketed-pill border-pocketed-loss/40 bg-pocketed-loss/10 text-pocketed-loss">lost</span>
                   ) : (
-                    <span className="krypt-pill text-krypt-muted">n/a</span>
+                    <span className="pocketed-pill text-pocketed-muted">n/a</span>
                   )}
                 </td>
                 <td className={cls(
                   'font-mono text-xs',
-                  (p.pnlUsd ?? 0) >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+                  (p.pnlUsd ?? 0) >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
                 )}>
                   {fmtUsd(p.pnlUsd, { sign: true })}
                 </td>
@@ -526,7 +526,7 @@ function TradeHistory({ resolved, account }: {
           </tbody>
         </table>
         {resolved.length === 0 && (
-          <div className="border-t border-krypt-border bg-krypt-surface2/40 px-5 py-6 text-center text-xs text-krypt-muted">
+          <div className="border-t border-pocketed-border bg-pocketed-surface2/40 px-5 py-6 text-center text-xs text-pocketed-muted">
             No resolved trades yet. Wait for markets to settle.
           </div>
         )}
@@ -543,21 +543,21 @@ function Standout({
   accent: 'good' | 'bad';
 }) {
   if (!day) {
-    return <div className="text-krypt-muted">{label}: —</div>;
+    return <div className="text-pocketed-muted">{label}: —</div>;
   }
   return (
-    <div className="rounded-lg border border-krypt-border bg-krypt-surface2 p-2">
-      <div className="text-[11px] uppercase tracking-wider text-krypt-muted">{label}</div>
+    <div className="rounded-lg border border-pocketed-border bg-pocketed-surface2 p-2">
+      <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">{label}</div>
       <div className="mt-1 flex items-baseline justify-between">
         <span className="font-mono text-sm">{day.day}</span>
         <span className={cls(
           'font-mono text-sm',
-          accent === 'good' ? 'text-krypt-win' : 'text-krypt-loss',
+          accent === 'good' ? 'text-pocketed-win' : 'text-pocketed-loss',
         )}>
           {fmtUsd(day.pnl, { sign: true })}
         </span>
       </div>
-      <div className="mt-0.5 text-[11px] text-krypt-dim">
+      <div className="mt-0.5 text-[11px] text-pocketed-dim">
         {day.trades} trades · {day.wins}W/{day.losses}L
       </div>
     </div>
@@ -567,15 +567,15 @@ function Standout({
 function EnvStat({ env, v }: { env: string; v?: { wins: number; losses: number; realizedPnl: number } }) {
   const wr = v && (v.wins + v.losses) ? (v.wins / (v.wins + v.losses)) * 100 : 0;
   return (
-    <div className="rounded-lg border border-krypt-border bg-krypt-surface2 p-2">
-      <div className="text-[10px] uppercase tracking-wider text-krypt-dim">{env}</div>
+    <div className="rounded-lg border border-pocketed-border bg-pocketed-surface2 p-2">
+      <div className="text-[10px] uppercase tracking-wider text-pocketed-dim">{env}</div>
       <div className={cls(
         'font-mono text-sm',
-        (v?.realizedPnl ?? 0) >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+        (v?.realizedPnl ?? 0) >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
       )}>
         {fmtUsd(v?.realizedPnl ?? 0, { sign: true })}
       </div>
-      <div className="text-[11px] text-krypt-muted">
+      <div className="text-[11px] text-pocketed-muted">
         {v?.wins ?? 0}W / {v?.losses ?? 0}L · {wr.toFixed(1)}%
       </div>
     </div>

@@ -5,7 +5,7 @@ import session_key
 
 
 def test_create_signed_order_uses_session_key_when_active(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     polymarket_auth.reset_credential_cache()
     polymarket_auth.save_credentials(
         "0x" + "11" * 32, funder="0x00000000000000000000000000000000000000aa",
@@ -46,7 +46,7 @@ def test_create_signed_order_uses_session_key_when_active(tmp_path, monkeypatch)
 def test_sell_orders_do_not_consume_the_daily_spend_cap(tmp_path, monkeypatch):
     """The cap limits USDC *spend*; a SELL returns collateral. Charging it
     to the cap let a day of selling exhaust the buying budget."""
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     polymarket_auth.reset_credential_cache()
     polymarket_auth.save_credentials(
         "0x" + "33" * 32, funder="0x00000000000000000000000000000000000000aa",
@@ -82,7 +82,7 @@ def test_sell_orders_do_not_consume_the_daily_spend_cap(tmp_path, monkeypatch):
 
 
 def test_create_signed_order_falls_back_to_desktop_flow_without_session_key(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     polymarket_auth.reset_credential_cache()
     polymarket_auth.save_credentials(
         "0x" + "22" * 32, funder="0x00000000000000000000000000000000000000cc",

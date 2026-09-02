@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _data_dir() -> Path:
-    base = os.environ.get("KRYPT_POLYBOT_USERDATA")
+    base = os.environ.get("POCKETED_USERDATA")
     if base:
         d = Path(base) / "data"
     else:
@@ -24,7 +24,7 @@ def _data_dir() -> Path:
 
 def _vault_dir() -> Path | None:
     try:
-        override = os.environ.get("KRYPT_POLYBOT_VAULT")
+        override = os.environ.get("POCKETED_VAULT")
         if override:
             base = Path(override)
         else:
@@ -34,7 +34,7 @@ def _vault_dir() -> Path | None:
                 if local else Path.home() / ".krypt-polybot-vault"
             )
         tag = "default"
-        ud = os.environ.get("KRYPT_POLYBOT_USERDATA")
+        ud = os.environ.get("POCKETED_USERDATA")
         if ud:
             p = Path(ud)
             if p.parent.name.lower() == "accounts" and p.name:

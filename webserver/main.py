@@ -18,16 +18,16 @@ from webserver.supervisor import Supervisor, WorkerStartError
 logger = logging.getLogger("webserver.main")
 
 SESSION_COOKIE_NAME = "kpb_session"
-SESSION_SECRET = os.environ.get("KRYPT_POLYBOT_SESSION_SECRET")
+SESSION_SECRET = os.environ.get("POCKETED_SESSION_SECRET")
 if not SESSION_SECRET:
     raise RuntimeError(
-        "KRYPT_POLYBOT_SESSION_SECRET must be set — refusing to sign "
+        "POCKETED_SESSION_SECRET must be set — refusing to sign "
         "sessions with a default secret."
     )
 
 DATA_ROOT = Path(
     os.environ.get(
-        "KRYPT_POLYBOT_WEBAPP_DATA",
+        "POCKETED_WEBAPP_DATA",
         str(Path(__file__).resolve().parent.parent / "python" / "data" / "webapp"),
     )
 )
@@ -56,7 +56,7 @@ async def _lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Krypt PolyBot webapp gateway", lifespan=_lifespan)
+app = FastAPI(title="Pocketed webapp gateway", lifespan=_lifespan)
 
 
 class NonceResponse(BaseModel):
@@ -457,7 +457,7 @@ async def import_profile_route(
 ) -> JSONResponse:
     # json.JSONDecodeError (malformed json_str) is itself a ValueError subclass,
     # so this one except also covers it in addition to config_store's own
-    # "Not a valid Krypt PolyBot profile" ValueError.
+    # "Not a valid Pocketed profile" ValueError.
     try:
         profile = config_store.import_profile(_user_data_dir(wallet_address), body.json_)
     except ValueError as e:
@@ -573,7 +573,7 @@ async def ws_endpoint(
 # directory via monkeypatch without touching the real build output.
 DIST_DIR = Path(
     os.environ.get(
-        "KRYPT_POLYBOT_WEBAPP_DIST",
+        "POCKETED_WEBAPP_DIST",
         str(Path(__file__).resolve().parent.parent / "dist"),
     )
 )

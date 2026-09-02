@@ -4,7 +4,7 @@ import os
 
 import httpx
 
-AA_SERVICE_URL_ENV = "KRYPT_POLYBOT_AA_SERVICE_URL"
+AA_SERVICE_URL_ENV = "POCKETED_AA_SERVICE_URL"
 
 
 class AAServiceError(Exception):

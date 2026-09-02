@@ -10,7 +10,7 @@ name: Build Installers
 # The Python backend is frozen with PyInstaller, which cannot cross-compile — so
 # each installer is built on its own native runner (win backend on Windows, mac
 # on macOS, linux on Ubuntu). `npm run dist` = vite build + PyInstaller (from
-# python/krypt-polybot-backend.spec, incl. the --selftest gate) + electron-builder.
+# python/pocketed-backend.spec, incl. the --selftest gate) + electron-builder.
 on:
   push:
     branches: [main, build]

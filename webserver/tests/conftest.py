@@ -9,9 +9,9 @@ import pytest
 # it. Set a test default here (module-level, so it runs during conftest
 # collection) — before any test module does `import webserver.main`.
 os.environ.setdefault(
-    "KRYPT_POLYBOT_SESSION_SECRET", "test-secret-at-least-32-bytes-long-for-hs256"
+    "POCKETED_SESSION_SECRET", "test-secret-at-least-32-bytes-long-for-hs256"
 )
-os.environ.setdefault("KRYPT_POLYBOT_AA_SERVICE_URL", "http://aa-service.test")
+os.environ.setdefault("POCKETED_AA_SERVICE_URL", "http://aa-service.test")
 
 
 @pytest.fixture(scope="session", autouse=True)

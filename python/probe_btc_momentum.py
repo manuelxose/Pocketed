@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 _APPDATA = os.environ.get("APPDATA") or (Path.home() / ".config")
-os.environ.setdefault("KRYPT_POLYBOT_USERDATA", str(Path(_APPDATA) / "Krypt PolyBot"))
+os.environ.setdefault("POCKETED_USERDATA", str(Path(_APPDATA) / "Krypt PolyBot"))
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 import db

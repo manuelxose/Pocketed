@@ -313,11 +313,11 @@ export function VisualizerPage() {
       subtitle="Live orbital map of every signal the bot sees and every trade it takes. Buckets at the bottom catch resolved positions."
       actions={
         <>
-          <button onClick={() => setRunning((v) => !v)} className="krypt-btn-default">
+          <button onClick={() => setRunning((v) => !v)} className="pocketed-btn-default">
             {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             {running ? 'Pause' : 'Resume'}
           </button>
-          <button onClick={reset} className="krypt-btn-default">
+          <button onClick={reset} className="pocketed-btn-default">
             <RotateCcw className="h-4 w-4" /> Reset view
           </button>
         </>
@@ -325,18 +325,18 @@ export function VisualizerPage() {
     >
       <div className="grid gap-4 lg:grid-cols-[320px,1fr]">
         <div className="space-y-3">
-          <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">Equity (session)</div>}>
+          <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">Equity (session)</div>}>
             <div className="text-lg font-mono text-white">{fmtUsd(account?.totalUsd)}</div>
             <div className={cls(
               'text-xs',
-              sessionPnl >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+              sessionPnl >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
             )}>
               {fmtUsd(sessionPnl, { sign: true })} session &middot;{' '}
-              <span className="text-krypt-dim">{sessionRoi >= 0 ? '+' : ''}{sessionRoi.toFixed(2)}%</span>
+              <span className="text-pocketed-dim">{sessionRoi >= 0 ? '+' : ''}{sessionRoi.toFixed(2)}%</span>
             </div>
             <div className="mt-2 h-20">
               {sessionSeries.length < 3 ? (
-                <div className="grid h-full place-items-center text-[11px] text-krypt-dim">collecting data…</div>
+                <div className="grid h-full place-items-center text-[11px] text-pocketed-dim">collecting data…</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={sessionSeries}>
@@ -358,7 +358,7 @@ export function VisualizerPage() {
             </div>
           </Card>
 
-          <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">P&amp;L per hour (12h)</div>}>
+          <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">P&amp;L per hour (12h)</div>}>
             <div className="h-24">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={hourlyBars}>
@@ -375,7 +375,7 @@ export function VisualizerPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-krypt-muted">
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-pocketed-muted">
               <Mini label="Today wins" value={String(account?.todayWins ?? 0)} tone="good" />
               <Mini label="Today losses" value={String(account?.todayLosses ?? 0)} tone="bad" />
               <Mini label="Win rate" value={`${(account?.winRate ?? 0).toFixed(1)}%`} />
@@ -383,7 +383,7 @@ export function VisualizerPage() {
             </div>
           </Card>
 
-          <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">Scanner activity</div>}>
+          <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">Scanner activity</div>}>
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <Mini label="Whales seen" value={String(scannerStats?.whales.total ?? 0)} tone="purple" />
               <Mini label="Whales hit" value={`${(scannerStats?.whales.winRate ?? 0).toFixed(1)}%`} tone="good" />
@@ -394,21 +394,21 @@ export function VisualizerPage() {
             </div>
           </Card>
 
-          <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">Hot tickers (24h)</div>}>
+          <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">Hot tickers (24h)</div>}>
             {hotTickers.length === 0 ? (
-              <div className="py-3 text-center text-[11px] text-krypt-dim">no resolutions yet</div>
+              <div className="py-3 text-center text-[11px] text-pocketed-dim">no resolutions yet</div>
             ) : (
-              <div className="divide-y divide-krypt-border">
+              <div className="divide-y divide-pocketed-border">
                 {hotTickers.map((t) => (
                   <div key={t.ticker} className="flex items-center gap-2 py-1.5 text-[11px]">
-                    <span className="font-mono text-krypt-muted truncate" title={t.ticker}>
+                    <span className="font-mono text-pocketed-muted truncate" title={t.ticker}>
                       {t.ticker.split('-').pop() || t.ticker}
                     </span>
-                    <span className="ml-auto text-krypt-win">{t.wins}W</span>
-                    <span className="text-krypt-loss">{t.losses}L</span>
+                    <span className="ml-auto text-pocketed-win">{t.wins}W</span>
+                    <span className="text-pocketed-loss">{t.losses}L</span>
                     <span className={cls(
                       'min-w-[52px] text-right font-mono',
-                      t.pnl >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+                      t.pnl >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
                     )}>
                       {fmtUsd(t.pnl, { sign: true })}
                     </span>
@@ -420,39 +420,39 @@ export function VisualizerPage() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <div ref={wrapperRef} className="relative h-[calc(100vh-280px)] min-h-[440px] overflow-hidden rounded-2xl border border-krypt-border bg-krypt-void">
+          <div ref={wrapperRef} className="relative h-[calc(100vh-280px)] min-h-[440px] overflow-hidden rounded-2xl border border-pocketed-border bg-pocketed-void">
             <canvas ref={canvasRef} className="absolute inset-0" />
 
-            <div className="pointer-events-none absolute right-3 top-3 flex flex-col gap-1 rounded-lg border border-krypt-border bg-krypt-void/80 px-3 py-2 text-[11px] text-krypt-muted backdrop-blur">
+            <div className="pointer-events-none absolute right-3 top-3 flex flex-col gap-1 rounded-lg border border-pocketed-border bg-pocketed-void/80 px-3 py-2 text-[11px] text-pocketed-muted backdrop-blur">
               <LegendDot color="#3B82F6" label="Whale signal" />
               <LegendDot color="#38BDF8" label="Momentum signal" />
               <LegendDot color="#FFFFFF" label="Open position (orbiting)" outline />
               <LegendDot color="#22C55E" label="Won → wins pot" />
               <LegendDot color="#EF4444" label="Lost → losses pot" />
-              <div className="mt-1 text-[10px] text-krypt-dim">orb size = potential profit</div>
+              <div className="mt-1 text-[10px] text-pocketed-dim">orb size = potential profit</div>
             </div>
 
-            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-lg border border-krypt-border bg-krypt-void/80 px-3 py-2 text-[11px] backdrop-blur">
-              <Wallet className="h-3.5 w-3.5 text-krypt-purple" />
+            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-lg border border-pocketed-border bg-pocketed-void/80 px-3 py-2 text-[11px] backdrop-blur">
+              <Wallet className="h-3.5 w-3.5 text-pocketed-purple" />
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-krypt-muted">Session P&amp;L</div>
+                <div className="text-[10px] uppercase tracking-wider text-pocketed-muted">Session P&amp;L</div>
                 <div className={cls(
                   'font-mono text-sm',
-                  (account?.sessionPnlUsd ?? 0) >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+                  (account?.sessionPnlUsd ?? 0) >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
                 )}>
                   {fmtUsd(account?.sessionPnlUsd ?? 0, { sign: true })}
                 </div>
-                <div className="text-[10px] text-krypt-dim">
+                <div className="text-[10px] text-pocketed-dim">
                   visualized: {pot.wins}W / {pot.losses}L this session
                 </div>
               </div>
               <ShareButton
                 size="xs"
                 text={
-                  `Krypt PolyBot session P&L: `
+                  `Pocketed session P&L: `
                   + `${fmtUsd(account?.sessionPnlUsd ?? 0, { sign: true })} `
                   + `(${pot.wins}W / ${pot.losses}L). `
-                  + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`
+                  + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`
                 }
               />
             </div>
@@ -478,16 +478,16 @@ export function VisualizerPage() {
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted"><Activity className="mr-1 inline h-3 w-3" />Latest signals</div>}>
+        <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted"><Activity className="mr-1 inline h-3 w-3" />Latest signals</div>}>
           {signals.slice(0, 8).map((s) => (
-            <div key={`${s.source}:${s.id}`} className="flex items-center gap-2 border-t border-krypt-border py-1.5 first:border-t-0 text-xs">
+            <div key={`${s.source}:${s.id}`} className="flex items-center gap-2 border-t border-pocketed-border py-1.5 first:border-t-0 text-xs">
               <span className="h-2 w-2 rounded-full" style={{ background: s.source === 'whale' ? '#3B82F6' : '#38BDF8' }} />
-              <span className="font-mono text-krypt-muted">{s.ticker}</span>
-              <span className="ml-auto text-krypt-dim truncate">{s.title}</span>
+              <span className="font-mono text-pocketed-muted">{s.ticker}</span>
+              <span className="ml-auto text-pocketed-dim truncate">{s.title}</span>
             </div>
           ))}
         </Card>
-        <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted"><Sparkles className="mr-1 inline h-3 w-3" />Latest trades</div>}>
+        <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted"><Sparkles className="mr-1 inline h-3 w-3" />Latest trades</div>}>
           {positions.slice(0, 8).map((p) => (
             <TradeRow key={p.id} p={p} />
           ))}
@@ -692,7 +692,7 @@ function drawSun(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: numbe
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
   ctx.font = "600 11px ui-monospace, monospace";
   ctx.textAlign = 'center';
-  ctx.fillText('KRYPT', cx, cy + 4);
+  ctx.fillText('POCKETED', cx, cy + 4);
 }
 
 function withAlpha(hex: string, alpha: number): string {
@@ -706,16 +706,16 @@ function withAlpha(hex: string, alpha: number): string {
 function Mini({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'bad' | 'purple' | 'pink' }) {
   const cn = (() => {
     switch (tone) {
-      case 'good': return 'text-krypt-win';
-      case 'bad': return 'text-krypt-loss';
-      case 'purple': return 'text-krypt-purple';
-      case 'pink': return 'text-krypt-pink';
+      case 'good': return 'text-pocketed-win';
+      case 'bad': return 'text-pocketed-loss';
+      case 'purple': return 'text-pocketed-purple';
+      case 'pink': return 'text-pocketed-pink';
       default: return 'text-white';
     }
   })();
   return (
-    <div className="rounded-md border border-krypt-border bg-krypt-surface2 px-2 py-1.5">
-      <div className="text-[10px] uppercase tracking-wider text-krypt-muted">{label}</div>
+    <div className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wider text-pocketed-muted">{label}</div>
       <div className={cls('font-mono text-sm', cn)}>{value}</div>
     </div>
   );
@@ -747,13 +747,13 @@ interface BucketTileProps {
 
 function BucketTile({ tone, label, count, pnl, icon: Icon }: BucketTileProps) {
   const bg = tone === 'good'
-    ? 'border-krypt-win/50 bg-krypt-win/10 text-krypt-win'
-    : 'border-krypt-loss/50 bg-krypt-loss/10 text-krypt-loss';
+    ? 'border-pocketed-win/50 bg-pocketed-win/10 text-pocketed-win'
+    : 'border-pocketed-loss/50 bg-pocketed-loss/10 text-pocketed-loss';
   return (
     <div className={cls('flex items-center gap-3 rounded-xl border px-4 py-3 backdrop-blur', bg)}>
       <div className={cls(
         'grid h-9 w-9 place-items-center rounded-lg',
-        tone === 'good' ? 'bg-krypt-win/20' : 'bg-krypt-loss/20',
+        tone === 'good' ? 'bg-pocketed-win/20' : 'bg-pocketed-loss/20',
       )}>
         <Icon className="h-4 w-4" />
       </div>
@@ -767,18 +767,18 @@ function BucketTile({ tone, label, count, pnl, icon: Icon }: BucketTileProps) {
 
 function TradeRow({ p }: { p: BotPosition }) {
   const tone = p.resolved
-    ? p.outcomeCorrect === 1 ? 'text-krypt-win'
-    : p.outcomeCorrect === 0 ? 'text-krypt-loss'
-    : 'text-krypt-muted'
-    : 'text-krypt-muted';
+    ? p.outcomeCorrect === 1 ? 'text-pocketed-win'
+    : p.outcomeCorrect === 0 ? 'text-pocketed-loss'
+    : 'text-pocketed-muted'
+    : 'text-pocketed-muted';
   return (
-    <div className="flex items-center gap-2 border-t border-krypt-border py-1.5 first:border-t-0 text-xs">
+    <div className="flex items-center gap-2 border-t border-pocketed-border py-1.5 first:border-t-0 text-xs">
       <span
         className="h-2 w-2 rounded-full"
         style={{ background: p.signalSource === 'whale' ? '#3B82F6' : '#38BDF8' }}
       />
-      <span className="font-mono text-krypt-muted">{p.ticker.split('-').pop() || p.ticker}</span>
-      <span className="ml-auto truncate text-krypt-dim">{p.title}</span>
+      <span className="font-mono text-pocketed-muted">{p.ticker.split('-').pop() || p.ticker}</span>
+      <span className="ml-auto truncate text-pocketed-dim">{p.title}</span>
       <span className={cls('min-w-[60px] text-right font-mono', tone)}>
         {p.resolved ? fmtUsd(p.pnlUsd ?? 0, { sign: true }) : '—'}
       </span>

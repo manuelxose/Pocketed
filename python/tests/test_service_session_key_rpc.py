@@ -34,7 +34,7 @@ def _mint(owner_address, **overrides):
 
 @pytest.fixture(autouse=True)
 def _isolated_userdata(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     import polymarket_auth
     polymarket_auth.reset_credential_cache()
     service._pending_session_key = None

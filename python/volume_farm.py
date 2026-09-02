@@ -44,7 +44,7 @@ class Progress:
 def _state_path(args) -> Path:
     if args.state_file:
         return Path(args.state_file)
-    base = os.environ.get("KRYPT_POLYBOT_USERDATA")
+    base = os.environ.get("POCKETED_USERDATA")
     root = Path(base) if base else Path(__file__).resolve().parent
     return root / "volume_farm_state.json"
 
@@ -355,9 +355,9 @@ async def run(args) -> int:
     if not auth.credentials_present():
         log.error(
             "no Polymarket wallet key found. Connect your wallet in the app "
-            "first (Wallet tab), or set KRYPT_POLYBOT_USERDATA to its data dir."
+            "first (Wallet tab), or set POCKETED_USERDATA to its data dir."
         )
-        log.error(f"(looked in: {os.environ.get('KRYPT_POLYBOT_USERDATA', '<unset>')})")
+        log.error(f"(looked in: {os.environ.get('POCKETED_USERDATA', '<unset>')})")
         return 2
     auth.prime_credentials()
     if not args.yes:

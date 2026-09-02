@@ -25,11 +25,11 @@ export function BacktestPanel() {
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-krypt-border bg-krypt-surface2/40 p-3">
+    <div className="mt-3 rounded-xl border border-pocketed-border bg-pocketed-surface2/40 p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-white">Test this strategy on my data</div>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-krypt-dim">
+          <p className="mt-0.5 text-[11px] leading-relaxed text-pocketed-dim">
             Replays your current crypto settings (direction mode, thresholds, custom rules) through the
             <span className="text-white"> live entry gates</span> over every window this app has recorded
             and seen settle — taker fills at the recorded ask, Polymarket fees included, held to settlement.
@@ -38,13 +38,13 @@ export function BacktestPanel() {
         <button
           onClick={() => void run()}
           disabled={busy}
-          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-krypt-purple/40 bg-krypt-purple/10 px-3 py-1.5 text-xs text-krypt-purple transition-colors hover:bg-krypt-purple/20 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-pocketed-purple/40 bg-pocketed-purple/10 px-3 py-1.5 text-xs text-pocketed-purple transition-colors hover:bg-pocketed-purple/20 disabled:opacity-50"
         >
           <FlaskConical className="h-3.5 w-3.5" />
           {busy ? 'Replaying…' : 'Run backtest'}
         </button>
       </div>
-      {err && <p className="mt-2 text-[11px] text-krypt-loss">{err}</p>}
+      {err && <p className="mt-2 text-[11px] text-pocketed-loss">{err}</p>}
       {res && (
         <div className="mt-3">
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
@@ -63,15 +63,15 @@ export function BacktestPanel() {
           {Object.keys(res.byAsset).length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {Object.entries(res.byAsset).map(([a, st]) => (
-                <span key={a} className="rounded bg-krypt-surface2 px-1.5 py-0.5 font-mono text-[10px] text-krypt-dim">
-                  {a} {st.wins}/{st.n} <span className={st.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>{fmtUsd(st.pnlUsd, { sign: true })}</span>
+                <span key={a} className="rounded bg-pocketed-surface2 px-1.5 py-0.5 font-mono text-[10px] text-pocketed-dim">
+                  {a} {st.wins}/{st.n} <span className={st.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>{fmtUsd(st.pnlUsd, { sign: true })}</span>
                 </span>
               ))}
             </div>
           )}
           <ul className="mt-2 space-y-0.5">
             {res.caveats.map((c, i) => (
-              <li key={i} className="text-[10px] leading-relaxed text-krypt-warn/80">⚠ {c}</li>
+              <li key={i} className="text-[10px] leading-relaxed text-pocketed-warn/80">⚠ {c}</li>
             ))}
           </ul>
         </div>
@@ -82,10 +82,10 @@ export function BacktestPanel() {
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'good' | 'bad' }) {
   return (
-    <div className="rounded-lg bg-krypt-surface2/60 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-krypt-dim">{label}</div>
-      <div className={cls('font-mono text-sm', tone === 'good' ? 'text-krypt-win' : tone === 'bad' ? 'text-krypt-loss' : 'text-white')}>{value}</div>
-      {sub && <div className="text-[10px] text-krypt-dim">{sub}</div>}
+    <div className="rounded-lg bg-pocketed-surface2/60 p-2">
+      <div className="text-[10px] uppercase tracking-wide text-pocketed-dim">{label}</div>
+      <div className={cls('font-mono text-sm', tone === 'good' ? 'text-pocketed-win' : tone === 'bad' ? 'text-pocketed-loss' : 'text-white')}>{value}</div>
+      {sub && <div className="text-[10px] text-pocketed-dim">{sub}</div>}
     </div>
   );
 }

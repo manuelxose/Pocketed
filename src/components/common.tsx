@@ -42,11 +42,11 @@ export function NameDialog({
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-xl border border-krypt-border bg-krypt-surface p-5 shadow-krypt-soft"
+        className="w-full max-w-sm rounded-xl border border-pocketed-border bg-pocketed-surface p-5 shadow-pocketed-soft"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm font-semibold text-white">{title}</h3>
-        {label && <p className="mt-1 text-xs text-krypt-muted">{label}</p>}
+        {label && <p className="mt-1 text-xs text-pocketed-muted">{label}</p>}
         <input
           ref={inputRef}
           autoFocus
@@ -57,11 +57,11 @@ export function NameDialog({
             if (e.key === 'Enter') { e.preventDefault(); submit(); }
             else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
           }}
-          className="krypt-input mt-3 w-full"
+          className="pocketed-input mt-3 w-full"
         />
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="krypt-btn-default">Cancel</button>
-          <button onClick={submit} disabled={!value.trim()} className="krypt-btn-primary">
+          <button onClick={onClose} className="pocketed-btn-default">Cancel</button>
+          <button onClick={submit} disabled={!value.trim()} className="pocketed-btn-primary">
             {confirmLabel}
           </button>
         </div>
@@ -84,7 +84,7 @@ export function Page({
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-white">{title}</h2>
           {subtitle && (
-            <p className="mt-1 text-sm text-krypt-muted">{subtitle}</p>
+            <p className="mt-1 text-sm text-pocketed-muted">{subtitle}</p>
           )}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
@@ -103,15 +103,15 @@ export function Card({
   footer?: ReactNode;
 }) {
   return (
-    <div className={cls('krypt-card', className)}>
+    <div className={cls('pocketed-card', className)}>
       {header && (
-        <div className="-mx-5 -mt-5 mb-4 border-b border-krypt-border bg-krypt-surface2/60 px-5 py-3">
+        <div className="-mx-5 -mt-5 mb-4 border-b border-pocketed-border bg-pocketed-surface2/60 px-5 py-3">
           {header}
         </div>
       )}
       {children}
       {footer && (
-        <div className="-mx-5 -mb-5 mt-4 border-t border-krypt-border bg-krypt-surface2/60 px-5 py-3">
+        <div className="-mx-5 -mb-5 mt-4 border-t border-pocketed-border bg-pocketed-surface2/60 px-5 py-3">
           {footer}
         </div>
       )}
@@ -129,15 +129,15 @@ export function StatCard({
   className?: string;
 }) {
   const ring =
-    accent === 'good' ? 'ring-1 ring-krypt-win/30' :
-    accent === 'bad' ? 'ring-1 ring-krypt-loss/30' :
-    accent === 'warn' ? 'ring-1 ring-krypt-warn/30' :
+    accent === 'good' ? 'ring-1 ring-pocketed-win/30' :
+    accent === 'bad' ? 'ring-1 ring-pocketed-loss/30' :
+    accent === 'warn' ? 'ring-1 ring-pocketed-warn/30' :
     '';
   return (
-    <div className={cls('krypt-card', ring, className)}>
-      <div className="text-[11px] uppercase tracking-wider text-krypt-muted">{label}</div>
+    <div className={cls('pocketed-card', ring, className)}>
+      <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">{label}</div>
       <div className="mt-1 font-mono text-2xl font-medium text-white">{value}</div>
-      {hint && <div className="mt-1 text-xs text-krypt-dim">{hint}</div>}
+      {hint && <div className="mt-1 text-xs text-pocketed-dim">{hint}</div>}
     </div>
   );
 }
@@ -174,7 +174,7 @@ export function ShareButton({
       onClick={() => void shareToX(text)}
       title={`Share to ${X_PROFILE}`}
       className={cls(
-        'grid place-items-center rounded-md border border-krypt-border bg-krypt-surface2 text-krypt-muted transition-colors hover:border-krypt-purple/40 hover:bg-krypt-purple/10 hover:text-white',
+        'grid place-items-center rounded-md border border-pocketed-border bg-pocketed-surface2 text-pocketed-muted transition-colors hover:border-pocketed-purple/40 hover:bg-pocketed-purple/10 hover:text-white',
         sz,
         className,
       )}
@@ -188,10 +188,10 @@ export function Empty({
   title, description, action,
 }: { title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="grid place-items-center rounded-xl border border-dashed border-krypt-border p-10 text-center">
+    <div className="grid place-items-center rounded-xl border border-dashed border-pocketed-border p-10 text-center">
       <div>
         <div className="text-base font-medium text-white">{title}</div>
-        {description && <p className="mt-1 max-w-md text-sm text-krypt-muted">{description}</p>}
+        {description && <p className="mt-1 max-w-md text-sm text-pocketed-muted">{description}</p>}
         {action && <div className="mt-4">{action}</div>}
       </div>
     </div>
@@ -214,20 +214,20 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cls(
-        'flex w-full items-start justify-between gap-4 rounded-lg border border-krypt-border bg-krypt-surface2 p-3 text-left transition-colors hover:border-krypt-borderHi',
+        'flex w-full items-start justify-between gap-4 rounded-lg border border-pocketed-border bg-pocketed-surface2 p-3 text-left transition-colors hover:border-pocketed-borderHi',
         disabled && 'opacity-50',
       )}
     >
       <div className="flex-1">
         {label && <div className="text-sm text-white">{label}</div>}
         {description && (
-          <div className="mt-0.5 text-xs text-krypt-muted">{description}</div>
+          <div className="mt-0.5 text-xs text-pocketed-muted">{description}</div>
         )}
       </div>
       <div
         className={cls(
           'relative h-5 w-9 shrink-0 rounded-full transition-colors',
-          checked ? 'bg-krypt-glow' : 'bg-krypt-border',
+          checked ? 'bg-pocketed-glow' : 'bg-pocketed-border',
         )}
       >
         <div
@@ -264,7 +264,7 @@ function RuleValueInput({ value, onCommit }: { value: number; onCommit: (n: numb
       onChange={(e) => setText(e.target.value)}
       onBlur={() => { focused.current = false; commit(); }}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-      className="krypt-input w-24 font-mono"
+      className="pocketed-input w-24 font-mono"
     />
   );
 }
@@ -287,7 +287,7 @@ export function RuleBuilder({
   const setRules = (next: RuleCondition[]) => save({ [rulesKey]: next } as Partial<TraderConfig>);
 
   return (
-    <div className="rounded-xl border border-krypt-border bg-krypt-surface p-3">
+    <div className="rounded-xl border border-pocketed-border bg-pocketed-surface p-3">
       <Switch
         checked={useRules}
         onChange={(v) => save({ [useRulesKey]: v } as Partial<TraderConfig>)}
@@ -297,7 +297,7 @@ export function RuleBuilder({
       {useRules && (
         <div className="mt-3 space-y-2">
           {rules.length === 0 && (
-            <div className="text-[11px] text-krypt-warn">
+            <div className="text-[11px] text-pocketed-warn">
               No conditions yet — add at least one (an empty rule-set never trades).
             </div>
           )}
@@ -306,14 +306,14 @@ export function RuleBuilder({
               <select
                 value={r.field}
                 onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, field: e.target.value } : x)))}
-                className="krypt-input flex-1"
+                className="pocketed-input flex-1"
               >
                 {fields.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
               </select>
               <select
                 value={r.op}
                 onChange={(e) => setRules(rules.map((x, j) => (j === i ? { ...x, op: e.target.value as RuleCondition['op'] } : x)))}
-                className="krypt-input w-16 text-center font-mono"
+                className="pocketed-input w-16 text-center font-mono"
               >
                 {RULE_OPS.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
@@ -323,18 +323,18 @@ export function RuleBuilder({
               />
               <button
                 onClick={() => setRules(rules.filter((_, j) => j !== i))}
-                className="px-1 text-krypt-loss/80 hover:text-krypt-loss"
+                className="px-1 text-pocketed-loss/80 hover:text-pocketed-loss"
                 title="Remove condition"
               >✕</button>
             </div>
           ))}
           <button
             onClick={() => setRules([...rules, { field: fields[0].key, op: '>=', value: fields[0].dflt }])}
-            className="krypt-btn-default text-xs"
+            className="pocketed-btn-default text-xs"
           >
             + Add condition
           </button>
-          {tip && <div className="text-[10px] text-krypt-dim">{tip}</div>}
+          {tip && <div className="text-[10px] text-pocketed-dim">{tip}</div>}
         </div>
       )}
     </div>
@@ -375,7 +375,7 @@ export function NumberInput({
   return (
     <div className={cls('relative', disabled && 'opacity-50')}>
       {prefix && (
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-krypt-dim">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-pocketed-dim">
           {prefix}
         </span>
       )}
@@ -391,14 +391,14 @@ export function NumberInput({
         onBlur={() => { focused.current = false; commit(); }}
         onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
         className={cls(
-          'krypt-input font-mono',
+          'pocketed-input font-mono',
           prefix && 'pl-7',
           suffix && 'pr-12',
           disabled && 'cursor-not-allowed',
         )}
       />
       {suffix && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-krypt-dim">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-pocketed-dim">
           {suffix}
         </span>
       )}
@@ -412,11 +412,11 @@ export function Section({
   return (
     <div className="mb-6">
       <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-krypt-muted">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-pocketed-muted">
           {title}
         </h3>
         {description && (
-          <p className="ml-4 max-w-md text-right text-xs text-krypt-dim">{description}</p>
+          <p className="ml-4 max-w-md text-right text-xs text-pocketed-dim">{description}</p>
         )}
       </div>
       {children}

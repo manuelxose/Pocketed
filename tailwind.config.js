@@ -3,7 +3,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        krypt: {
+        pocketed: {
           black: '#000000',
           void: '#0A0A0F',
           surface: '#11111A',
@@ -27,17 +27,17 @@ export default {
         mono: ['"JetBrains Mono"', 'Menlo', 'monospace'],
       },
       backgroundImage: {
-        'krypt-glow':
+        'pocketed-glow':
           'linear-gradient(90deg, #1D4ED8 0%, #3B82F6 50%, #38BDF8 100%)',
-        'krypt-radial':
+        'pocketed-radial':
           'radial-gradient(700px circle at 15% 0%, rgba(59,130,246,0.14), transparent 60%)',
-        'krypt-radial-r':
+        'pocketed-radial-r':
           'radial-gradient(600px circle at 90% 0%, rgba(56,189,248,0.10), transparent 60%)',
       },
       boxShadow: {
-        'krypt-glow': '0 0 28px 0 rgba(59,130,246,0.35)',
-        'krypt-soft': '0 10px 40px -10px rgba(59,130,246,0.20)',
-        'krypt-strong': '0 0 60px -10px rgba(59,130,246,0.55)',
+        'pocketed-glow': '0 0 28px 0 rgba(59,130,246,0.35)',
+        'pocketed-soft': '0 10px 40px -10px rgba(59,130,246,0.20)',
+        'pocketed-strong': '0 0 60px -10px rgba(59,130,246,0.55)',
       },
       keyframes: {
         'fade-in': {

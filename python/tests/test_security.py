@@ -71,7 +71,7 @@ def test_dpapi_roundtrip():
 
 
 def test_credentials_encrypted_at_rest(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     ka.reset_credential_cache()
     ka.set_env("mainnet")
 
@@ -89,7 +89,7 @@ def test_credentials_encrypted_at_rest(tmp_path, monkeypatch):
 
 
 def test_keyring_encrypts_at_rest_when_no_dpapi(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     store: dict = {}
     monkeypatch.setattr(ka, "_dpapi_available", lambda: False)
     monkeypatch.setattr(ka, "_keyring_set",
@@ -113,7 +113,7 @@ def test_keyring_encrypts_at_rest_when_no_dpapi(tmp_path, monkeypatch):
 
 
 def test_credentials_fall_back_to_plaintext_without_any_backend(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     monkeypatch.setattr(ka, "_dpapi_available", lambda: False)
     monkeypatch.setattr(ka, "_keyring_set", lambda acct, val: False)
     monkeypatch.setattr(ka, "_keyring_get", lambda acct: None)
@@ -132,7 +132,7 @@ def test_credentials_fall_back_to_plaintext_without_any_backend(tmp_path, monkey
 
 
 def test_legacy_plaintext_upgraded_to_keychain_on_read(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     store: dict = {}
     monkeypatch.setattr(ka, "_dpapi_available", lambda: False)
     monkeypatch.setattr(ka, "_keyring_set",
@@ -154,7 +154,7 @@ def test_legacy_plaintext_upgraded_to_keychain_on_read(tmp_path, monkeypatch):
 
 
 def test_new_key_clears_stale_api_creds(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     ka.reset_credential_cache()
     ka.set_env("mainnet")
     pk1 = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
@@ -168,7 +168,7 @@ def test_new_key_clears_stale_api_creds(tmp_path, monkeypatch):
 
 
 def test_resaving_key_with_explicit_creds_keeps_them(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     ka.reset_credential_cache()
     ka.set_env("mainnet")
     pk = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"

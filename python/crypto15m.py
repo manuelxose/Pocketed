@@ -73,7 +73,7 @@ def _get_spot_client() -> httpx.AsyncClient:
     if _spot_client is None or _spot_client.is_closed:
         _spot_client = httpx.AsyncClient(
             timeout=8.0,
-            headers={"Accept": "application/json", "User-Agent": "KryptPolyBot/1.0"},
+            headers={"Accept": "application/json", "User-Agent": "Pocketed/1.0"},
         )
     return _spot_client
 

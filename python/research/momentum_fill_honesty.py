@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 _APPDATA = os.environ.get("APPDATA") or (Path.home() / ".config")
-os.environ.setdefault("KRYPT_POLYBOT_USERDATA", str(Path(_APPDATA) / "Krypt PolyBot"))
+os.environ.setdefault("POCKETED_USERDATA", str(Path(_APPDATA) / "Krypt PolyBot"))
 
 import replay
 from config import merge_with_defaults

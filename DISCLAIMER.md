@@ -1,13 +1,13 @@
 # Disclaimer & Risk Notice
 
-**Read this before using Krypt PolyBot with real money.**
+**Read this before using Pocketed with real money.**
 
-Krypt PolyBot is free, open-source, experimental software for placing trades on
+Pocketed is free, open-source, experimental software for placing trades on
 [Polymarket](https://polymarket.com). By downloading, building, or running it, you
 acknowledge and accept everything below.
 
 ## Not financial advice
-Krypt PolyBot, its strategies, signals, scores, and any documentation are for
+Pocketed, its strategies, signals, scores, and any documentation are for
 informational and educational purposes only. Nothing here is financial,
 investment, legal, or tax advice. The authors are **not** registered investment
 advisors, commodity trading advisors, broker-dealers, or fiduciaries of any
@@ -58,7 +58,7 @@ any engine on, understand exactly what it does, and begin with a small amount yo
 afford to lose entirely.
 
 ## Usage data
-Krypt PolyBot sends **no** telemetry, analytics, or usage data of any kind. It
+Pocketed sends **no** telemetry, analytics, or usage data of any kind. It
 collects nothing about you and phones no home server. The only network traffic
 it makes is to Polymarket's own APIs, the market-data feeds it needs to trade,
 and any Discord webhook **you** configure yourself in Settings.
@@ -72,7 +72,7 @@ a material connection; using a referral link is optional and costs you nothing
 extra.
 
 ## No affiliation
-Krypt PolyBot is an independent project and is **not affiliated with, endorsed
+Pocketed is an independent project and is **not affiliated with, endorsed
 by, or sponsored by** Polymarket, Discord, or any data provider. Your use of
 those services is governed by their own terms, and you are responsible for
 complying with them.

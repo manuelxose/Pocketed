@@ -36,15 +36,15 @@ export function SignalsPage() {
       title="Signals"
       subtitle="Live whale + momentum signals as the scanners produce them."
     >
-      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-krypt-border bg-krypt-surface p-3">
-        <div className="inline-flex rounded-md border border-krypt-border bg-krypt-surface2 p-0.5">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-pocketed-border bg-pocketed-surface p-3">
+        <div className="inline-flex rounded-md border border-pocketed-border bg-pocketed-surface2 p-0.5">
           {(['all', 'whale', 'momentum'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSrc(s)}
               className={cls(
                 'rounded-[6px] px-3 py-1.5 text-xs uppercase tracking-wider',
-                src === s ? 'bg-white/10 text-white' : 'text-krypt-muted hover:text-white',
+                src === s ? 'bg-white/10 text-white' : 'text-pocketed-muted hover:text-white',
               )}
             >
               {s}
@@ -52,7 +52,7 @@ export function SignalsPage() {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <label className="text-xs text-krypt-muted">Min confidence</label>
+          <label className="text-xs text-pocketed-muted">Min confidence</label>
           <input
             type="range"
             min={0}
@@ -60,7 +60,7 @@ export function SignalsPage() {
             step={1}
             value={minConf}
             onChange={(e) => setMinConf(parseInt(e.target.value))}
-            className="accent-krypt-purple"
+            className="accent-pocketed-purple"
           />
           <span className="font-mono text-xs text-white">{minConf}%</span>
         </div>
@@ -69,8 +69,8 @@ export function SignalsPage() {
       {filtered.length === 0 ? (
         <Empty title="No signals" description="Loosen the filter or wait for the next scan cycle." />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-krypt-border">
-          <table className="krypt-table">
+        <div className="overflow-hidden rounded-xl border border-pocketed-border">
+          <table className="pocketed-table">
             <thead>
               <tr>
                 <th>When</th>
@@ -105,55 +105,55 @@ export function SignalsPage() {
 function SignalRowView({ s, inPosition }: { s: SignalRow; inPosition: boolean }) {
   return (
     <tr>
-      <td className="text-xs text-krypt-muted">{fmtRelative(s.createdAt)}</td>
+      <td className="text-xs text-pocketed-muted">{fmtRelative(s.createdAt)}</td>
       <td>
         <span className={cls(
           'inline-flex rounded-md px-1.5 py-0.5 text-[10px] uppercase',
           s.source === 'whale'
-            ? 'bg-krypt-purple/15 text-krypt-purple'
-            : 'bg-krypt-pink/15 text-krypt-pink',
+            ? 'bg-pocketed-purple/15 text-pocketed-purple'
+            : 'bg-pocketed-pink/15 text-pocketed-pink',
         )}>
           {s.source}
         </span>
       </td>
       <td className="font-mono text-xs">{s.ticker}</td>
-      <td className="max-w-[260px] truncate text-xs text-krypt-muted">{s.title}</td>
-      <td className="text-xs text-krypt-muted">{s.category || '—'}</td>
+      <td className="max-w-[260px] truncate text-xs text-pocketed-muted">{s.title}</td>
+      <td className="text-xs text-pocketed-muted">{s.category || '—'}</td>
       <td>
         <span className={cls(
           'rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase',
-          s.direction === 'yes' ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
+          s.direction === 'yes' ? 'bg-pocketed-win/10 text-pocketed-win' : 'bg-pocketed-loss/10 text-pocketed-loss',
         )}>
           {s.direction}
         </span>
       </td>
       <td className="font-mono text-xs">{s.priceCents}¢</td>
       <td className="font-mono text-xs">{s.confidence.toFixed(1)}%</td>
-      <td className="font-mono text-xs text-krypt-purple">+{s.edgePts.toFixed(1)}</td>
-      <td className="font-mono text-xs text-krypt-muted">
+      <td className="font-mono text-xs text-pocketed-purple">+{s.edgePts.toFixed(1)}</td>
+      <td className="font-mono text-xs text-pocketed-muted">
         {s.dollarValue ? fmtUsd(s.dollarValue) : '—'}
       </td>
       <td>
         {s.resolved ? (
           <span className={cls(
             'rounded-md px-1.5 py-0.5 text-[10px] uppercase',
-            s.outcomeCorrect === 1 ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
+            s.outcomeCorrect === 1 ? 'bg-pocketed-win/10 text-pocketed-win' : 'bg-pocketed-loss/10 text-pocketed-loss',
           )}>
             {s.outcomeCorrect === 1 ? 'won' : 'lost'}
           </span>
         ) : s.traded ? (
-          <span className="rounded-md bg-krypt-indigo/10 px-1.5 py-0.5 text-[10px] uppercase text-krypt-indigo">
+          <span className="rounded-md bg-pocketed-indigo/10 px-1.5 py-0.5 text-[10px] uppercase text-pocketed-indigo">
             traded
           </span>
         ) : inPosition ? (
           <span
-            className="rounded-md bg-krypt-indigo/10 px-1.5 py-0.5 text-[10px] uppercase text-krypt-indigo"
+            className="rounded-md bg-pocketed-indigo/10 px-1.5 py-0.5 text-[10px] uppercase text-pocketed-indigo"
             title="The bot already holds a position in this market/event — the per-event cap skips the duplicate (not a missed trade)."
           >
             in position
           </span>
         ) : (
-          <span className="text-[10px] text-krypt-dim">open</span>
+          <span className="text-[10px] text-pocketed-dim">open</span>
         )}
       </td>
     </tr>

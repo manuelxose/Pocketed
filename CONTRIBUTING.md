@@ -1,4 +1,4 @@
-# Contributing to Krypt PolyBot
+# Contributing to Pocketed
 
 Thanks for your interest! This is a real-money trading app, so correctness and safety matter — please
 keep changes small, tested, and easy to review.
@@ -34,7 +34,7 @@ Both are also enforced by CI on every pull request.
 
 ## Architecture quick reference
 
-- `electron/` — main process, preload (`window.krypt` API surface), IPC, system integration.
+- `webserver/` — FastAPI gateway (auth, config/profile persistence, session-key routes).
 - `python/` — backend: `service.py` (RPC loop), `scanner.py`, `trader.py`, `crypto15m*.py`, `db.py`.
   Renderer ↔ backend talk JSON-RPC over stdio.
 - `src/` — React UI. `shared/types.ts` is the IPC contract shared by both sides.

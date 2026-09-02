@@ -399,7 +399,7 @@ BUILTIN_STRATEGIES: list[dict[str, Any]] = [
     },
     {
         "id": "krypt-aggressive",
-        "name": "Krypt Aggressive",
+        "name": "Aggressive",
         "tagline": "More signals, larger sizing, higher variance.",
         "description": (
             "Loosens edge gates to 3pts and confidence to 50%. Sizing scales 4-10% "
@@ -614,14 +614,14 @@ def export_profile(user_id: str, profile_id: str) -> str:
     profile = _find_profile(profiles, profile_id)
     if profile is None:
         raise KeyError("Profile not found")
-    return json.dumps({"kryptTraderProfile": 1, "profile": profile}, indent=2)
+    return json.dumps({"pocketedTraderProfile": 1, "profile": profile}, indent=2)
 
 
 def import_profile(user_id: str, json_str: str) -> dict[str, Any]:
     parsed = json.loads(json_str)
     norm = _merge_profile(parsed.get("profile") if isinstance(parsed, dict) else None)
     if norm is None:
-        raise ValueError("Not a valid Krypt PolyBot profile")
+        raise ValueError("Not a valid Pocketed profile")
     now = _now_iso()
     dup = {**norm, "id": _gen_id(), "createdAt": now, "updatedAt": now}
     profiles = _load_profiles(user_id)

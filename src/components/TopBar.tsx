@@ -26,7 +26,7 @@ export function TopBar() {
   const liveCount = ENGINES.filter((e) => live[e.key]).length;
 
   return (
-    <header className="z-20 flex items-center gap-4 border-b border-krypt-border bg-krypt-void/70 px-6 py-3 backdrop-blur">
+    <header className="z-20 flex items-center gap-4 border-b border-pocketed-border bg-pocketed-void/70 px-6 py-3 backdrop-blur">
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-semibold text-white">
@@ -37,7 +37,7 @@ export function TopBar() {
           <span
             className={cls(
               'text-xs',
-              connected ? 'text-krypt-muted' : 'text-krypt-warn',
+              connected ? 'text-pocketed-muted' : 'text-pocketed-warn',
             )}
           >
             · {connected ? 'Backend online' : 'Backend offline'}
@@ -52,8 +52,8 @@ export function TopBar() {
               className={cls(
                 'rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
                 live[e.key]
-                  ? 'bg-krypt-win/15 text-krypt-win'
-                  : 'bg-krypt-surface2 text-krypt-dim',
+                  ? 'bg-pocketed-win/15 text-pocketed-win'
+                  : 'bg-pocketed-surface2 text-pocketed-dim',
               )}
             >
               {e.label}
@@ -70,7 +70,7 @@ export function TopBar() {
             label="Session P&L"
             value={fmtUsd(account?.sessionPnlUsd ?? 0, { sign: true })}
             color={
-              (account?.sessionPnlUsd ?? 0) >= 0 ? 'text-krypt-win' : 'text-krypt-loss'
+              (account?.sessionPnlUsd ?? 0) >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'
             }
           />
           <Stat
@@ -78,16 +78,16 @@ export function TopBar() {
             value={fmtPct(account?.sessionRoiPct ?? account?.roiPct ?? 0)}
             color={
               (account?.sessionRoiPct ?? account?.roiPct ?? 0) >= 0
-                ? 'text-krypt-win' : 'text-krypt-loss'
+                ? 'text-pocketed-win' : 'text-pocketed-loss'
             }
           />
           <ShareButton
             size="xs"
             text={
-              `Krypt PolyBot: ${fmtUsd(account?.totalUsd ?? 0)} balance · `
+              `Pocketed: ${fmtUsd(account?.totalUsd ?? 0)} balance · `
               + `${fmtUsd(account?.sessionPnlUsd ?? 0, { sign: true })} this session · `
               + `${fmtPct(account?.sessionRoiPct ?? account?.roiPct ?? 0)} ROI. `
-              + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`
+              + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`
             }
           />
         </div>
@@ -101,7 +101,7 @@ function Stat({
 }: { label: string; value: string; color?: string }) {
   return (
     <div className="flex flex-col items-end leading-tight">
-      <span className="text-[10px] uppercase tracking-wider text-krypt-muted">
+      <span className="text-[10px] uppercase tracking-wider text-pocketed-muted">
         {label}
       </span>
       <span className={cls('font-mono text-sm', color || 'text-white')}>

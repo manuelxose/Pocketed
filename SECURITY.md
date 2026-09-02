@@ -8,15 +8,15 @@ Report them privately via one of:
 
 - GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
   ("Security" tab → "Report a vulnerability"), or
-- email **hi@krypt.cc**.
+- email **hi@pocketed.online**.
 
 Please include reproduction steps and the affected version. We'll acknowledge as soon as we can.
 
 ## Handling of credentials
 
-Krypt PolyBot stores your **Polygon wallet private key** (and the Polymarket CLOB API credentials
+Pocketed stores your **Polygon wallet private key** (and the Polymarket CLOB API credentials
 derived from it) **locally** in the app's user-data directory
-(`%APPDATA%/Krypt PolyBot/credentials/` on Windows). They are used only to sign orders/requests to
+(`%APPDATA%/Pocketed/credentials/` on Windows). They are used only to sign orders/requests to
 Polymarket and are **never transmitted to any server operated by this project**. Anyone with the
 private key controls that wallet's funds, so use a dedicated trading wallet.
 
@@ -31,7 +31,7 @@ generate a new pair.
 
 ## User strategy scripts (the Scripts tab)
 
-Krypt PolyBot runs **user-authored Python** in the same process that holds the decrypted wallet key,
+Pocketed runs **user-authored Python** in the same process that holds the decrypted wallet key,
 with the same privileges as the trading engine. There is **no language sandbox**.
 
 > [!WARNING]

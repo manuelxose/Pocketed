@@ -9,14 +9,14 @@ import { useCancelAllOpenMutation, useRunOnceMutation } from '../hooks/useTradin
 import { usePositionsQuery } from '../hooks/useAccountData';
 
 const STATUS_COLORS: Record<string, string> = {
-  submitted: 'bg-krypt-warn/15 text-krypt-warn border-krypt-warn/30',
-  partial: 'bg-krypt-warn/15 text-krypt-warn border-krypt-warn/30',
-  filled: 'bg-krypt-indigo/15 text-krypt-indigo border-krypt-indigo/30',
-  canceled: 'bg-krypt-dim/15 text-krypt-muted border-krypt-border',
-  expired: 'bg-krypt-dim/15 text-krypt-muted border-krypt-border',
-  gone: 'bg-krypt-dim/15 text-krypt-muted border-krypt-border',
-  error: 'bg-krypt-loss/15 text-krypt-loss border-krypt-loss/30',
-  dry_run: 'bg-krypt-purple/15 text-krypt-purple border-krypt-purple/30',
+  submitted: 'bg-pocketed-warn/15 text-pocketed-warn border-pocketed-warn/30',
+  partial: 'bg-pocketed-warn/15 text-pocketed-warn border-pocketed-warn/30',
+  filled: 'bg-pocketed-indigo/15 text-pocketed-indigo border-pocketed-indigo/30',
+  canceled: 'bg-pocketed-dim/15 text-pocketed-muted border-pocketed-border',
+  expired: 'bg-pocketed-dim/15 text-pocketed-muted border-pocketed-border',
+  gone: 'bg-pocketed-dim/15 text-pocketed-muted border-pocketed-border',
+  error: 'bg-pocketed-loss/15 text-pocketed-loss border-pocketed-loss/30',
+  dry_run: 'bg-pocketed-purple/15 text-pocketed-purple border-pocketed-purple/30',
 };
 
 type Tab = 'open' | 'pending' | 'won' | 'lost' | 'errors' | 'all';
@@ -95,11 +95,11 @@ export function PositionsPage() {
       subtitle="Live + recent positions. Tap Cancel All to flatten any working orders on Polymarket."
       actions={
         <div className="flex items-center gap-2">
-          <button onClick={syncPositions} disabled={!!busy} className="krypt-btn-default">
+          <button onClick={syncPositions} disabled={!!busy} className="pocketed-btn-default">
             <RefreshCw className={cls('h-4 w-4', busy === 'sync' && 'animate-spin')} />
             {busy === 'sync' ? 'Syncing…' : 'Refresh'}
           </button>
-          <button onClick={cancelAll} disabled={!!busy} className="krypt-btn-danger">
+          <button onClick={cancelAll} disabled={!!busy} className="pocketed-btn-danger">
             <Ban className="h-4 w-4" /> Cancel All
           </button>
         </div>
@@ -133,8 +133,8 @@ export function PositionsPage() {
           description="Switch tabs or wait for the trader to open something."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-krypt-border">
-          <table className="krypt-table">
+        <div className="overflow-hidden rounded-xl border border-pocketed-border">
+          <table className="pocketed-table">
             <thead>
               <tr>
                 <th>When</th>
@@ -168,7 +168,7 @@ function Tabs<T extends string>({
   options: { value: T; label: string }[];
 }) {
   return (
-    <div className="inline-flex rounded-md border border-krypt-border bg-krypt-surface2 p-0.5">
+    <div className="inline-flex rounded-md border border-pocketed-border bg-pocketed-surface2 p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
@@ -177,7 +177,7 @@ function Tabs<T extends string>({
             'rounded-[6px] px-3 py-1.5 text-xs font-medium transition-colors',
             value === o.value
               ? 'bg-white/10 text-white'
-              : 'text-krypt-muted hover:text-white',
+              : 'text-pocketed-muted hover:text-white',
           )}
         >
           {o.label}
@@ -192,32 +192,32 @@ function PositionRow({ p }: { p: BotPosition }) {
   const pnl = realized ? p.pnlUsd : p.livePnlUsd;
   return (
     <tr>
-      <td className="text-xs text-krypt-muted">{fmtRelative(p.createdAt)}</td>
+      <td className="text-xs text-pocketed-muted">{fmtRelative(p.createdAt)}</td>
       <td>
         <span
           className={cls(
             'inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] uppercase',
             p.signalSource === 'whale'
-              ? 'bg-krypt-purple/15 text-krypt-purple'
+              ? 'bg-pocketed-purple/15 text-pocketed-purple'
               : p.signalSource === 'copy'
-                ? 'bg-krypt-indigo/15 text-krypt-indigo'
+                ? 'bg-pocketed-indigo/15 text-pocketed-indigo'
                 : p.signalSource === 'external'
-                  ? 'bg-krypt-dim/15 text-krypt-muted'
-                  : 'bg-krypt-pink/15 text-krypt-pink',
+                  ? 'bg-pocketed-dim/15 text-pocketed-muted'
+                  : 'bg-pocketed-pink/15 text-pocketed-pink',
           )}
         >
           {p.signalSource}
         </span>
       </td>
       <td><TickerLink ticker={p.ticker} eventTicker={p.eventTicker} env={p.network} /></td>
-      <td className="max-w-[280px] truncate text-xs text-krypt-muted">{p.title}</td>
+      <td className="max-w-[280px] truncate text-xs text-pocketed-muted">{p.title}</td>
       <td>
         <span
           className={cls(
             'rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase',
             p.direction === 'yes'
-              ? 'bg-krypt-win/10 text-krypt-win'
-              : 'bg-krypt-loss/10 text-krypt-loss',
+              ? 'bg-pocketed-win/10 text-pocketed-win'
+              : 'bg-pocketed-loss/10 text-pocketed-loss',
           )}
         >
           {p.direction}
@@ -225,7 +225,7 @@ function PositionRow({ p }: { p: BotPosition }) {
       </td>
       <td className="font-mono text-xs">
         {p.filledContracts}/{p.targetContracts}
-        <span className="ml-2 text-krypt-dim">
+        <span className="ml-2 text-pocketed-dim">
           @ {fmtCents(p.avgFillPriceCents ?? p.limitPriceCents)}
         </span>
       </td>
@@ -234,7 +234,7 @@ function PositionRow({ p }: { p: BotPosition }) {
         <span
           className={cls(
             'inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium uppercase',
-            STATUS_COLORS[p.status] ?? 'border-krypt-border bg-krypt-surface2 text-krypt-muted',
+            STATUS_COLORS[p.status] ?? 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted',
           )}
         >
           {p.status}
@@ -242,24 +242,24 @@ function PositionRow({ p }: { p: BotPosition }) {
       </td>
       <td>
         {!p.resolved ? (
-          <span className="text-[10px] uppercase tracking-wider text-krypt-dim">live</span>
+          <span className="text-[10px] uppercase tracking-wider text-pocketed-dim">live</span>
         ) : p.outcomeCorrect === 1 ? (
-          <span className="krypt-pill border-krypt-win/40 bg-krypt-win/10 text-krypt-win">won</span>
+          <span className="pocketed-pill border-pocketed-win/40 bg-pocketed-win/10 text-pocketed-win">won</span>
         ) : p.outcomeCorrect === 0 ? (
-          <span className="krypt-pill border-krypt-loss/40 bg-krypt-loss/10 text-krypt-loss">lost</span>
+          <span className="pocketed-pill border-pocketed-loss/40 bg-pocketed-loss/10 text-pocketed-loss">lost</span>
         ) : (
-          <span className="krypt-pill text-krypt-muted">closed</span>
+          <span className="pocketed-pill text-pocketed-muted">closed</span>
         )}
       </td>
-      <td className="font-mono text-xs text-krypt-purple">
+      <td className="font-mono text-xs text-pocketed-purple">
         {p.signalSource === 'external'
-          ? <span className="text-krypt-dim" title="Imported from your Polymarket wallet — no entry signal">—</span>
+          ? <span className="text-pocketed-dim" title="Imported from your Polymarket wallet — no entry signal">—</span>
           : `+${p.edgePts.toFixed(1)}`}
       </td>
       <td
         className={cls(
           'font-mono text-xs',
-          pnl == null ? 'text-krypt-dim' : pnl >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+          pnl == null ? 'text-pocketed-dim' : pnl >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
         )}
       >
         {pnl == null ? (
@@ -272,7 +272,7 @@ function PositionRow({ p }: { p: BotPosition }) {
           }>
             {fmtUsd(pnl, { sign: true })}
             {!realized && (
-              <span className="ml-1 text-[9px] uppercase tracking-wide text-krypt-dim">live</span>
+              <span className="ml-1 text-[9px] uppercase tracking-wide text-pocketed-dim">live</span>
             )}
           </span>
         )}

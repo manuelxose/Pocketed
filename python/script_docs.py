@@ -62,7 +62,7 @@ Your reply must be EXACTLY one fenced ```python code block and nothing else —
 no prose before or after it. The first lines of the script MUST be this
 metadata header (comments):
 
-# krypt-script v1
+# pocketed-script v1
 # name: <short strategy name>
 # description: <one sentence>
 
@@ -178,7 +178,7 @@ but see the rules below, because the app audits what you import.
 '''
 
 EXAMPLE_SIMPLE = '''\
-# krypt-script v1
+# pocketed-script v1
 # name: Late Favorite Follow
 # description: Buys the favorite in the last 3 minutes when it is 80-95c with a real book.
 
@@ -198,7 +198,7 @@ def decide(ctx):
 '''
 
 EXAMPLE_STATEFUL = '''\
-# krypt-script v1
+# pocketed-script v1
 # name: Momentum Confirm
 # description: Buys the direction of a sustained 5-minute move, confirmed across two ticks, with a stop.
 
@@ -224,7 +224,7 @@ def decide(ctx):
 
 
 EXAMPLE_MANAGE = '''\
-# krypt-script v1
+# pocketed-script v1
 # name: Trailing Exit
 # description: Buys cheap momentum, then trails a stop up behind the bid instead of holding to settlement.
 
@@ -256,7 +256,7 @@ def manage(position, ctx):
 '''
 
 EXAMPLE_SUPERVISOR = '''\
-# krypt-script v1
+# pocketed-script v1
 # name: Night Shift
 # description: Runs the crypto engine in model mode only when volatility is high, and pauses momentum overnight.
 
@@ -331,7 +331,7 @@ def build_context_pack(cfg: dict, env: str = "mainnet") -> str:
         "  only — exits are held to settlement — so don't rely on a shadow\n"
         "  record to validate a manage()-driven exit strategy."
     )
-    return f"""You are writing a trading strategy script for Krypt PolyBot, a
+    return f"""You are writing a trading strategy script for Pocketed, a
 Polymarket desktop bot. The script trades short-window crypto "Up/Down"
 markets (will BTC/ETH/SOL/... close this {interval} window above its open
 price?). Each side is a binary contract: win = $1.00, lose = $0.00.

@@ -278,8 +278,8 @@ def _marker_survived(path) -> bool:
 
 def test_db_restores_from_local_backups_when_missing(tmp_path, monkeypatch):
     ud = tmp_path / "userdata"
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(ud))
-    monkeypatch.setenv("KRYPT_POLYBOT_VAULT", str(tmp_path / "vault"))
+    monkeypatch.setenv("POCKETED_USERDATA", str(ud))
+    monkeypatch.setenv("POCKETED_VAULT", str(tmp_path / "vault"))
     bdir = ud / "data" / "backups"
     bdir.mkdir(parents=True)
     _make_marker_db(bdir / "research-20990101.db")
@@ -290,13 +290,13 @@ def test_db_restores_from_local_backups_when_missing(tmp_path, monkeypatch):
 
 def test_db_restores_from_vault_after_full_userdata_wipe(tmp_path, monkeypatch):
     vault = tmp_path / "vault"
-    monkeypatch.setenv("KRYPT_POLYBOT_VAULT", str(vault))
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path / "old-userdata"))
+    monkeypatch.setenv("POCKETED_VAULT", str(vault))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path / "old-userdata"))
     snap = tmp_path / "research-20990101.db"
     _make_marker_db(snap)
     db._mirror_to_vault(str(snap))
     assert (vault / "default" / "research-latest.db").exists()
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path / "new-userdata"))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path / "new-userdata"))
     monkeypatch.setattr(db, "_restore_checked", False)
     p = db.db_path()
     assert p.exists() and _marker_survived(p)
@@ -305,8 +305,8 @@ def test_db_restores_from_vault_after_full_userdata_wipe(tmp_path, monkeypatch):
 def test_db_restore_prefers_newest_local_backup_over_vault(tmp_path, monkeypatch):
     ud = tmp_path / "userdata"
     vault = tmp_path / "vault"
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(ud))
-    monkeypatch.setenv("KRYPT_POLYBOT_VAULT", str(vault))
+    monkeypatch.setenv("POCKETED_USERDATA", str(ud))
+    monkeypatch.setenv("POCKETED_VAULT", str(vault))
     bdir = ud / "data" / "backups"
     bdir.mkdir(parents=True)
     _make_marker_db(bdir / "research-20990101.db")
@@ -324,8 +324,8 @@ def test_db_restore_prefers_newest_local_backup_over_vault(tmp_path, monkeypatch
 
 def test_no_restore_when_db_already_exists(tmp_path, monkeypatch):
     ud = tmp_path / "userdata"
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(ud))
-    monkeypatch.setenv("KRYPT_POLYBOT_VAULT", str(tmp_path / "vault"))
+    monkeypatch.setenv("POCKETED_USERDATA", str(ud))
+    monkeypatch.setenv("POCKETED_VAULT", str(tmp_path / "vault"))
     (ud / "data").mkdir(parents=True)
     live = ud / "data" / "krypt-polybot.db"
     _make_marker_db(live)

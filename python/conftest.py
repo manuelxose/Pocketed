@@ -10,7 +10,7 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 _SCRATCH = tempfile.mkdtemp(prefix="krypt-test-")
-os.environ.setdefault("KRYPT_POLYBOT_USERDATA", _SCRATCH)
+os.environ.setdefault("POCKETED_USERDATA", _SCRATCH)
 
 import pytest  # noqa: E402
 

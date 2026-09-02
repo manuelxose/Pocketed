@@ -210,7 +210,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 STRATEGY_PRESETS: list[dict[str, Any]] = [
     {
         "id": "krypt-balanced",
-        "name": "Krypt Balanced",
+        "name": "Balanced",
         "tagline": "Whales + momentum, both gates active.",
         "description": (
             "Our default everyday strategy. Trades both whale signals and "
@@ -224,7 +224,7 @@ STRATEGY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "id": "krypt-conservative",
-        "name": "Krypt Conservative",
+        "name": "Conservative",
         "tagline": "Tight sizing, high-edge only, capital-preservation mode.",
         "description": (
             "Only trades signals with edge ≥ 8pts and confidence ≥ 65%. "
@@ -250,7 +250,7 @@ STRATEGY_PRESETS: list[dict[str, Any]] = [
     },
     {
         "id": "krypt-aggressive",
-        "name": "Krypt Aggressive",
+        "name": "Aggressive",
         "tagline": "More signals, larger sizing, higher variance.",
         "description": (
             "Loosens edge gates to 3pts and confidence to 50%. Sizing "

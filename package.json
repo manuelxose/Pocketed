@@ -1,12 +1,12 @@
 {
-  "name": "krypt-polybot",
-  "productName": "Krypt PolyBot",
+  "name": "pocketed",
+  "productName": "Pocketed",
   "version": "2.0.0",
   "description": "A free, fully-featured Polymarket auto-trading bot.",
-  "author": { "name": "Krypt", "email": "hi@krypt.cc", "url": "https://krypt.cc" },
-  "homepage": "https://krypt.cc/tools/polybot",
-  "repository": { "type": "git", "url": "https://github.com/scripflipped/krypt-polybot.git" },
-  "bugs": { "url": "https://github.com/scripflipped/krypt-polybot/issues" },
+  "author": { "name": "Pocketed", "email": "hi@pocketed.online", "url": "https://pocketed.online" },
+  "homepage": "https://pocketed.online",
+  "repository": { "type": "git", "url": "TODO: set once the repo has a remote" },
+  "bugs": { "url": "TODO: set once the repo has a remote" },
   "license": "MIT",
   "private": true,
   "scripts": {

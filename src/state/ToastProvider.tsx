@@ -88,27 +88,27 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   return (
     <div
       className={cls(
-        'pointer-events-auto flex items-start gap-3 rounded-xl border bg-krypt-surface/90 p-3 backdrop-blur-md shadow-krypt-soft animate-fade-in',
-        toast.kind === 'success' && 'border-krypt-win/30',
-        toast.kind === 'error' && 'border-krypt-loss/40',
-        toast.kind === 'warn' && 'border-krypt-warn/40',
-        toast.kind === 'info' && 'border-krypt-border',
+        'pointer-events-auto flex items-start gap-3 rounded-xl border bg-pocketed-surface/90 p-3 backdrop-blur-md shadow-pocketed-soft animate-fade-in',
+        toast.kind === 'success' && 'border-pocketed-win/30',
+        toast.kind === 'error' && 'border-pocketed-loss/40',
+        toast.kind === 'warn' && 'border-pocketed-warn/40',
+        toast.kind === 'info' && 'border-pocketed-border',
         exit && 'opacity-0 transition-opacity duration-200',
       )}
     >
       <Icon
         className={cls(
           'mt-0.5 h-5 w-5 shrink-0',
-          toast.kind === 'success' && 'text-krypt-win',
-          toast.kind === 'error' && 'text-krypt-loss',
-          toast.kind === 'warn' && 'text-krypt-warn',
-          toast.kind === 'info' && 'text-krypt-purple',
+          toast.kind === 'success' && 'text-pocketed-win',
+          toast.kind === 'error' && 'text-pocketed-loss',
+          toast.kind === 'warn' && 'text-pocketed-warn',
+          toast.kind === 'info' && 'text-pocketed-purple',
         )}
       />
       <div className="flex-1 text-sm">{toast.message}</div>
       <button
         onClick={onClose}
-        className="text-krypt-muted hover:text-white"
+        className="text-pocketed-muted hover:text-white"
         aria-label="Dismiss"
       >
         <X className="h-4 w-4" />

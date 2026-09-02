@@ -10,7 +10,7 @@ import session_key
 
 @pytest.fixture(autouse=True)
 def _isolated_userdata(tmp_path, monkeypatch):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     polymarket_auth.reset_credential_cache()
     yield
 

@@ -1,8 +1,6 @@
-import { ExternalLink, Gift, Globe, MessageCircle, RotateCcw } from 'lucide-react';
+import { ExternalLink, Gift, RotateCcw } from 'lucide-react';
 import { Card, Page, Section } from '../components/common';
-import {
-  POLYMARKET_REFERRAL_URL, KRYPT_DISCORD, KRYPT_HOME, KRYPT_TOOLS, KRYPT_TRADER_PAGE,
-} from '../utils/links';
+import { POLYMARKET_REFERRAL_URL } from '../utils/links';
 import { useResetOnboardingMutation } from '../hooks/useOnboarding';
 import { useConfigQuery } from '../hooks/useConfig';
 import { useBackendConnectionStatus } from '../hooks/useTrading';
@@ -19,27 +17,21 @@ export function AboutPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <div className="flex items-start gap-4">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-krypt-glow shadow-krypt-strong">
-              <span className="font-pixel text-sm">K</span>
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-pocketed-glow shadow-pocketed-strong">
+              <span className="font-pixel text-sm">P</span>
             </div>
             <div>
-              <div className="font-pixel text-sm">KRYPT POLYBOT</div>
-              <div className="mt-1 text-sm text-krypt-muted">
+              <div className="font-pixel text-sm">POCKETED</div>
+              <div className="mt-1 text-sm text-pocketed-muted">
                 Free Polymarket auto-trading bot
               </div>
-              <div className="mt-1 text-xs text-krypt-dim">
+              <div className="mt-1 text-xs text-pocketed-dim">
                 Backend: {connected ? 'connected' : 'disconnected'} · {config?.network?.toUpperCase()}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button onClick={open(KRYPT_TRADER_PAGE)} className="krypt-btn-default">
-                  <Globe className="h-4 w-4" /> krypt.cc/tools/polybot <ExternalLink className="h-3 w-3" />
-                </button>
-                <button onClick={open(KRYPT_DISCORD)} className="krypt-btn-default">
-                  <MessageCircle className="h-4 w-4" /> Discord <ExternalLink className="h-3 w-3" />
-                </button>
                 <button
                   onClick={() => void resetOnboarding.mutateAsync()}
-                  className="krypt-btn-default"
+                  className="pocketed-btn-default"
                   title="Re-show the first-run setup walkthrough"
                 >
                   <RotateCcw className="h-4 w-4" /> Replay onboarding
@@ -47,19 +39,10 @@ export function AboutPage() {
               </div>
             </div>
           </div>
-          <p className="mt-6 text-sm text-krypt-muted">
-            Krypt PolyBot is part of the <span className="text-white">Krypt</span> free
-            tools suite — a collection of small, polished, no-bullshit Windows utilities
-            we build because the existing options annoyed us. If you want to support
-            development without paying anything, throw a follow at{' '}
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); open(KRYPT_HOME)(); }}
-              className="text-krypt-purple hover:underline"
-            >
-              krypt.cc
-            </a>{' '}
-            or use our Polymarket referral when signing up.
+          <p className="mt-6 text-sm text-pocketed-muted">
+            Pocketed is a small, polished, no-bullshit Polymarket auto-trading bot. If
+            you want to support development without paying anything, use our Polymarket
+            referral when signing up.
           </p>
         </Card>
 
@@ -69,7 +52,6 @@ export function AboutPage() {
             <LinkRow label="Polymarket public site" onClick={open('https://polymarket.com')} />
             <LinkRow label="Polymarket docs" onClick={open('https://docs.polymarket.com')} />
             <LinkRow label="Polymarket CLOB API" onClick={open('https://docs.polymarket.com/developers/CLOB/introduction')} />
-            <LinkRow label="Krypt Tools homepage" onClick={open(KRYPT_TOOLS)} />
           </div>
         </Card>
       </div>
@@ -77,22 +59,22 @@ export function AboutPage() {
       <Section title="Sign up to Polymarket · up to $50 in trading credits">
         <Card>
           <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-krypt-glow shadow-krypt-soft">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-pocketed-glow shadow-pocketed-soft">
               <Gift className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
               <div className="text-sm text-white">
                 Don&apos;t have a Polymarket account yet?
               </div>
-              <p className="mt-0.5 text-xs text-krypt-muted">
+              <p className="mt-0.5 text-xs text-pocketed-muted">
                 Sign up with our link, then deposit <span className="text-white">$20</span> and place
                 your first trade — Polymarket&apos;s current offer is <span className="text-white">up to
                 $50 in trading credits</span> for new users (trading credit, not instant cash; amount
                 and terms are set by Polymarket and can change). The link is our referral — it costs you
-                nothing extra and helps support Krypt&apos;s free tools.
+                nothing extra and helps support development.
               </p>
             </div>
-            <button onClick={open(POLYMARKET_REFERRAL_URL)} className="krypt-btn-primary">
+            <button onClick={open(POLYMARKET_REFERRAL_URL)} className="pocketed-btn-primary">
               <Gift className="h-4 w-4" /> Sign up on Polymarket <ExternalLink className="h-3 w-3" />
             </button>
           </div>
@@ -101,9 +83,9 @@ export function AboutPage() {
 
       <Section title="Risk &amp; disclosure">
         <Card>
-          <div className="space-y-2.5 text-xs leading-relaxed text-krypt-muted">
+          <div className="space-y-2.5 text-xs leading-relaxed text-pocketed-muted">
             <p>
-              <span className="text-white">Not advice.</span> Krypt PolyBot and its
+              <span className="text-white">Not advice.</span> Pocketed and its
               strategies, signals, and scores are for informational and educational
               purposes only — not financial, investment, legal, or tax advice. The
               authors are not registered investment or trading advisors, broker-dealers,
@@ -135,7 +117,7 @@ export function AboutPage() {
             <p>
               <span className="text-white">Your responsibility.</span> You alone are
               responsible for every order placed, for complying with{' '}
-              <button onClick={open('https://polymarket.com/tos')} className="text-krypt-purple hover:underline">
+              <button onClick={open('https://polymarket.com/tos')} className="text-pocketed-purple hover:underline">
                 Polymarket&apos;s Terms of Service
               </button>{' '}
               (including whether automated/algorithmic trading is permitted on your
@@ -145,7 +127,7 @@ export function AboutPage() {
               controls your funds, so use a dedicated trading wallet.
             </p>
             <p>
-              <span className="text-white">Usage data.</span> Krypt PolyBot sends{' '}
+              <span className="text-white">Usage data.</span> Pocketed sends{' '}
               <span className="text-white">no</span> telemetry, analytics, or usage data
               of any kind. The only network traffic it makes is to Polymarket&apos;s APIs,
               the market-data feeds it needs to trade, and any Discord webhook you
@@ -155,11 +137,11 @@ export function AboutPage() {
             <p>
               <span className="text-white">Affiliate &amp; affiliation.</span> Polymarket
               links here are referral links — if you sign up through one, Polymarket may
-              credit both you and the authors. Krypt PolyBot is independent and is{' '}
+              credit both you and the authors. Pocketed is independent and is{' '}
               <span className="text-white">not affiliated with, endorsed by, or
               sponsored by</span> Polymarket or Discord.
             </p>
-            <p className="text-krypt-dim">
+            <p className="text-pocketed-dim">
               By downloading, building, or running this software you accept these terms
               and the full Disclaimer included with the project. If you do not agree, do
               not use it.
@@ -170,18 +152,10 @@ export function AboutPage() {
 
       <Section title="Credits">
         <Card>
-          <p className="text-xs text-krypt-muted">
+          <p className="text-xs text-pocketed-muted">
             UI built with <span className="text-white">React · Tailwind · Recharts</span> ·
             backend in <span className="text-white">Python (httpx + cryptography)</span> ·
             packaged with <span className="text-white">PyInstaller</span>.
-            Brand &amp; tooling by{' '}
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); open(KRYPT_HOME)(); }}
-              className="text-krypt-purple hover:underline"
-            >
-              Krypt
-            </a>.
           </p>
         </Card>
       </Section>
@@ -193,10 +167,10 @@ function LinkRow({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-2 text-left text-xs hover:border-krypt-borderHi hover:bg-white/5"
+      className="flex items-center justify-between rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-2 text-left text-xs hover:border-pocketed-borderHi hover:bg-white/5"
     >
       <span>{label}</span>
-      <ExternalLink className="h-3.5 w-3.5 text-krypt-muted" />
+      <ExternalLink className="h-3.5 w-3.5 text-pocketed-muted" />
     </button>
   );
 }

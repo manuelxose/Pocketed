@@ -146,7 +146,7 @@ export function ProfilesPage() {
             className="hidden"
             onChange={(e) => void importHandler(e)}
           />
-          <button onClick={importClick} className="krypt-btn-default">
+          <button onClick={importClick} className="pocketed-btn-default">
             <Upload className="h-4 w-4" /> Import
           </button>
         </>
@@ -161,11 +161,11 @@ export function ProfilesPage() {
               <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <div>
                   <h2 className="text-sm font-semibold text-white">{title}</h2>
-                  <p className="text-xs text-krypt-dim">{subtitle}</p>
+                  <p className="text-xs text-pocketed-dim">{subtitle}</p>
                 </div>
                 <button
                   onClick={() => setCreateScope(scope)}
-                  className="krypt-btn-default ml-auto text-xs"
+                  className="pocketed-btn-default ml-auto text-xs"
                 >
                   <FolderPlus className="h-3.5 w-3.5" /> New from current settings
                 </button>
@@ -176,7 +176,7 @@ export function ProfilesPage() {
                   title={`No ${title.toLowerCase()} profiles`}
                   description="Save the current settings for this engine as a profile to switch between setups."
                   action={
-                    <button onClick={() => setCreateScope(scope)} className="krypt-btn-primary">
+                    <button onClick={() => setCreateScope(scope)} className="pocketed-btn-primary">
                       <FolderPlus className="h-4 w-4" /> Save current as profile
                     </button>
                   }
@@ -261,23 +261,23 @@ function ProfileCard({
   return (
     <div
       className={cls(
-        'rounded-xl border bg-krypt-surface p-4 transition-colors',
+        'rounded-xl border bg-pocketed-surface p-4 transition-colors',
         active
-          ? 'border-krypt-purple shadow-krypt-soft'
-          : 'border-krypt-border hover:border-krypt-borderHi',
+          ? 'border-pocketed-purple shadow-pocketed-soft'
+          : 'border-pocketed-border hover:border-pocketed-borderHi',
       )}
     >
       <div className="flex items-start gap-3">
         <div className={cls(
           'grid h-10 w-10 place-items-center rounded-lg',
-          active ? 'bg-krypt-glow text-white' : 'bg-krypt-surface2 text-krypt-muted',
+          active ? 'bg-pocketed-glow text-white' : 'bg-pocketed-surface2 text-pocketed-muted',
         )}>
           <FolderOpen className="h-4 w-4" />
         </div>
         <div className="flex-1">
           <div className="text-sm font-medium text-white">{p.name}</div>
-          <div className="text-xs text-krypt-muted">Updated {fmtDateTime(p.updatedAt)}</div>
-          {p.description && <p className="mt-1 text-xs text-krypt-dim">{p.description}</p>}
+          <div className="text-xs text-pocketed-muted">Updated {fmtDateTime(p.updatedAt)}</div>
+          {p.description && <p className="mt-1 text-xs text-pocketed-dim">{p.description}</p>}
         </div>
       </div>
 
@@ -287,23 +287,23 @@ function ProfileCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {!active && (
-          <button onClick={onApply} className="krypt-btn-primary text-xs">Apply</button>
+          <button onClick={onApply} className="pocketed-btn-primary text-xs">Apply</button>
         )}
         {active && (
-          <span className="krypt-pill border-krypt-purple/40 bg-krypt-purple/10 text-krypt-purple">
+          <span className="pocketed-pill border-pocketed-purple/40 bg-pocketed-purple/10 text-pocketed-purple">
             <Check className="h-3 w-3" /> Active
           </span>
         )}
-        <button onClick={onRename} className="krypt-btn-ghost text-xs">
+        <button onClick={onRename} className="pocketed-btn-ghost text-xs">
           <Pencil className="h-3.5 w-3.5" /> Rename
         </button>
-        <button onClick={onDuplicate} className="krypt-btn-ghost text-xs">
+        <button onClick={onDuplicate} className="pocketed-btn-ghost text-xs">
           <Copy className="h-3.5 w-3.5" /> Duplicate
         </button>
-        <button onClick={onExport} className="krypt-btn-ghost text-xs">
+        <button onClick={onExport} className="pocketed-btn-ghost text-xs">
           <Download className="h-3.5 w-3.5" /> Export
         </button>
-        <button onClick={onDelete} className="krypt-btn-ghost text-xs text-krypt-loss/80 hover:text-krypt-loss">
+        <button onClick={onDelete} className="pocketed-btn-ghost text-xs text-pocketed-loss/80 hover:text-pocketed-loss">
           <Trash2 className="h-3.5 w-3.5" /> Delete
         </button>
       </div>
@@ -313,8 +313,8 @@ function ProfileCard({
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-krypt-border bg-krypt-surface2 px-2 py-1">
-      <div className="text-[9px] uppercase tracking-wider text-krypt-dim">{label}</div>
+    <div className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2 py-1">
+      <div className="text-[9px] uppercase tracking-wider text-pocketed-dim">{label}</div>
       <div className="font-mono text-[11px] text-white">{value}</div>
     </div>
   );

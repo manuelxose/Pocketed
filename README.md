@@ -1,12 +1,11 @@
 <div align="center">
 
-# Krypt PolyBot
+# Pocketed
 
-**A free, open-source Polymarket auto-trading desktop app.**
-Whale tracker · momentum scanner · short-term crypto module · copy trading · **your own Python strategy scripts** — in one polished Electron app.
-Part of the [Krypt free tools suite](https://krypt.cc/tools).
+**A free, open-source Polymarket auto-trading webapp.**
+Whale tracker · momentum scanner · short-term crypto module · copy trading · **your own Python strategy scripts** — in one polished app.
 
-[![CI](https://github.com/scripflipped/krypt-polybot/actions/workflows/ci.yml/badge.svg)](https://github.com/scripflipped/krypt-polybot/actions/workflows/ci.yml)
+[![CI](https://github.com/TODO/pocketed/actions/workflows/ci.yml/badge.svg)](https://github.com/TODO/pocketed/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Status: beta](https://img.shields.io/badge/status-beta-orange)
 
@@ -49,7 +48,7 @@ Part of the [Krypt free tools suite](https://krypt.cc/tools).
 - **Profiles** — save / load / import / export tuned configs, plus built-in strategy presets.
 - **Discord** — optional webhooks for trade events / whales / momentum + Rich Presence.
 - **Local-first** — your wallet key and trade data stay on your machine in a single SQLite DB under
-  `%APPDATA%/Krypt PolyBot/`. It talks to Polymarket and public crypto-price feeds, and sends **no**
+  `%APPDATA%/Pocketed/`. It talks to Polymarket and public crypto-price feeds, and sends **no**
   telemetry, analytics, or usage data of any kind (see the [Disclaimer](DISCLAIMER.md)).
 
 ## How it works
@@ -70,7 +69,7 @@ and persists to a local SQLite DB.
 
 ## Webapp (Fase 1, in progress)
 
-Krypt PolyBot is being migrated from an Electron desktop app to a hosted,
+Pocketed migrated from an Electron desktop app to a hosted,
 multi-user webapp. Fase 1 (this repo state) adds a `webserver/` FastAPI
 gateway that authenticates users by wallet signature (SIWE / EIP-4361,
 no passwords) and gives each logged-in wallet its own isolated
@@ -88,7 +87,7 @@ Run it locally:
 ```bash
 cd webserver
 python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-KRYPT_POLYBOT_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload
+POCKETED_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload
 ```
 
 (Run uvicorn from the repo root, not from inside `webserver/`, so the
@@ -127,8 +126,8 @@ POLYGON_RPC_URL=https://rpc-amoy.polygon.technology \
   npm run dev
 
 # 3. gateway (Fase 1 + Fase 2a routes)
-cd webserver && KRYPT_POLYBOT_SESSION_SECRET=dev-secret \
-  KRYPT_POLYBOT_AA_SERVICE_URL=http://localhost:4001 \
+cd webserver && POCKETED_SESSION_SECRET=dev-secret \
+  POCKETED_AA_SERVICE_URL=http://localhost:4001 \
   .venv/Scripts/python -m uvicorn webserver.main:app --reload
 ```
 
@@ -190,7 +189,7 @@ A script defines one or more hooks. Every hook is optional except that you need 
 | `on_start` / `on_fill` / `on_settle` | lifecycle | keep cross-tick memory in the persistent `state` dict |
 
 ```python
-# krypt-script v1
+# pocketed-script v1
 # name: Late Favorite Follow
 # description: Buys the favorite in the last 3 minutes when it is 80-95c with a real book.
 
@@ -295,26 +294,24 @@ the script back, and the validator checks it before it can be enabled.
 ## Project layout
 
 ```
-krypt-polybot/
-├─ electron/             Main process + preload + system modules
+pocketed/
+├─ webserver/            FastAPI gateway (auth, config/profile persistence, session-key routes)
 ├─ python/               Consolidated backend (scanner, trader, crypto15m, service) + tests/
-├─ src/                  React UI (dashboard, settings, 15m crypto, etc.)
-├─ shared/types.ts       IPC contract shared by main + renderer
-├─ resources/            Icons (krypt.png, krypt.ico)
+├─ src/                  React UI (dashboard, settings, 15m crypto, etc.), talks to webserver/ over WS+REST
+├─ shared/types.ts       Types shared across the frontend
+├─ resources/            Icons (pocketed.png, pocketed.ico)
 ├─ scripts/              Node-based build helpers (no PowerShell needed)
-├─ build/installer.nsh   NSIS extras
-└─ package.json          Electron + electron-builder config
+└─ package.json          Frontend build config
 ```
 
 ## Quick start (development)
 
 **Prerequisites:** [Node.js](https://nodejs.org) 18+ and [Python](https://python.org) 3.10+ on PATH
-(`py`, `python`, or `python3`). Windows is required to build the packaged installer; development runs
-on macOS/Linux/Windows.
+(`py`, `python`, or `python3`).
 
 ```bash
-git clone https://github.com/scripflipped/krypt-polybot.git
-cd krypt-polybot
+git clone <this-repo-url>
+cd pocketed
 npm install
 npm run dev          # `predev` auto-creates python/.venv and installs backend deps (~30s, one-time)
 ```
@@ -332,7 +329,7 @@ Bootstrap just the Python venv without launching the app: `npm run py:setup`.
 npm run dist         # builds the renderer, bundles the Python backend (PyInstaller), runs electron-builder
 ```
 
-Artifacts land in `release/` (e.g. `Krypt PolyBot-Setup-2.0.0.exe`). Note: builds are currently
+Artifacts land in `release/` (e.g. `Pocketed-Setup-2.0.0.exe`). Note: builds are currently
 **unsigned**, so Windows SmartScreen / antivirus may warn on first run.
 
 The build aborts if the PyInstaller bundle fails its `--selftest` (imports every runtime dep and
@@ -417,14 +414,14 @@ Still open:
 
 | What | Where |
 | --- | --- |
-| Settings | `%APPDATA%/Krypt PolyBot/settings.json` |
-| Credentials | `%APPDATA%/Krypt PolyBot/credentials/` |
-| Database | `%APPDATA%/Krypt PolyBot/data/krypt-polybot.db` |
-| Logs | `%APPDATA%/Krypt PolyBot/logs/backend.log` |
+| Settings | `%APPDATA%/Pocketed/settings.json` |
+| Credentials | `%APPDATA%/Pocketed/credentials/` |
+| Database | `%APPDATA%/Pocketed/data/krypt-polybot.db` |
+| Logs | `%APPDATA%/Pocketed/logs/backend.log` |
 
 ## Security
 
-Krypt PolyBot stores your **Polygon wallet private key** (and the CLOB API credentials derived from it)
+Pocketed stores your **Polygon wallet private key** (and the CLOB API credentials derived from it)
 **locally**; they are never sent to any server other than Polymarket. On Windows they are **encrypted at
 rest with the OS keystore (DPAPI)** — tied to your user account, with no key stored on disk in plaintext.
 On non-Windows dev builds they fall back to plaintext. Anyone with your private key controls that wallet's

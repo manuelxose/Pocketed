@@ -93,7 +93,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='krypt-polybot-backend',
+    name='pocketed-backend',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -114,5 +114,5 @@ coll = COLLECT(
     strip=False,
     upx=False,  # see EXE(): avoid AV false-positive/quarantine of the unsigned exe
     upx_exclude=[],
-    name='krypt-polybot-backend',
+    name='pocketed-backend',
 )

@@ -58,7 +58,7 @@ def test_profile_crud_roundtrip(user_dir):
     dup = config_store.duplicate_profile(str(user_dir), p["id"])
     assert dup["id"] != p["id"]
     exported = config_store.export_profile(str(user_dir), p["id"])
-    assert "kryptTraderProfile" in exported
+    assert "pocketedTraderProfile" in exported
     config_store.delete_profile(str(user_dir), p["id"])
     assert not any(x["id"] == p["id"] for x in config_store.list_profiles(str(user_dir)))
 

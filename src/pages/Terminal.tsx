@@ -368,35 +368,35 @@ export function TerminalPage() {
   })();
 
   return (
-    <div className="kt-root">
-      <style>{KT_CSS}</style>
-      <div className="kt-app">
-        <div className="kt-ticker">
-          <div className="kt-brand">
+    <div className="pt-root">
+      <style>{PT_CSS}</style>
+      <div className="pt-app">
+        <div className="pt-ticker">
+          <div className="pt-brand">
             <div>
-              <h1>KRYPT&nbsp;TERMINAL</h1>
-              <div className="kt-sub">SETTLEMENT ENGINE · POLYGON · LIVE FEED</div>
+              <h1>POCKETED&nbsp;TERMINAL</h1>
+              <div className="pt-sub">SETTLEMENT ENGINE · POLYGON · LIVE FEED</div>
             </div>
           </div>
-          <div className={'kt-live' + (isLive ? '' : ' off')}>
-            <span className="kt-dot" />{isLive ? 'LIVE' : 'OFFLINE'}
+          <div className={'pt-live' + (isLive ? '' : ' off')}>
+            <span className="pt-dot" />{isLive ? 'LIVE' : 'OFFLINE'}
           </div>
-          <div className="kt-spots">
+          <div className="pt-spots">
             {TICKER_ASSETS.map(sym => {
               const a = assets.find(x => x.asset === sym);
 
               const d = a?.deltaSignedPct ?? a?.deltaPct ?? null;
               const mh = a?.macdHist ?? (a?.macd != null && a?.macdSignal != null ? a.macd - a.macdSignal : null);
               return (
-                <div className="kt-spot" key={sym}>
+                <div className="pt-spot" key={sym}>
                   <div className="s">{sym}/USD</div>
-                  <div className="v kt-num">{a?.spotUsd != null ? fmtSpot(a.spotUsd) : '—'}</div>
-                  <div className="kt-drow">
-                    <span className={'kt-num ' + (d == null ? '' : d >= 0 ? 'up' : 'down')}>
+                  <div className="v pt-num">{a?.spotUsd != null ? fmtSpot(a.spotUsd) : '—'}</div>
+                  <div className="pt-drow">
+                    <span className={'pt-num ' + (d == null ? '' : d >= 0 ? 'up' : 'down')}>
                       {d == null ? '—' : (d >= 0 ? '▲' : '▼') + (Math.abs(d) * 100).toFixed(2) + '%'}
                     </span>
                     {mh != null && (
-                      <span className={'kt-macd ' + (mh >= 0 ? 'up' : 'down')} title="MACD histogram (Hyperliquid closes)">
+                      <span className={'pt-macd ' + (mh >= 0 ? 'up' : 'down')} title="MACD histogram (Hyperliquid closes)">
                         MACD {mh >= 0 ? '▲' : '▼'}
                       </span>
                     )}
@@ -405,55 +405,55 @@ export function TerminalPage() {
               );
             })}
           </div>
-          <div className="kt-clock">
-            <div className="t kt-num">{lead ? `${lead.asset} ${(lead.favorite ?? '').toUpperCase()}` : '—'}</div>
+          <div className="pt-clock">
+            <div className="t pt-num">{lead ? `${lead.asset} ${(lead.favorite ?? '').toUpperCase()}` : '—'}</div>
             <div className="u">SESSION <span>{uptime}</span></div>
           </div>
         </div>
 
-        <div className="kt-col kt-left">
-          <div className="kt-panel">
-            <div className="kt-lbl"><b>◈</b> SESSION P&amp;L <span className="tag">WALLET Δ</span></div>
-            <div className="kt-pnl-top">
+        <div className="pt-col pt-left">
+          <div className="pt-panel">
+            <div className="pt-lbl"><b>◈</b> SESSION P&amp;L <span className="tag">WALLET Δ</span></div>
+            <div className="pt-pnl-top">
               <div>
-                <div className="kt-pnl-big kt-num" style={{ color: sessionPnl >= 0 ? 'var(--win)' : 'var(--loss)' }}>{fmtMoney(sessionPnl)}</div>
-                <div className="kt-pnl-sub">REALIZED + MARK-TO-MARKET</div>
+                <div className="pt-pnl-big pt-num" style={{ color: sessionPnl >= 0 ? 'var(--win)' : 'var(--loss)' }}>{fmtMoney(sessionPnl)}</div>
+                <div className="pt-pnl-sub">REALIZED + MARK-TO-MARKET</div>
               </div>
             </div>
             <canvas ref={eqRef} height={60} />
-            <div className="kt-chips">
-              <div className="kt-chip"><div className="k">TODAY</div><div className={'v kt-num ' + ((todayPnl ?? 0) >= 0 ? 'g-win' : 'g-loss')}>{fmtMoney(todayPnl)}</div></div>
-              <div className="kt-chip"><div className="k">ALL-TIME</div><div className={'v kt-num ' + ((allPnl ?? 0) >= 0 ? 'g-win' : 'g-loss')}>{fmtMoney(allPnl)}</div></div>
-              <div className="kt-chip"><div className="k">WIN RATE</div><div className="v kt-num">{winRate != null ? Math.round(winRate * (winRate <= 1 ? 100 : 1)) + '%' : '—'}</div></div>
+            <div className="pt-chips">
+              <div className="pt-chip"><div className="k">TODAY</div><div className={'v pt-num ' + ((todayPnl ?? 0) >= 0 ? 'g-win' : 'g-loss')}>{fmtMoney(todayPnl)}</div></div>
+              <div className="pt-chip"><div className="k">ALL-TIME</div><div className={'v pt-num ' + ((allPnl ?? 0) >= 0 ? 'g-win' : 'g-loss')}>{fmtMoney(allPnl)}</div></div>
+              <div className="pt-chip"><div className="k">WIN RATE</div><div className="v pt-num">{winRate != null ? Math.round(winRate * (winRate <= 1 ? 100 : 1)) + '%' : '—'}</div></div>
             </div>
           </div>
 
-          <div className="kt-panel">
-            <div className="kt-lbl"><b>◈</b> {gaugeInfo.title} <span className="tag">{gaugeInfo.tag}</span></div>
-            <div className="kt-gauge-wrap">
+          <div className="pt-panel">
+            <div className="pt-lbl"><b>◈</b> {gaugeInfo.title} <span className="tag">{gaugeInfo.tag}</span></div>
+            <div className="pt-gauge-wrap">
               <canvas ref={gaugeRef} width={150} height={150} style={{ width: 88, height: 88 }} />
-              <div className="kt-gauge-meta">
-                <div className="g1 kt-num">{gaugeInfo.val != null ? gaugeInfo.val.toFixed(2) : '—'}</div>
+              <div className="pt-gauge-meta">
+                <div className="g1 pt-num">{gaugeInfo.val != null ? gaugeInfo.val.toFixed(2) : '—'}</div>
                 <div className="g2"><span style={{ color: 'var(--pri2)' }}>{gaugeInfo.sub}</span></div>
                 <div className="g3">Live {ivLabel} model when a window is open;<br />else the strongest scanner signal.</div>
               </div>
             </div>
           </div>
 
-          <div className="kt-panel">
-            <div className="kt-lbl"><b>◈</b> LAST 10 FILLS <span className="tag">SETTLED</span></div>
-            <div className="kt-fills">
+          <div className="pt-panel">
+            <div className="pt-lbl"><b>◈</b> LAST 10 FILLS <span className="tag">SETTLED</span></div>
+            <div className="pt-fills">
               {Array.from({ length: 10 }).map((_, i) => {
                 const f = fills[fills.length - 10 + i];
                 const tip = f ? `${f.label} ${f.side} · entry ${Math.round(f.entry)}c · ${f.pnl != null ? fmtMoney(f.pnl) : 'n/a'} · ${f.w ? 'WON' : 'LOST'}` : 'no fill yet';
-                return <div key={i} title={tip} className={'kt-cell' + (f === undefined ? '' : f.w ? ' w' : ' l')} />;
+                return <div key={i} title={tip} className={'pt-cell' + (f === undefined ? '' : f.w ? ' w' : ' l')} />;
               })}
             </div>
           </div>
 
-          <div className="kt-panel">
-            <div className="kt-lbl"><b>◈</b> FEED HEALTH <span className="tag">SOURCES</span></div>
-            <div className="kt-feeds">
+          <div className="pt-panel">
+            <div className="pt-lbl"><b>◈</b> FEED HEALTH <span className="tag">SOURCES</span></div>
+            <div className="pt-feeds">
               {[
                 ['coinbase.ws', snap?.spotOk],
                 ['rtds.chainlink', snap?.spotSource === 'rtds' || snap?.spotOk],
@@ -463,7 +463,7 @@ export function TerminalPage() {
                 ['momentum', !!scannerStats?.lastMomentumScanAt],
                 ['account.snap', !!account],
               ].map(([name, ok]) => (
-                <div className="kt-feed-row" key={name as string}>
+                <div className="pt-feed-row" key={name as string}>
                   <span className="fn">{name}</span>
                   <span className="bar"><i style={{ width: ok ? '100%' : '18%' }} /></span>
                   <span className={'st ' + (ok ? 'on' : 'off')}>{ok ? 'LIVE' : '—'}</span>
@@ -473,34 +473,34 @@ export function TerminalPage() {
           </div>
         </div>
 
-        <div className="kt-col kt-center">
-          <div className="kt-panel kt-field">
+        <div className="pt-col pt-center">
+          <div className="pt-panel pt-field">
             <canvas ref={fieldRef} />
-            <div className="kt-title kt-lbl"><b>◈</b> CONVERGENCE FIELD — LIVE SIGNAL FLOW</div>
-            <div className="kt-ov a"><div className="k">SIGNALS / MIN</div><div className="v kt-num" style={{ color: 'var(--pri2)' }}>{signalsMin}</div></div>
-            <div className="kt-ov b"><div className="k">MARKETS SCANNED</div><div className="v kt-num" style={{ color: 'var(--pri2)' }}>{marketsScanned.toLocaleString()}</div></div>
-            <div className="kt-ov c"><div className="k">TRADES / HR</div><div className="v kt-num" style={{ color: 'var(--hot)' }}>{tradesHr}</div></div>
-            <div className="kt-ov d"><div className="k">BOOK Δ GAMMA</div><div className="v kt-num" style={{ color: 'var(--hot)' }}>{bookDelta}c</div></div>
-            <div className="kt-legend">
+            <div className="pt-title pt-lbl"><b>◈</b> CONVERGENCE FIELD — LIVE SIGNAL FLOW</div>
+            <div className="pt-ov a"><div className="k">SIGNALS / MIN</div><div className="v pt-num" style={{ color: 'var(--pri2)' }}>{signalsMin}</div></div>
+            <div className="pt-ov b"><div className="k">MARKETS SCANNED</div><div className="v pt-num" style={{ color: 'var(--pri2)' }}>{marketsScanned.toLocaleString()}</div></div>
+            <div className="pt-ov c"><div className="k">TRADES / HR</div><div className="v pt-num" style={{ color: 'var(--hot)' }}>{tradesHr}</div></div>
+            <div className="pt-ov d"><div className="k">BOOK Δ GAMMA</div><div className="v pt-num" style={{ color: 'var(--hot)' }}>{bookDelta}c</div></div>
+            <div className="pt-legend">
               <span><i style={{ background: 'var(--pri2)' }} />ASSET</span>
               <span><i style={{ background: 'var(--warn)' }} />WHALE</span>
               <span><i style={{ background: '#7dd3fc' }} />MOMENTUM</span>
               <span><i style={{ background: 'var(--win)' }} />FILLED</span>
             </div>
           </div>
-          <div className="kt-panel">
-            <div className="kt-chart-head">
-              <div className="kt-lbl"><b>◈</b> {chartInfo.active ? 'MODEL PROB × REAL-BOOK' : 'SPOT MOMENTUM'} — <span style={{ color: 'var(--pri2)' }}>{chartInfo.sym}</span> {chartInfo.active ? `${ivLabel.toUpperCase()} WINDOW` : `· ${ivLabel} idle`}</div>
-              <div className="kt-now kt-num">{chartInfo.nowStr}</div>
+          <div className="pt-panel">
+            <div className="pt-chart-head">
+              <div className="pt-lbl"><b>◈</b> {chartInfo.active ? 'MODEL PROB × REAL-BOOK' : 'SPOT MOMENTUM'} — <span style={{ color: 'var(--pri2)' }}>{chartInfo.sym}</span> {chartInfo.active ? `${ivLabel.toUpperCase()} WINDOW` : `· ${ivLabel} idle`}</div>
+              <div className="pt-now pt-num">{chartInfo.nowStr}</div>
             </div>
             <canvas ref={modelRef} height={128} />
           </div>
         </div>
 
-        <div className="kt-col kt-right">
-          <div className="kt-panel">
-            <div className="kt-lbl"><b>◈</b> OPEN POSITIONS <span className="tag">{openRows.length}</span></div>
-            <table className="kt-table">
+        <div className="pt-col pt-right">
+          <div className="pt-panel">
+            <div className="pt-lbl"><b>◈</b> OPEN POSITIONS <span className="tag">{openRows.length}</span></div>
+            <table className="pt-table">
               <thead><tr><th>MKT</th><th>SIDE</th><th>ENTRY</th><th>SZ</th><th>P&amp;L</th></tr></thead>
               <tbody>
                 {openRows.length === 0 && <tr><td colSpan={5} style={{ color: 'var(--dim)', textAlign: 'center', padding: '14px 0' }}>no open positions</td></tr>}
@@ -509,7 +509,7 @@ export function TerminalPage() {
                   return (
                     <tr key={r.key}>
                       <td><span className="sym">{r.label}</span></td>
-                      <td><span className={'kt-side ' + (up ? 'up' : 'dn')}>{(r.side || '—').toUpperCase()}</span></td>
+                      <td><span className={'pt-side ' + (up ? 'up' : 'dn')}>{(r.side || '—').toUpperCase()}</span></td>
                       <td>{Number.isFinite(r.entry) ? r.entry + 'c' : '—'}</td>
                       <td>{r.size}</td>
                       <td className={(r.pnl ?? 0) >= 0 ? 'g-win' : 'g-loss'}>{fmtMoney(r.pnl)}</td>
@@ -519,21 +519,21 @@ export function TerminalPage() {
               </tbody>
             </table>
           </div>
-          <div className="kt-panel">
-            <div className="kt-lbl"><b>◈</b> DECISION TRACE <span className="tag">signal → gate → exec</span></div>
-            <div className="kt-tracev">
+          <div className="pt-panel">
+            <div className="pt-lbl"><b>◈</b> DECISION TRACE <span className="tag">signal → gate → exec</span></div>
+            <div className="pt-tracev">
               {signals.slice(0, 5).map(s => (
-                <div className="kt-tchip" key={s.id}>
+                <div className="pt-tchip" key={s.id}>
                   <b>{(s.ticker || s.category || s.source).slice(0, 10)}</b><span className="arw">▸</span>
                   {s.source}<span className="arw">▸</span>conf {(conf01(s.confidence) * 100).toFixed(0)}<span className="arw">▸</span>
                   {s.traded ? <span className="g-win">placed</span> : <span style={{ color: 'var(--dim)' }}>skip</span>}
                 </div>
               ))}
-              {signals.length === 0 && <div className="kt-tchip" style={{ color: 'var(--dim)' }}>no signals yet — scanners warming up</div>}
+              {signals.length === 0 && <div className="pt-tchip" style={{ color: 'var(--dim)' }}>no signals yet — scanners warming up</div>}
             </div>
-            <div className="kt-spread-hl">
+            <div className="pt-spread-hl">
               <span style={{ color: 'var(--dim)', letterSpacing: '.14em' }}>REAL-BOOK EDGE</span>
-              <span className="big kt-num">{bookDelta}c</span>
+              <span className="big pt-num">{bookDelta}c</span>
               <span style={{ color: 'var(--mut)' }}>CLOB ask vs Gamma — the lag is the edge</span>
             </div>
           </div>
@@ -557,104 +557,104 @@ function makeOrb(cv: HTMLCanvasElement | null, kind: Orb['kind'], nodes: { x: nu
   return { x, y, kind, tx: tgt.x, ty: tgt.y, ph: 0, r: kind === 'whale' ? 3 + Math.random() * 2.5 : 1.8 + Math.random() * 1.4 };
 }
 
-const KT_CSS = `
-.kt-root{--ground:#04070e;--panel:#080f1e;--panel2:#0a1324;--line:#16233f;--line2:#1f3358;
+const PT_CSS = `
+.pt-root{--ground:#04070e;--panel:#080f1e;--panel2:#0a1324;--line:#16233f;--line2:#1f3358;
   --pri:#2f81f7;--pri2:#38bdf8;--hot:#5ab0ff;--win:#34d399;--loss:#fb7185;--warn:#fbbf24;
   --tx:#dbe8ff;--mut:#8098c4;--dim:#4a5d84;--dimmer:#33456a;
   --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
   height:100%;width:100%;overflow:auto;padding:12px;font-family:var(--mono);color:var(--tx);
   background:radial-gradient(1200px 600px at 50% -8%,rgba(47,129,247,.10),transparent 60%),linear-gradient(180deg,#04070e,#03060d)}
-.kt-app{max-width:1520px;margin:0 auto;display:grid;gap:10px;grid-template-columns:262px minmax(0,1fr) 352px;
+.pt-app{max-width:1520px;margin:0 auto;display:grid;gap:10px;grid-template-columns:262px minmax(0,1fr) 352px;
   grid-template-areas:"ticker ticker ticker" "left center right";grid-template-rows:auto auto;align-items:start}
-@media (max-width:1180px){.kt-app{grid-template-columns:1fr;grid-template-areas:"ticker" "center" "left" "right";grid-template-rows:auto}}
-.kt-num{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.kt-panel{position:relative;background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
+@media (max-width:1180px){.pt-app{grid-template-columns:1fr;grid-template-areas:"ticker" "center" "left" "right";grid-template-rows:auto}}
+.pt-num{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.pt-panel{position:relative;background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
   border-radius:9px;padding:11px 12px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(120,170,255,.05),0 8px 26px rgba(0,0,0,.45)}
-.kt-lbl{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:7px}
-.kt-lbl b{color:var(--pri2);font-weight:600}
-.kt-lbl .tag{margin-left:auto;color:var(--dimmer);letter-spacing:.14em}
-.kt-ticker{grid-area:ticker;display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,#0a1428,#070d1c);
+.pt-lbl{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:7px}
+.pt-lbl b{color:var(--pri2);font-weight:600}
+.pt-lbl .tag{margin-left:auto;color:var(--dimmer);letter-spacing:.14em}
+.pt-ticker{grid-area:ticker;display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,#0a1428,#070d1c);
   border:1px solid var(--line);border-radius:9px;padding:9px 14px}
-.kt-brand h1{font-size:15px;letter-spacing:.30em;font-weight:700;color:#eaf2ff}
-.kt-brand .kt-sub{font-size:8.5px;letter-spacing:.26em;color:var(--dim);margin-top:2px}
-.kt-live{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.2em;color:var(--pri2);padding:4px 10px;
+.pt-brand h1{font-size:15px;letter-spacing:.30em;font-weight:700;color:#eaf2ff}
+.pt-brand .pt-sub{font-size:8.5px;letter-spacing:.26em;color:var(--dim);margin-top:2px}
+.pt-live{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.2em;color:var(--pri2);padding:4px 10px;
   border:1px solid rgba(56,189,248,.3);border-radius:20px;background:rgba(47,129,247,.08);min-width:max-content}
-.kt-live.off{color:var(--warn);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)}
-.kt-live .kt-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;animation:ktblink 1.5s infinite}
+.pt-live.off{color:var(--warn);border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)}
+.pt-live .pt-dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;animation:ktblink 1.5s infinite}
 @keyframes ktblink{0%,100%{opacity:1}50%{opacity:.25}}
-.kt-spots{display:flex;gap:9px;flex:1;overflow:hidden;margin-left:4px}
-.kt-spot{flex:1;min-width:0;border-left:1px solid var(--line);padding-left:9px}
-.kt-spot .s{font-size:9px;letter-spacing:.14em;color:var(--dim)}
-.kt-spot .v{font-size:14px;font-weight:600;color:#eaf2ff}
-.kt-drow{display:flex;align-items:center;gap:6px;font-size:9.5px;margin-top:1px}
-.kt-macd{font-size:8px;letter-spacing:.03em;color:var(--dim)}
-.kt-macd.up{color:var(--win)}.kt-macd.down{color:var(--loss)}
-.kt-cell[title]{cursor:help}
+.pt-spots{display:flex;gap:9px;flex:1;overflow:hidden;margin-left:4px}
+.pt-spot{flex:1;min-width:0;border-left:1px solid var(--line);padding-left:9px}
+.pt-spot .s{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+.pt-spot .v{font-size:14px;font-weight:600;color:#eaf2ff}
+.pt-drow{display:flex;align-items:center;gap:6px;font-size:9.5px;margin-top:1px}
+.pt-macd{font-size:8px;letter-spacing:.03em;color:var(--dim)}
+.pt-macd.up{color:var(--win)}.pt-macd.down{color:var(--loss)}
+.pt-cell[title]{cursor:help}
 .up{color:var(--win)!important}.down{color:var(--loss)!important}
-.kt-clock{text-align:right;min-width:max-content}
-.kt-clock .t{font-size:13px;font-weight:600;color:#eaf2ff}
-.kt-clock .u{font-size:8.5px;letter-spacing:.18em;color:var(--dim)}
-.kt-col{display:flex;flex-direction:column;gap:10px;min-width:0}
-.kt-left{grid-area:left}.kt-center{grid-area:center}.kt-right{grid-area:right}
-.kt-center .kt-panel:first-child{height:clamp(300px,40vh,440px)}
-.kt-pnl-top{display:flex;align-items:flex-end;justify-content:space-between;margin-top:9px}
-.kt-pnl-big{font-size:31px;font-weight:700;line-height:1;letter-spacing:-.03em}
-.kt-pnl-sub{font-size:9.5px;color:var(--dim);letter-spacing:.12em;margin-top:6px}
-.kt-chips{display:flex;gap:6px;margin-top:9px}
-.kt-chip{flex:1;background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:6px 7px;text-align:center}
-.kt-chip .k{font-size:8px;letter-spacing:.14em;color:var(--dim)}
-.kt-chip .v{font-size:13px;font-weight:600;margin-top:2px}
+.pt-clock{text-align:right;min-width:max-content}
+.pt-clock .t{font-size:13px;font-weight:600;color:#eaf2ff}
+.pt-clock .u{font-size:8.5px;letter-spacing:.18em;color:var(--dim)}
+.pt-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pt-left{grid-area:left}.pt-center{grid-area:center}.pt-right{grid-area:right}
+.pt-center .pt-panel:first-child{height:clamp(300px,40vh,440px)}
+.pt-pnl-top{display:flex;align-items:flex-end;justify-content:space-between;margin-top:9px}
+.pt-pnl-big{font-size:31px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.pt-pnl-sub{font-size:9.5px;color:var(--dim);letter-spacing:.12em;margin-top:6px}
+.pt-chips{display:flex;gap:6px;margin-top:9px}
+.pt-chip{flex:1;background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:6px 7px;text-align:center}
+.pt-chip .k{font-size:8px;letter-spacing:.14em;color:var(--dim)}
+.pt-chip .v{font-size:13px;font-weight:600;margin-top:2px}
 .g-win{color:var(--win)}.g-loss{color:var(--loss)}
-.kt-root canvas{display:block;width:100%}
-.kt-gauge-wrap{display:flex;align-items:center;gap:12px;margin-top:6px}
-.kt-gauge-wrap canvas{width:88px!important;flex:none}
-.kt-gauge-meta .g1{font-size:25px;font-weight:700;letter-spacing:-.02em;color:var(--pri2)}
-.kt-gauge-meta .g2{font-size:9px;letter-spacing:.12em;color:var(--dim);margin-top:2px}
-.kt-gauge-meta .g3{font-size:9px;color:var(--mut);margin-top:6px;line-height:1.5}
-.kt-fills{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:9px}
-.kt-cell{aspect-ratio:1;border-radius:3px;background:var(--dimmer);transition:background .3s}
-.kt-cell.w{background:var(--win);box-shadow:0 0 8px rgba(52,211,153,.55)}
-.kt-cell.l{background:var(--loss);box-shadow:0 0 8px rgba(251,113,133,.5)}
-.kt-feeds{display:flex;flex-direction:column;gap:5px;margin-top:9px}
-.kt-feed-row{display:flex;align-items:center;gap:8px;font-size:10px}
-.kt-feed-row .fn{color:var(--mut);width:86px}
-.kt-feed-row .bar{flex:1;height:4px;background:var(--ground);border-radius:3px;overflow:hidden}
-.kt-feed-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2))}
-.kt-feed-row .st{width:32px;text-align:right;font-size:9px;letter-spacing:.1em}
-.kt-feed-row .st.on{color:var(--pri2)}.kt-feed-row .st.off{color:var(--dimmer)}
-.kt-field{position:relative}
-.kt-field canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
-.kt-ov{position:absolute;z-index:3;pointer-events:none}
-.kt-ov .k{font-size:8.5px;letter-spacing:.18em;color:var(--dim)}
-.kt-ov .v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1;text-shadow:0 0 18px rgba(47,129,247,.55)}
-.kt-ov.a{top:12px;left:14px}.kt-ov.b{top:12px;right:14px;text-align:right}
-.kt-ov.c{bottom:12px;left:14px}.kt-ov.d{bottom:12px;right:14px;text-align:right}
-.kt-field .kt-title{position:absolute;top:11px;left:50%;transform:translateX(-50%);z-index:3}
-.kt-legend{position:absolute;bottom:11px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:14px;font-size:8.5px;letter-spacing:.12em;color:var(--dim)}
-.kt-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.kt-chart-head{display:flex;justify-content:space-between;align-items:baseline}
-.kt-chart-head .kt-now{font-size:11px;color:var(--pri2)}
-.kt-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.kt-table th{font-size:8.5px;letter-spacing:.12em;color:var(--dim);text-align:right;padding:7px 6px 6px;font-weight:500;border-bottom:1px solid var(--line)}
-.kt-table th:first-child,.kt-table td:first-child{text-align:left}
-.kt-table td{font-size:11px;padding:6px;border-bottom:1px solid rgba(22,35,63,.5);color:var(--mut);text-align:right}
-.kt-table td .sym{color:#eaf2ff;font-weight:600}
-.kt-side{font-size:8.5px;letter-spacing:.08em;padding:1px 5px;border-radius:4px}
-.kt-side.up{background:rgba(52,211,153,.13);color:var(--win)}
-.kt-side.dn{background:rgba(251,113,133,.13);color:var(--loss)}
-.kt-term{display:flex;flex-direction:column}
-.kt-log{height:270px;overflow:hidden;margin-top:8px;font-size:10.5px;line-height:1.62;display:flex;flex-direction:column;justify-content:flex-end;
+.pt-root canvas{display:block;width:100%}
+.pt-gauge-wrap{display:flex;align-items:center;gap:12px;margin-top:6px}
+.pt-gauge-wrap canvas{width:88px!important;flex:none}
+.pt-gauge-meta .g1{font-size:25px;font-weight:700;letter-spacing:-.02em;color:var(--pri2)}
+.pt-gauge-meta .g2{font-size:9px;letter-spacing:.12em;color:var(--dim);margin-top:2px}
+.pt-gauge-meta .g3{font-size:9px;color:var(--mut);margin-top:6px;line-height:1.5}
+.pt-fills{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-top:9px}
+.pt-cell{aspect-ratio:1;border-radius:3px;background:var(--dimmer);transition:background .3s}
+.pt-cell.w{background:var(--win);box-shadow:0 0 8px rgba(52,211,153,.55)}
+.pt-cell.l{background:var(--loss);box-shadow:0 0 8px rgba(251,113,133,.5)}
+.pt-feeds{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+.pt-feed-row{display:flex;align-items:center;gap:8px;font-size:10px}
+.pt-feed-row .fn{color:var(--mut);width:86px}
+.pt-feed-row .bar{flex:1;height:4px;background:var(--ground);border-radius:3px;overflow:hidden}
+.pt-feed-row .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2))}
+.pt-feed-row .st{width:32px;text-align:right;font-size:9px;letter-spacing:.1em}
+.pt-feed-row .st.on{color:var(--pri2)}.pt-feed-row .st.off{color:var(--dimmer)}
+.pt-field{position:relative}
+.pt-field canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.pt-ov{position:absolute;z-index:3;pointer-events:none}
+.pt-ov .k{font-size:8.5px;letter-spacing:.18em;color:var(--dim)}
+.pt-ov .v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1;text-shadow:0 0 18px rgba(47,129,247,.55)}
+.pt-ov.a{top:12px;left:14px}.pt-ov.b{top:12px;right:14px;text-align:right}
+.pt-ov.c{bottom:12px;left:14px}.pt-ov.d{bottom:12px;right:14px;text-align:right}
+.pt-field .pt-title{position:absolute;top:11px;left:50%;transform:translateX(-50%);z-index:3}
+.pt-legend{position:absolute;bottom:11px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:14px;font-size:8.5px;letter-spacing:.12em;color:var(--dim)}
+.pt-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.pt-chart-head{display:flex;justify-content:space-between;align-items:baseline}
+.pt-chart-head .pt-now{font-size:11px;color:var(--pri2)}
+.pt-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.pt-table th{font-size:8.5px;letter-spacing:.12em;color:var(--dim);text-align:right;padding:7px 6px 6px;font-weight:500;border-bottom:1px solid var(--line)}
+.pt-table th:first-child,.pt-table td:first-child{text-align:left}
+.pt-table td{font-size:11px;padding:6px;border-bottom:1px solid rgba(22,35,63,.5);color:var(--mut);text-align:right}
+.pt-table td .sym{color:#eaf2ff;font-weight:600}
+.pt-side{font-size:8.5px;letter-spacing:.08em;padding:1px 5px;border-radius:4px}
+.pt-side.up{background:rgba(52,211,153,.13);color:var(--win)}
+.pt-side.dn{background:rgba(251,113,133,.13);color:var(--loss)}
+.pt-term{display:flex;flex-direction:column}
+.pt-log{height:270px;overflow:hidden;margin-top:8px;font-size:10.5px;line-height:1.62;display:flex;flex-direction:column;justify-content:flex-end;
   -webkit-mask-image:linear-gradient(180deg,transparent,#000 22px)}
-.kt-tracev{display:flex;flex-direction:column;gap:5px;margin-top:8px}
-.kt-tracev .kt-tchip{white-space:normal;font-size:10px}
-.kt-log .ln{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kt-log .t{color:var(--dimmer)}
-.kt-tchip{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:6px;
+.pt-tracev{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.pt-tracev .pt-tchip{white-space:normal;font-size:10px}
+.pt-log .ln{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-log .t{color:var(--dimmer)}
+.pt-tchip{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--mut);border:1px solid var(--line);border-radius:6px;
   padding:4px 9px;white-space:nowrap;background:var(--ground)}
-.kt-tchip b{color:var(--pri2);font-weight:600}
-.kt-tchip .arw{color:var(--dimmer)}
-.kt-spread-hl{margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:9.5px;padding:7px 10px;
+.pt-tchip b{color:var(--pri2);font-weight:600}
+.pt-tchip .arw{color:var(--dimmer)}
+.pt-spread-hl{margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:9.5px;padding:7px 10px;
   border:1px solid rgba(56,189,248,.22);border-radius:7px;background:linear-gradient(90deg,rgba(47,129,247,.10),transparent)}
-.kt-spread-hl .big{font-size:15px;font-weight:700;color:var(--pri2)}
-@media (prefers-reduced-motion:reduce){.kt-live .kt-dot{animation:none}}
+.pt-spread-hl .big{font-size:15px;font-weight:700;color:var(--pri2)}
+@media (prefers-reduced-motion:reduce){.pt-live .pt-dot{animation:none}}
 `;

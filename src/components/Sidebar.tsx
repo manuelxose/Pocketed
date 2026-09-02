@@ -4,7 +4,7 @@ import {
   Info, KeyRound, LayoutDashboard, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
 } from 'lucide-react';
 import { cls, fmtUsd } from '../utils/format';
-import { KryptSprite } from './KryptSprite';
+import { MascotSprite } from './MascotSprite';
 import { FlexStatsCard } from './FlexStatsCard';
 import type { PageId } from '../App';
 import { useConfigQuery } from '../hooks/useConfig';
@@ -46,22 +46,22 @@ export function Sidebar({ page, setPage }: SidebarProps) {
   const [showStats, setShowStats] = useState(false);
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-krypt-border bg-krypt-void/40">
+    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-pocketed-border bg-pocketed-void/40">
       <div className="px-4 py-4">
         <div className="flex items-center gap-2">
-          <KryptSprite size={38} title="Krypt" />
+          <MascotSprite size={38} title="Pocketed" />
           <div>
             <div className="font-pixel text-[10px] uppercase tracking-[0.18em] text-white/90">
-              Krypt
+              Pocketed
             </div>
             <button
               onClick={() => setShowStats(true)}
-              className="group flex items-center gap-1 text-xs text-krypt-muted transition-colors hover:text-white"
+              className="group flex items-center gap-1 text-xs text-pocketed-muted transition-colors hover:text-white"
               title="Open your shareable stats card"
             >
-              <Share2 className="h-3 w-3 text-krypt-purple opacity-80 transition-opacity group-hover:opacity-100" />
+              <Share2 className="h-3 w-3 text-pocketed-purple opacity-80 transition-opacity group-hover:opacity-100" />
               <span className="underline-offset-2 group-hover:underline">
-                {acct === 'Default' ? 'Krypt Stats' : `${acct} · Stats`}
+                {acct === 'Default' ? 'Pocketed Stats' : `${acct} · Stats`}
               </span>
             </button>
           </div>
@@ -79,62 +79,62 @@ export function Sidebar({ page, setPage }: SidebarProps) {
                 'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                 active
                   ? 'bg-white/[0.06] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-                  : 'text-krypt-muted hover:bg-white/[0.03] hover:text-white',
+                  : 'text-pocketed-muted hover:bg-white/[0.03] hover:text-white',
               )}
             >
-              <Icon className={cls('h-4 w-4', active && 'text-krypt-purple')} />
+              <Icon className={cls('h-4 w-4', active && 'text-pocketed-purple')} />
               <span>{label}</span>
-              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-krypt-purple shadow-[0_0_8px_currentColor]" />}
+              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-pocketed-purple shadow-[0_0_8px_currentColor]" />}
             </button>
           );
         })}
 
         <div className="relative flex min-h-0 flex-1 select-none items-end justify-center pb-3 pt-2">
-          <div className="pointer-events-none absolute bottom-2 h-3 w-16 rounded-[100%] bg-krypt-pink/25 blur-md" />
-          <KryptSprite size={72} pet title="krypt" className="relative" />
+          <div className="pointer-events-none absolute bottom-2 h-3 w-16 rounded-[100%] bg-pocketed-pink/25 blur-md" />
+          <MascotSprite size={72} pet title="pocketed" className="relative" />
         </div>
       </nav>
 
-      <div className="border-t border-krypt-border px-3 pt-3">
+      <div className="border-t border-pocketed-border px-3 pt-3">
         <button
           onClick={() => setPage('visualizer')}
           className={cls(
             'group relative flex w-full items-center gap-2 overflow-hidden rounded-lg border px-3 py-2 text-sm transition-all',
             page === 'visualizer'
-              ? 'border-krypt-purple/60 bg-krypt-purple/15 text-white shadow-[0_0_18px_rgba(59,130,246,0.25)]'
-              : 'border-krypt-border bg-gradient-to-r from-krypt-purple/10 via-krypt-pink/5 to-transparent text-white hover:border-krypt-purple/40',
+              ? 'border-pocketed-purple/60 bg-pocketed-purple/15 text-white shadow-[0_0_18px_rgba(59,130,246,0.25)]'
+              : 'border-pocketed-border bg-gradient-to-r from-pocketed-purple/10 via-pocketed-pink/5 to-transparent text-white hover:border-pocketed-purple/40',
           )}
           title="Open the live trade visualizer"
         >
           <span className="relative grid h-7 w-7 place-items-center">
-            <span className="absolute inset-0 rounded-full bg-krypt-purple/30 blur-md transition-opacity group-hover:opacity-80" />
-            <Orbit className="relative h-4 w-4 text-krypt-purple animate-[spin_20s_linear_infinite]" />
+            <span className="absolute inset-0 rounded-full bg-pocketed-purple/30 blur-md transition-opacity group-hover:opacity-80" />
+            <Orbit className="relative h-4 w-4 text-pocketed-purple animate-[spin_20s_linear_infinite]" />
           </span>
           <span className="text-xs font-medium uppercase tracking-wider">Live Visualizer</span>
-          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-krypt-purple shadow-[0_0_8px_currentColor]" />
+          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-pocketed-purple shadow-[0_0_8px_currentColor]" />
         </button>
       </div>
 
       <div className="px-3 py-3">
-        <div className="rounded-lg border border-krypt-border bg-krypt-surface p-3">
-          <div className="flex items-center gap-2 text-xs text-krypt-muted">
+        <div className="rounded-lg border border-pocketed-border bg-pocketed-surface p-3">
+          <div className="flex items-center gap-2 text-xs text-pocketed-muted">
             <Wallet className="h-3.5 w-3.5" />
             <span className="uppercase tracking-wider">Wallet</span>
-            <span className="ml-auto rounded-full border border-krypt-purple/40 bg-krypt-purple/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-krypt-purple">
+            <span className="ml-auto rounded-full border border-pocketed-purple/40 bg-pocketed-purple/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-pocketed-purple">
               {config?.network ?? 'mainnet'}
             </span>
           </div>
           <div className="mt-1 font-mono text-lg text-white">
             {fmtUsd(account?.totalUsd)}
           </div>
-          <div className="text-[11px] text-krypt-dim">
+          <div className="text-[11px] text-pocketed-dim">
             cash {fmtUsd(account?.cashUsd)} · port {fmtUsd(account?.portfolioUsd)}
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-krypt-muted">
+          <div className="mt-2 flex items-center justify-between text-[11px] text-pocketed-muted">
             <span>{config?.enableTrading ? 'LIVE' : 'PAUSED'}</span>
             <span className={cls(
               'h-1.5 w-1.5 rounded-full',
-              connected ? 'bg-krypt-win' : 'bg-krypt-warn',
+              connected ? 'bg-pocketed-win' : 'bg-pocketed-warn',
             )} />
           </div>
         </div>

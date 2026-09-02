@@ -90,12 +90,12 @@ export function CopyTradingPage() {
       title="Copy Trading"
       subtitle="Mirror other Polymarket wallets — copy their entries and follow them out on exit."
       actions={
-        <button onClick={() => setSaveProfileOpen(true)} className="krypt-btn-default">
+        <button onClick={() => setSaveProfileOpen(true)} className="pocketed-btn-default">
           <FolderPlus className="h-4 w-4" /> Save as profile
         </button>
       }
     >
-      <div className="mb-4 rounded-xl border border-krypt-border bg-krypt-surface p-3">
+      <div className="mb-4 rounded-xl border border-pocketed-border bg-pocketed-surface p-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="min-w-[260px] flex-1">
             <Switch
@@ -124,12 +124,12 @@ export function CopyTradingPage() {
           </div>
         </div>
         {enabled && !authed && (
-          <div className="mt-3 rounded-lg border border-krypt-warn/30 bg-krypt-warn/5 px-3 py-2 text-xs text-krypt-warn">
+          <div className="mt-3 rounded-lg border border-pocketed-warn/30 bg-pocketed-warn/5 px-3 py-2 text-xs text-pocketed-warn">
             Enabled, but no wallet is connected — connect on the Wallet page to start mirroring trades.
           </div>
         )}
         {status?.lossLimitHit && (
-          <div className="mt-3 rounded-lg border border-krypt-loss/30 bg-krypt-loss/5 px-3 py-2 text-xs text-krypt-loss">
+          <div className="mt-3 rounded-lg border border-pocketed-loss/30 bg-pocketed-loss/5 px-3 py-2 text-xs text-pocketed-loss">
             Daily loss limit hit — no new copies today. Open positions are still managed.
           </div>
         )}
@@ -144,31 +144,31 @@ export function CopyTradingPage() {
               onKeyDown={(e) => { if (e.key === 'Enter') void addWallet(); }}
               placeholder="0x… wallet address"
               spellCheck={false}
-              className="flex-1 rounded-lg border border-krypt-border bg-krypt-surface2 px-3 py-2 font-mono text-xs text-white placeholder:text-krypt-dim focus:border-krypt-purple focus:outline-none"
+              className="flex-1 rounded-lg border border-pocketed-border bg-pocketed-surface2 px-3 py-2 font-mono text-xs text-white placeholder:text-pocketed-dim focus:border-pocketed-purple focus:outline-none"
             />
-            <button onClick={() => void addWallet()} disabled={busy} className="krypt-btn-primary shrink-0">
+            <button onClick={() => void addWallet()} disabled={busy} className="pocketed-btn-primary shrink-0">
               <Plus className="h-4 w-4" /> Follow
             </button>
           </div>
 
           <div className="mt-3 space-y-2">
             {wallets.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-krypt-border px-3 py-6 text-center text-xs text-krypt-muted">
+              <div className="rounded-lg border border-dashed border-pocketed-border px-3 py-6 text-center text-xs text-pocketed-muted">
                 Not following anyone yet. Add a wallet above to start mirroring its trades.
               </div>
             ) : wallets.map((w) => {
               const ws = walletStat(w);
               return (
-                <div key={w} className="flex items-center gap-3 rounded-lg border border-krypt-border bg-krypt-surface2 px-3 py-2">
-                  <Wallet className="h-4 w-4 shrink-0 text-krypt-purple" />
+                <div key={w} className="flex items-center gap-3 rounded-lg border border-pocketed-border bg-pocketed-surface2 px-3 py-2">
+                  <Wallet className="h-4 w-4 shrink-0 text-pocketed-purple" />
                   <span className="font-mono text-xs text-white">{ws?.short ?? `${w.slice(0, 6)}…${w.slice(-4)}`}</span>
-                  <span className="text-[11px] text-krypt-muted">
+                  <span className="text-[11px] text-pocketed-muted">
                     {ws ? `${ws.positions} open · ${fmtUsd(ws.valueUsd)}` : 'fetching…'}
                   </span>
                   <button
                     onClick={() => void removeWallet(w)}
                     disabled={busy}
-                    className="ml-auto rounded-md p-1 text-krypt-muted hover:bg-krypt-loss/10 hover:text-krypt-loss"
+                    className="ml-auto rounded-md p-1 text-pocketed-muted hover:bg-pocketed-loss/10 hover:text-pocketed-loss"
                     title="Stop following"
                   >
                     <X className="h-4 w-4" />
@@ -185,14 +185,14 @@ export function CopyTradingPage() {
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <Label>Copy size</Label>
-              <div className="mb-2 inline-flex rounded-md border border-krypt-border bg-krypt-surface2 p-0.5">
+              <div className="mb-2 inline-flex rounded-md border border-pocketed-border bg-pocketed-surface2 p-0.5">
                 {(['fixed', 'balance_pct'] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => void update({ copySizingMode: m })}
                     className={cls(
                       'rounded-[6px] px-3 py-1.5 text-xs font-medium transition-colors',
-                      sizingMode === m ? 'bg-krypt-purple/15 text-krypt-purple' : 'text-krypt-muted hover:text-white',
+                      sizingMode === m ? 'bg-pocketed-purple/15 text-pocketed-purple' : 'text-pocketed-muted hover:text-white',
                     )}
                   >
                     {m === 'fixed' ? 'Fixed $' : '% of balance'}
@@ -254,11 +254,11 @@ export function CopyTradingPage() {
         </Card>
       </Section>
 
-      <p className="text-xs text-krypt-dim">
-        Copied positions appear on the <span className="text-krypt-muted">Positions</span> page tagged
-        {' '}<span className="rounded bg-krypt-purple/15 px-1 text-krypt-purple">copy</span>, with live P&amp;L.
-        The bot mirrors an <span className="text-krypt-muted">entry</span> when a followed wallet opens a position you
-        don&apos;t hold, and <span className="text-krypt-muted">exits</span> yours once every followed wallet has closed it.
+      <p className="text-xs text-pocketed-dim">
+        Copied positions appear on the <span className="text-pocketed-muted">Positions</span> page tagged
+        {' '}<span className="rounded bg-pocketed-purple/15 px-1 text-pocketed-purple">copy</span>, with live P&amp;L.
+        The bot mirrors an <span className="text-pocketed-muted">entry</span> when a followed wallet opens a position you
+        don&apos;t hold, and <span className="text-pocketed-muted">exits</span> yours once every followed wallet has closed it.
       </p>
 
       <NameDialog
@@ -279,7 +279,7 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
     <div className="flex items-center justify-between gap-4">
       <div>
         <div className="text-xs text-white">{label}</div>
-        {hint && <div className="text-[11px] text-krypt-dim">{hint}</div>}
+        {hint && <div className="text-[11px] text-pocketed-dim">{hint}</div>}
       </div>
       <div className="w-32 shrink-0">{children}</div>
     </div>
@@ -293,9 +293,9 @@ function Label({ children }: { children: React.ReactNode }) {
 function KV({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'bad' }) {
   return (
     <div className="flex flex-col items-end leading-tight">
-      <span className="text-[10px] uppercase tracking-wider text-krypt-muted">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-pocketed-muted">{label}</span>
       <span className={cls('font-mono text-sm',
-        tone === 'good' ? 'text-krypt-win' : tone === 'bad' ? 'text-krypt-loss' : 'text-white')}>
+        tone === 'good' ? 'text-pocketed-win' : tone === 'bad' ? 'text-pocketed-loss' : 'text-white')}>
         {value}
       </span>
     </div>
@@ -306,9 +306,9 @@ function ModePill({ mode }: { mode: 'OFF' | 'WAITING' | 'LIVE' }) {
   return (
     <span className={cls(
       'rounded-md border px-2 py-1 text-[11px] font-semibold uppercase tracking-wider',
-      mode === 'LIVE' && 'border-krypt-loss/40 bg-krypt-loss/10 text-krypt-loss',
-      mode === 'WAITING' && 'border-krypt-warn/40 bg-krypt-warn/10 text-krypt-warn',
-      mode === 'OFF' && 'border-krypt-border bg-krypt-surface2 text-krypt-muted',
+      mode === 'LIVE' && 'border-pocketed-loss/40 bg-pocketed-loss/10 text-pocketed-loss',
+      mode === 'WAITING' && 'border-pocketed-warn/40 bg-pocketed-warn/10 text-pocketed-warn',
+      mode === 'OFF' && 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted',
     )}>
       {mode}
     </span>

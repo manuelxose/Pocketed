@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 _APPDATA = os.environ.get("APPDATA") or (Path.home() / ".config")
-os.environ.setdefault("KRYPT_POLYBOT_USERDATA", str(Path(_APPDATA) / "Krypt PolyBot"))
+os.environ.setdefault("POCKETED_USERDATA", str(Path(_APPDATA) / "Krypt PolyBot"))
 
 import backtest as bt
 import db as dbmod
@@ -19,7 +19,7 @@ from config import merge_with_defaults
 
 
 def app_config() -> dict:
-    p = Path(os.environ["KRYPT_POLYBOT_USERDATA"]) / "settings.json"
+    p = Path(os.environ["POCKETED_USERDATA"]) / "settings.json"
     try:
         raw = json.loads(p.read_text(encoding="utf-8"))
         return merge_with_defaults(raw.get("config") or {})

@@ -37,7 +37,7 @@ export function AccountsPage() {
       title="Accounts"
       subtitle="Add wallets to this session and switch the wallet whose account data is active."
       actions={
-        <button onClick={() => void add()} disabled={addWallet.isPending} className="krypt-btn-primary">
+        <button onClick={() => void add()} disabled={addWallet.isPending} className="pocketed-btn-primary">
           <Plus className="h-4 w-4" /> {addWallet.isPending ? 'Connecting…' : 'Add wallet'}
         </button>
       }
@@ -52,27 +52,27 @@ export function AccountsPage() {
                 <div className="flex items-start gap-3">
                   <div className={cls(
                     'grid h-10 w-10 shrink-0 place-items-center rounded-lg',
-                    active ? 'bg-krypt-glow text-white' : 'bg-krypt-surface2 text-krypt-muted',
+                    active ? 'bg-pocketed-glow text-white' : 'bg-pocketed-surface2 text-pocketed-muted',
                   )}>
                     <Users className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-mono text-sm font-medium text-white" title={address}>{address}</div>
-                    <div className="mt-1 text-xs text-krypt-muted">
+                    <div className="mt-1 text-xs text-pocketed-muted">
                       {active ? 'Active wallet' : 'Available in this session'}
                     </div>
                   </div>
                 </div>
                 <div className="mt-3">
                   {active ? (
-                    <span className="krypt-pill border-krypt-purple/40 bg-krypt-purple/10 text-krypt-purple">
+                    <span className="pocketed-pill border-pocketed-purple/40 bg-pocketed-purple/10 text-pocketed-purple">
                       <Check className="h-3 w-3" /> Active
                     </span>
                   ) : (
                     <button
                       onClick={() => void select(address)}
                       disabled={switchWallet.isPending}
-                      className="krypt-btn-default text-xs"
+                      className="pocketed-btn-default text-xs"
                     >
                       Switch to wallet
                     </button>
@@ -86,7 +86,7 @@ export function AccountsPage() {
 
       <Section title="How it works">
         <Card>
-          <ul className="list-disc space-y-1.5 pl-5 text-xs text-krypt-muted">
+          <ul className="list-disc space-y-1.5 pl-5 text-xs text-pocketed-muted">
             <li>Each wallet has isolated server-side account data, positions, and configuration.</li>
             <li>Adding a wallet asks it to sign in, then keeps it available in this browser session.</li>
             <li>Switching wallets reloads the app&apos;s data for the selected address.</li>

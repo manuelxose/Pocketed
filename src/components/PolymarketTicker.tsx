@@ -18,7 +18,7 @@ export function TickerLink({
 }) {
   const marketUrlMutation = useMarketUrlMutation();
   const inFlightRef = useRef(false);
-  if (!ticker) return <span className="text-krypt-dim">{label ?? '—'}</span>;
+  if (!ticker) return <span className="text-pocketed-dim">{label ?? '—'}</span>;
   const openMarket = async (): Promise<void> => {
     if (inFlightRef.current || marketUrlMutation.isPending) return;
     inFlightRef.current = true;
@@ -38,8 +38,8 @@ export function TickerLink({
       disabled={marketUrlMutation.isPending}
       title="Open this market on Polymarket"
       className={cls(
-        'group inline-flex items-center gap-1 font-mono text-xs text-krypt-purple',
-        'transition-colors hover:text-krypt-pink hover:underline',
+        'group inline-flex items-center gap-1 font-mono text-xs text-pocketed-purple',
+        'transition-colors hover:text-pocketed-pink hover:underline',
         className,
       )}
     >

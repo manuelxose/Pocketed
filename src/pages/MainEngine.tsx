@@ -12,7 +12,7 @@ import { useStrategiesQuery, useApplyStrategyMutation } from '../hooks/useStrate
 import { useSaveProfileMutation } from '../hooks/useProfiles';
 import { useAuthStatusQuery, useSetTradingEnabledMutation } from '../hooks/useTrading';
 
-const KRYPT_CATEGORIES: { id: string; label: string; Icon: typeof Trophy }[] = [
+const MARKET_CATEGORIES: { id: string; label: string; Icon: typeof Trophy }[] = [
   { id: 'sports', label: 'Sports', Icon: Trophy },
   { id: 'politics', label: 'Politics', Icon: Vote },
   { id: 'economics', label: 'Economics', Icon: Banknote },
@@ -55,7 +55,7 @@ export function MainEnginePage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [saveProfileOpen, setSaveProfileOpen] = useState(false);
 
-  if (!config) return <Page title="Main Engine"><div className="text-krypt-muted">Loading…</div></Page>;
+  if (!config) return <Page title="Main Engine"><div className="text-pocketed-muted">Loading…</div></Page>;
 
   const tradingOn = !!config.enableTrading;
 
@@ -123,10 +123,10 @@ export function MainEnginePage() {
       subtitle="The whale + momentum trader. Pick a preset as a starting point, then fine-tune any knob below — changes are saved + applied immediately. (Crypto, Copy Trading and Scripts are separate engines with their own pages and their own switches.)"
       actions={
         <>
-          <button onClick={reset} disabled={busy} className="krypt-btn-default">
+          <button onClick={reset} disabled={busy} className="pocketed-btn-default">
             <RotateCcw className="h-4 w-4" /> Reset
           </button>
-          <button onClick={() => setSaveProfileOpen(true)} className="krypt-btn-primary">
+          <button onClick={() => setSaveProfileOpen(true)} className="pocketed-btn-primary">
             <Save className="h-4 w-4" /> Save as Profile
           </button>
         </>
@@ -137,7 +137,7 @@ export function MainEnginePage() {
           <button
             onClick={() => void toggleTrading()}
             className={cls(
-              tradingOn ? 'krypt-btn-danger' : 'krypt-btn-primary',
+              tradingOn ? 'pocketed-btn-danger' : 'pocketed-btn-primary',
               'min-w-[150px]',
             )}
           >
@@ -147,10 +147,10 @@ export function MainEnginePage() {
           </button>
           <div className="min-w-0">
             <div className={cls('text-sm font-semibold',
-              tradingOn ? 'text-krypt-win' : 'text-krypt-dim')}>
+              tradingOn ? 'text-pocketed-win' : 'text-pocketed-dim')}>
               {tradingOn ? 'LIVE — placing real orders' : 'Paused'}
             </div>
-            <div className="text-[11px] text-krypt-dim">
+            <div className="text-[11px] text-pocketed-dim">
               {!authStatus?.authOk
                 ? 'No wallet connected — connect one on the Dashboard before starting.'
                 : tradingOn
@@ -172,20 +172,20 @@ export function MainEnginePage() {
               <div
                 key={s.id}
                 className={cls(
-                  'group relative flex flex-col overflow-hidden rounded-xl border bg-krypt-surface p-5 transition-colors',
+                  'group relative flex flex-col overflow-hidden rounded-xl border bg-pocketed-surface p-5 transition-colors',
                   comingSoon
-                    ? 'border-krypt-border opacity-60'
+                    ? 'border-pocketed-border opacity-60'
                     : active
-                      ? 'border-krypt-purple shadow-krypt-soft'
-                      : 'border-krypt-border hover:border-krypt-borderHi',
+                      ? 'border-pocketed-purple shadow-pocketed-soft'
+                      : 'border-pocketed-border hover:border-pocketed-borderHi',
                 )}
               >
                 {s.badge && (
                   <span className={cls(
                     'absolute right-3 top-3 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider',
-                    s.badge === 'recommended' && 'bg-krypt-glow text-white shadow-krypt-soft',
-                    s.badge === 'new' && 'border border-krypt-pink/40 bg-krypt-pink/10 text-krypt-pink',
-                    s.badge === 'soon' && 'border border-krypt-border bg-krypt-surface2 text-krypt-muted',
+                    s.badge === 'recommended' && 'bg-pocketed-glow text-white shadow-pocketed-soft',
+                    s.badge === 'new' && 'border border-pocketed-pink/40 bg-pocketed-pink/10 text-pocketed-pink',
+                    s.badge === 'soon' && 'border border-pocketed-border bg-pocketed-surface2 text-pocketed-muted',
                   )}>
                     {s.badge}
                   </span>
@@ -193,23 +193,23 @@ export function MainEnginePage() {
                 <div className="flex items-center gap-3">
                   <div className={cls(
                     'grid h-9 w-9 place-items-center rounded-lg',
-                    s.riskLabel === 'safe' && 'bg-krypt-win/10 text-krypt-win',
-                    s.riskLabel === 'balanced' && 'bg-krypt-purple/15 text-krypt-purple',
-                    s.riskLabel === 'aggressive' && 'bg-krypt-loss/10 text-krypt-loss',
-                    s.riskLabel === 'experimental' && 'bg-krypt-warn/10 text-krypt-warn',
+                    s.riskLabel === 'safe' && 'bg-pocketed-win/10 text-pocketed-win',
+                    s.riskLabel === 'balanced' && 'bg-pocketed-purple/15 text-pocketed-purple',
+                    s.riskLabel === 'aggressive' && 'bg-pocketed-loss/10 text-pocketed-loss',
+                    s.riskLabel === 'experimental' && 'bg-pocketed-warn/10 text-pocketed-warn',
                   )}>
                     <Sparkles className="h-4 w-4" />
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-white">{s.name}</div>
-                    <div className="text-[11px] uppercase tracking-wider text-krypt-muted">
+                    <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">
                       {s.riskLabel}
                     </div>
                   </div>
                 </div>
 
-                <p className="mt-3 text-xs italic text-krypt-purple/80">{s.tagline}</p>
-                <p className="mt-2 flex-1 text-xs leading-relaxed text-krypt-muted">
+                <p className="mt-3 text-xs italic text-pocketed-purple/80">{s.tagline}</p>
+                <p className="mt-2 flex-1 text-xs leading-relaxed text-pocketed-muted">
                   {s.description}
                 </p>
 
@@ -227,7 +227,7 @@ export function MainEnginePage() {
                   disabled={busyId === s.id || comingSoon}
                   title={comingSoon ? 'This strategy is not available yet' : undefined}
                   className={cls(
-                    active ? 'krypt-btn-default' : 'krypt-btn-primary',
+                    active ? 'pocketed-btn-default' : 'pocketed-btn-primary',
                     'mt-4 w-full',
                     comingSoon && 'cursor-not-allowed',
                   )}
@@ -254,13 +254,13 @@ export function MainEnginePage() {
         <Card>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="krypt-label">Network</label>
+              <label className="pocketed-label">Network</label>
               <div className="flex gap-2">
-                <div className="flex-1 rounded-md border border-krypt-purple bg-krypt-purple/10 px-3 py-2 text-sm text-white">
+                <div className="flex-1 rounded-md border border-pocketed-purple bg-pocketed-purple/10 px-3 py-2 text-sm text-white">
                   Polygon mainnet
                 </div>
               </div>
-              <p className="krypt-help">
+              <p className="pocketed-help">
                 Polymarket trades on Polygon mainnet (real USDC). Connect a
                 funded wallet on the Wallet page. There is no paper mode —
                 turning this on places real orders.
@@ -326,7 +326,7 @@ export function MainEnginePage() {
 
         <Card className="mt-4">
           <div className="text-sm font-medium text-white">Per-engine refinement</div>
-          <p className="mt-1 text-xs leading-relaxed text-krypt-muted">
+          <p className="mt-1 text-xs leading-relaxed text-pocketed-muted">
             Optional. These narrow <i>further</i> within the categories allowed above —
             both filters must pass. Use them to run, say, whales only in crypto while
             momentum only trades sports. Leave on “Any” unless you want that split;
@@ -335,7 +335,7 @@ export function MainEnginePage() {
           </p>
           <div className="mt-4 space-y-5">
             <div>
-              <div className="mb-2 text-xs font-medium text-krypt-muted">
+              <div className="mb-2 text-xs font-medium text-pocketed-muted">
                 Whale &amp; convergence signals
               </div>
               <SourceCategoryPicker
@@ -344,7 +344,7 @@ export function MainEnginePage() {
               />
             </div>
             <div>
-              <div className="mb-2 text-xs font-medium text-krypt-muted">
+              <div className="mb-2 text-xs font-medium text-pocketed-muted">
                 Momentum signals
               </div>
               <SourceCategoryPicker
@@ -436,7 +436,7 @@ export function MainEnginePage() {
       >
         <Card>
           <div className="mb-4">
-            <label className="krypt-label">Sizing mode</label>
+            <label className="pocketed-label">Sizing mode</label>
             <div className="flex gap-1.5">
               {([['percent', '% of balance'], ['contracts', 'Fixed contracts']] as const).map(([m, lbl]) => (
                 <button
@@ -445,8 +445,8 @@ export function MainEnginePage() {
                   className={cls(
                     'flex-1 rounded-md border px-2 py-2 text-xs',
                     (config.sizingMode ?? 'percent') === m
-                      ? 'border-krypt-purple bg-krypt-purple/10 text-white'
-                      : 'border-krypt-border bg-krypt-surface2 text-krypt-muted hover:border-krypt-borderHi',
+                      ? 'border-pocketed-purple bg-pocketed-purple/10 text-white'
+                      : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted hover:border-pocketed-borderHi',
                   )}
                 >
                   {lbl}
@@ -517,7 +517,7 @@ export function MainEnginePage() {
         <Card>
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="krypt-label">Order style</label>
+              <label className="pocketed-label">Order style</label>
               <div className="flex gap-1.5">
                 {(['limit_cross', 'limit_mid', 'market'] as const).map((o) => (
                   <button
@@ -526,15 +526,15 @@ export function MainEnginePage() {
                     className={cls(
                       'flex-1 rounded-md border px-2 py-2 text-xs',
                       config.orderStyle === o
-                        ? 'border-krypt-purple bg-krypt-purple/10 text-white'
-                        : 'border-krypt-border bg-krypt-surface2 text-krypt-muted hover:border-krypt-borderHi',
+                        ? 'border-pocketed-purple bg-pocketed-purple/10 text-white'
+                        : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted hover:border-pocketed-borderHi',
                     )}
                   >
                     {o.replace('_', '-')}
                   </button>
                 ))}
               </div>
-              <p className="krypt-help">
+              <p className="pocketed-help">
                 limit-cross hits the opposite side&apos;s best bid (highest fill rate).
               </p>
             </div>
@@ -637,7 +637,7 @@ export function MainEnginePage() {
                   type="time"
                   value={config.tradingHoursStart}
                   onChange={(e) => void update('tradingHoursStart', e.target.value)}
-                  className="w-full rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-1.5 font-mono text-sm text-white"
+                  className="w-full rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-1.5 font-mono text-sm text-white"
                 />
               </Field>
               <Field label="End (HH:MM)" hint="Same day or next-morning (overnight ranges supported)">
@@ -645,7 +645,7 @@ export function MainEnginePage() {
                   type="time"
                   value={config.tradingHoursEnd}
                   onChange={(e) => void update('tradingHoursEnd', e.target.value)}
-                  className="w-full rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-1.5 font-mono text-sm text-white"
+                  className="w-full rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-1.5 font-mono text-sm text-white"
                 />
               </Field>
               <Field label="UTC offset (minutes)" hint="0 = UTC · -300 = US Eastern (winter) · -240 = US Eastern (summer)">
@@ -657,13 +657,13 @@ export function MainEnginePage() {
               </Field>
             </div>
             <div className="mt-3">
-              <div className="mb-2 text-xs uppercase tracking-wider text-krypt-muted">Active days</div>
+              <div className="mb-2 text-xs uppercase tracking-wider text-pocketed-muted">Active days</div>
               <DayPicker
                 value={config.tradingDays}
                 onChange={(v) => void update('tradingDays', v)}
               />
             </div>
-            <div className="mt-3 rounded-md border border-krypt-border bg-krypt-surface2 p-3 text-[11px] text-krypt-muted">
+            <div className="mt-3 rounded-md border border-pocketed-border bg-pocketed-surface2 p-3 text-[11px] text-pocketed-muted">
               <span className="text-white">Tip:</span> sports markets settle on event clocks
               — restrict to evenings (19:00–23:30) if you only want trades around U.S.
               prime time. Late-night liquidity gets thin and the bot's edge can decay.
@@ -747,8 +747,8 @@ export function MainEnginePage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-krypt-border bg-krypt-surface2 px-2 py-1">
-      <div className="text-[9px] uppercase tracking-wider text-krypt-dim">{label}</div>
+    <div className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2 py-1">
+      <div className="text-[9px] uppercase tracking-wider text-pocketed-dim">{label}</div>
       <div className="font-mono text-[11px] text-white">{value}</div>
     </div>
   );
@@ -759,9 +759,9 @@ function Field({
 }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="krypt-label">{label}</label>
+      <label className="pocketed-label">{label}</label>
       {children}
-      {hint && <p className="krypt-help">{hint}</p>}
+      {hint && <p className="pocketed-help">{hint}</p>}
     </div>
   );
 }
@@ -774,13 +774,13 @@ function SourceCategoryPicker({
 
   const toggle = (id: string): void => {
     if (any) {
-      onChange(KRYPT_CATEGORIES.map((c) => c.id).filter((c) => c !== id));
+      onChange(MARKET_CATEGORIES.map((c) => c.id).filter((c) => c !== id));
       return;
     }
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);
     else next.add(id);
-    if (next.size === KRYPT_CATEGORIES.length) onChange(null);
+    if (next.size === MARKET_CATEGORIES.length) onChange(null);
     else onChange(Array.from(next));
   };
 
@@ -794,13 +794,13 @@ function SourceCategoryPicker({
           className={cls(
             'rounded-md border px-2.5 py-1 text-xs transition-colors',
             any
-              ? 'border-krypt-purple bg-krypt-purple/10 text-krypt-purple'
-              : 'border-krypt-border text-krypt-dim hover:text-white',
+              ? 'border-pocketed-purple bg-pocketed-purple/10 text-pocketed-purple'
+              : 'border-pocketed-border text-pocketed-dim hover:text-white',
           )}
         >
           Any
         </button>
-        {KRYPT_CATEGORIES.map(({ id, label }) => {
+        {MARKET_CATEGORIES.map(({ id, label }) => {
           const active = any || selected.has(id);
           return (
             <button
@@ -809,8 +809,8 @@ function SourceCategoryPicker({
               className={cls(
                 'rounded-md border px-2.5 py-1 text-xs transition-colors',
                 active && !any
-                  ? 'border-krypt-purple bg-krypt-purple/10 text-white'
-                  : 'border-krypt-border text-krypt-dim hover:text-white',
+                  ? 'border-pocketed-purple bg-pocketed-purple/10 text-white'
+                  : 'border-pocketed-border text-pocketed-dim hover:text-white',
               )}
             >
               {label}
@@ -819,7 +819,7 @@ function SourceCategoryPicker({
         })}
       </div>
       {empty && (
-        <div className="text-xs text-krypt-loss">
+        <div className="text-xs text-pocketed-loss">
           Nothing selected — this engine will skip every signal.
         </div>
       )}
@@ -835,14 +835,14 @@ function CategoryPicker({
 
   const toggleOne = (id: string): void => {
     if (allEnabled) {
-      onChange(KRYPT_CATEGORIES.map((c) => c.id).filter((c) => c !== id));
+      onChange(MARKET_CATEGORIES.map((c) => c.id).filter((c) => c !== id));
       return;
     }
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);
     else next.add(id);
 
-    if (next.size === KRYPT_CATEGORIES.length) {
+    if (next.size === MARKET_CATEGORIES.length) {
       onChange(null);
     } else {
       onChange(Array.from(next));
@@ -854,21 +854,21 @@ function CategoryPicker({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs text-krypt-muted">
+        <div className="text-xs text-pocketed-muted">
           {allEnabled
             ? 'No filter — every category is allowed.'
             : empty
               ? 'Nothing selected.'
-              : `Allowing ${selected.size} of ${KRYPT_CATEGORIES.length} categories.`}
+              : `Allowing ${selected.size} of ${MARKET_CATEGORIES.length} categories.`}
         </div>
         {!allEnabled && (
-          <button onClick={() => onChange(null)} className="krypt-btn-default text-xs">
+          <button onClick={() => onChange(null)} className="pocketed-btn-default text-xs">
             Allow all
           </button>
         )}
       </div>
       {empty && (
-        <div className="flex items-start gap-2 rounded-lg border border-krypt-loss/40 bg-krypt-loss/10 px-3 py-2 text-xs text-krypt-loss">
+        <div className="flex items-start gap-2 rounded-lg border border-pocketed-loss/40 bg-pocketed-loss/10 px-3 py-2 text-xs text-pocketed-loss">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
             <b>The bot will not trade.</b> An empty list means every signal is
@@ -877,7 +877,7 @@ function CategoryPicker({
         </div>
       )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        {KRYPT_CATEGORIES.map(({ id, label, Icon }) => {
+        {MARKET_CATEGORIES.map(({ id, label, Icon }) => {
           const active = allEnabled || selected.has(id);
           return (
             <button
@@ -886,11 +886,11 @@ function CategoryPicker({
               className={cls(
                 'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
                 active
-                  ? 'border-krypt-purple bg-krypt-purple/10 text-white'
-                  : 'border-krypt-border bg-krypt-surface2 text-krypt-muted hover:border-krypt-borderHi',
+                  ? 'border-pocketed-purple bg-pocketed-purple/10 text-white'
+                  : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted hover:border-pocketed-borderHi',
               )}
             >
-              <Icon className={cls('h-4 w-4', active ? 'text-krypt-purple' : 'text-krypt-dim')} />
+              <Icon className={cls('h-4 w-4', active ? 'text-pocketed-purple' : 'text-pocketed-dim')} />
               <span>{label}</span>
             </button>
           );
@@ -931,8 +931,8 @@ function DayPicker({
             className={cls(
               'rounded-md border px-3 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors',
               active
-                ? 'border-krypt-purple bg-krypt-purple/15 text-white'
-                : 'border-krypt-border bg-krypt-surface2 text-krypt-muted hover:border-krypt-borderHi',
+                ? 'border-pocketed-purple bg-pocketed-purple/15 text-white'
+                : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted hover:border-pocketed-borderHi',
             )}
           >
             {d.label}

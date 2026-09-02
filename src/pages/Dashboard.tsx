@@ -74,13 +74,13 @@ export function DashboardPage({ onNav }: DashboardProps) {
   return (
     <Page title="Dashboard" subtitle="Live snapshot of your portfolio, signals, and bot health.">
       {engineDown && (
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-krypt-loss/50 bg-krypt-loss/10 p-4 sm:flex-row sm:items-center">
-          <AlertTriangle className="h-6 w-6 shrink-0 text-krypt-loss" />
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-pocketed-loss/50 bg-pocketed-loss/10 p-4 sm:flex-row sm:items-center">
+          <AlertTriangle className="h-6 w-6 shrink-0 text-pocketed-loss" />
           <div className="flex-1">
-            <div className="text-sm font-semibold text-krypt-loss">
+            <div className="text-sm font-semibold text-pocketed-loss">
               Trading engine is offline
             </div>
-            <div className="mt-0.5 text-xs text-krypt-muted">
+            <div className="mt-0.5 text-xs text-pocketed-muted">
               No trades, reconciliation, or balance updates are running while the
               engine is down.
             </div>
@@ -88,13 +88,13 @@ export function DashboardPage({ onNav }: DashboardProps) {
         </div>
       )}
       {account?.tradingGeoblocked && (
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-krypt-bad/50 bg-krypt-bad/10 p-4 sm:flex-row sm:items-center">
-          <AlertTriangle className="h-6 w-6 shrink-0 text-krypt-bad" />
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-pocketed-bad/50 bg-pocketed-bad/10 p-4 sm:flex-row sm:items-center">
+          <AlertTriangle className="h-6 w-6 shrink-0 text-pocketed-bad" />
           <div className="flex-1">
-            <div className="text-sm font-semibold text-krypt-bad">
+            <div className="text-sm font-semibold text-pocketed-bad">
               Polymarket is blocking orders from your region
             </div>
-            <div className="mt-0.5 text-xs text-krypt-muted">
+            <div className="mt-0.5 text-xs text-pocketed-muted">
               Every recent order was rejected with Polymarket’s region-restriction error.
               Market data still flows, so everything else looks normal — but no trade can
               fill until your connection exits the blocked region (e.g. your VPN reconnects).
@@ -104,16 +104,16 @@ export function DashboardPage({ onNav }: DashboardProps) {
         </div>
       )}
       {account?.unredeemedWinningsStale && (
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-krypt-warn/50 bg-krypt-warn/10 p-4 sm:flex-row sm:items-center">
-          <AlertTriangle className="h-6 w-6 shrink-0 text-krypt-warn" />
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-pocketed-warn/50 bg-pocketed-warn/10 p-4 sm:flex-row sm:items-center">
+          <AlertTriangle className="h-6 w-6 shrink-0 text-pocketed-warn" />
           <div className="flex-1">
-            <div className="text-sm font-semibold text-krypt-warn">
+            <div className="text-sm font-semibold text-pocketed-warn">
               {fmtUsd(account?.unredeemedWinningsUsd)} in winnings waiting to be redeemed
             </div>
-            <div className="mt-0.5 text-xs text-krypt-muted">
+            <div className="mt-0.5 text-xs text-pocketed-muted">
               Your won {(account?.unredeemedWinningsCount ?? 0) === 1 ? 'position is' : 'positions are'} still
               held as outcome tokens, so the bot can’t size trades with that cash. Turn on{' '}
-              <span className="font-semibold text-krypt-warn">Auto-Redeem</span> in Polymarket
+              <span className="font-semibold text-pocketed-warn">Auto-Redeem</span> in Polymarket
               (Settings → Trading), or redeem on polymarket.com — your balance updates automatically
               once the winnings are redeemed.
             </div>
@@ -127,9 +127,9 @@ export function DashboardPage({ onNav }: DashboardProps) {
           hint={account?.balanceSyncing
             ? '⏳ syncing — an order just filled or settled; the venue reflects it in a moment'
             : `cash ${fmtUsd(account?.cashUsd)} · port ${fmtUsd(account?.portfolioUsd)}`}
-          shareText={`Krypt PolyBot balance: ${fmtUsd(account?.totalUsd)} `
+          shareText={`Pocketed balance: ${fmtUsd(account?.totalUsd)} `
             + `(${fmtUsd(alltimePnl, { sign: true })} since I started). `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <ShareableStat
           label="Session P&L"
@@ -142,9 +142,9 @@ export function DashboardPage({ onNav }: DashboardProps) {
                 : 'session baseline pending'
           }
           accent={account?.balanceSyncing ? undefined : sessionPnl >= 0 ? 'good' : 'bad'}
-          shareText={`This session on Krypt PolyBot: ${sessionPnl >= 0 ? '+' : ''}${fmtUsd(sessionPnl)} `
+          shareText={`This session on Pocketed: ${sessionPnl >= 0 ? '+' : ''}${fmtUsd(sessionPnl)} `
             + `(${fmtPct(sessionRoi)} ROI). `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <StatCard
           label="Open Positions"
@@ -163,9 +163,9 @@ export function DashboardPage({ onNav }: DashboardProps) {
               : 'pending baseline'
           }
           accent={alltimePnl >= 0 ? 'good' : 'bad'}
-          shareText={`All-time on Krypt PolyBot: ${alltimePnl >= 0 ? '+' : ''}${fmtUsd(alltimePnl)} `
+          shareText={`All-time on Pocketed: ${alltimePnl >= 0 ? '+' : ''}${fmtUsd(alltimePnl)} `
             + `(${fmtPct(account?.roiPct ?? 0)}). `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
         <ShareableStat
           label="Win Rate"
@@ -173,9 +173,9 @@ export function DashboardPage({ onNav }: DashboardProps) {
             ? `${(account?.winRate ?? 0).toFixed(1)}%`
             : '—'}
           hint={`${account?.wins ?? 0}W / ${account?.losses ?? 0}L · pos-derived realized ${fmtUsd(realizedPos, { sign: true })}`}
-          shareText={`Krypt PolyBot win rate: ${(account?.winRate ?? 0).toFixed(1)}% `
+          shareText={`Pocketed win rate: ${(account?.winRate ?? 0).toFixed(1)}% `
             + `(${account?.wins ?? 0}W / ${account?.losses ?? 0}L). `
-            + `Free Polymarket auto-trader by @YuhgoSlavia · krypt.cc/tools/polybot`}
+            + `Free Polymarket auto-trader by @YuhgoSlavia · pocketed.online`}
         />
       </div>
 
@@ -183,12 +183,12 @@ export function DashboardPage({ onNav }: DashboardProps) {
         <Card className="lg:col-span-2" header={
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs uppercase tracking-wider text-krypt-muted">Equity curve</div>
+              <div className="text-xs uppercase tracking-wider text-pocketed-muted">Equity curve</div>
               <div className="mt-0.5 text-sm text-white">
                 Last {Math.min(168, Math.floor(((Date.now() - new Date(series[0]?.at ?? Date.now()).getTime()) / 3600000) || 168))}h
               </div>
             </div>
-            <div className="text-xs text-krypt-muted">
+            <div className="text-xs text-pocketed-muted">
               {series.length} samples
             </div>
           </div>
@@ -243,16 +243,16 @@ export function DashboardPage({ onNav }: DashboardProps) {
           )}
         </Card>
 
-        <Card header={<div className="text-xs uppercase tracking-wider text-krypt-muted">Status</div>}>
+        <Card header={<div className="text-xs uppercase tracking-wider text-pocketed-muted">Status</div>}>
           <div className="flex flex-col gap-2">
             {issues.map((i, idx) => (
               <div
                 key={idx}
                 className={cls(
                   'flex items-start gap-2 rounded-lg border p-2 text-xs',
-                  i.tone === 'good' && 'border-krypt-win/30 bg-krypt-win/5 text-krypt-win',
-                  i.tone === 'warn' && 'border-krypt-warn/30 bg-krypt-warn/5 text-krypt-warn',
-                  i.tone === 'bad' && 'border-krypt-loss/30 bg-krypt-loss/5 text-krypt-loss',
+                  i.tone === 'good' && 'border-pocketed-win/30 bg-pocketed-win/5 text-pocketed-win',
+                  i.tone === 'warn' && 'border-pocketed-warn/30 bg-pocketed-warn/5 text-pocketed-warn',
+                  i.tone === 'bad' && 'border-pocketed-loss/30 bg-pocketed-loss/5 text-pocketed-loss',
                 )}
               >
                 {i.tone === 'good' ? (
@@ -290,10 +290,10 @@ export function DashboardPage({ onNav }: DashboardProps) {
         <Card header={
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-krypt-purple" />
+              <Activity className="h-4 w-4 text-pocketed-purple" />
               <span className="text-sm text-white">Latest signals</span>
             </div>
-            <button onClick={() => onNav('signals')} className="text-xs text-krypt-muted hover:text-white">
+            <button onClick={() => onNav('signals')} className="text-xs text-pocketed-muted hover:text-white">
               View all <ArrowRight className="ml-1 inline h-3 w-3" />
             </button>
           </div>
@@ -301,28 +301,28 @@ export function DashboardPage({ onNav }: DashboardProps) {
           {signals.length === 0 ? (
             <Empty title="No signals yet" description="The scanners need a few minutes after launch." />
           ) : (
-            <div className="flex flex-col divide-y divide-krypt-border">
+            <div className="flex flex-col divide-y divide-pocketed-border">
               {signals.slice(0, 7).map((s) => (
                 <div key={`${s.source}:${s.id}`} className="flex items-center gap-3 py-2 text-sm">
                   <span className={cls(
                     'inline-flex h-6 w-14 items-center justify-center rounded-md text-[10px] font-medium uppercase',
-                    s.source === 'whale' ? 'bg-krypt-purple/15 text-krypt-purple' : 'bg-krypt-pink/15 text-krypt-pink',
+                    s.source === 'whale' ? 'bg-pocketed-purple/15 text-pocketed-purple' : 'bg-pocketed-pink/15 text-pocketed-pink',
                   )}>
                     {s.source}
                   </span>
-                  <span className="font-mono text-xs text-krypt-muted">{s.ticker}</span>
-                  <span className="ml-auto truncate text-xs text-krypt-muted">{s.title}</span>
+                  <span className="font-mono text-xs text-pocketed-muted">{s.ticker}</span>
+                  <span className="ml-auto truncate text-xs text-pocketed-muted">{s.title}</span>
                   <span className={cls(
                     'min-w-[44px] text-right font-mono text-xs',
-                    s.direction === 'yes' ? 'text-krypt-win' : 'text-krypt-loss',
+                    s.direction === 'yes' ? 'text-pocketed-win' : 'text-pocketed-loss',
                   )}>
                     {s.direction.toUpperCase()} {s.priceCents}¢
                   </span>
-                  <span className="min-w-[40px] text-right font-mono text-xs text-krypt-purple">
+                  <span className="min-w-[40px] text-right font-mono text-xs text-pocketed-purple">
                     +{s.edgePts.toFixed(1)}
                   </span>
                   {s.traded && (
-                    <span className="krypt-pill border-krypt-indigo/40 bg-krypt-indigo/10 text-krypt-indigo">
+                    <span className="pocketed-pill border-pocketed-indigo/40 bg-pocketed-indigo/10 text-pocketed-indigo">
                       traded
                     </span>
                   )}
@@ -335,10 +335,10 @@ export function DashboardPage({ onNav }: DashboardProps) {
         <Card header={
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-krypt-pink" />
+              <Sparkles className="h-4 w-4 text-pocketed-pink" />
               <span className="text-sm text-white">Recent resolutions</span>
             </div>
-            <button onClick={() => onNav('history')} className="text-xs text-krypt-muted hover:text-white">
+            <button onClick={() => onNav('history')} className="text-xs text-pocketed-muted hover:text-white">
               View all <ArrowRight className="ml-1 inline h-3 w-3" />
             </button>
           </div>
@@ -349,21 +349,21 @@ export function DashboardPage({ onNav }: DashboardProps) {
               description="Wins and losses show up here as markets settle."
             />
           ) : (
-            <div className="flex flex-col divide-y divide-krypt-border">
+            <div className="flex flex-col divide-y divide-pocketed-border">
               {recentResolved.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 py-2 text-sm">
                   {p.outcomeCorrect === 1 ? (
-                    <TrendingUp className="h-4 w-4 text-krypt-win" />
+                    <TrendingUp className="h-4 w-4 text-pocketed-win" />
                   ) : p.outcomeCorrect === 0 ? (
-                    <TrendingDown className="h-4 w-4 text-krypt-loss" />
+                    <TrendingDown className="h-4 w-4 text-pocketed-loss" />
                   ) : (
                     <span className="h-4 w-4" />
                   )}
-                  <span className="font-mono text-xs text-krypt-muted">{p.ticker}</span>
-                  <span className="ml-auto truncate text-xs text-krypt-muted">{p.title}</span>
+                  <span className="font-mono text-xs text-pocketed-muted">{p.ticker}</span>
+                  <span className="ml-auto truncate text-xs text-pocketed-muted">{p.title}</span>
                   <span className={cls(
                     'min-w-[60px] text-right font-mono text-sm',
-                    (p.pnlUsd ?? 0) >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+                    (p.pnlUsd ?? 0) >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
                   )}>
                     {fmtUsd(p.pnlUsd, { sign: true })}
                   </span>
@@ -379,8 +379,8 @@ export function DashboardPage({ onNav }: DashboardProps) {
 
 function Mini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-krypt-border bg-krypt-surface2 px-2 py-1.5">
-      <div className="text-[10px] uppercase tracking-wider text-krypt-muted">{label}</div>
+    <div className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wider text-pocketed-muted">{label}</div>
       <div className="font-mono text-sm text-white">{value}</div>
     </div>
   );

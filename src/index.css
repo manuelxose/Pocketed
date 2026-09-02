@@ -55,76 +55,76 @@ button {
   -webkit-app-region: no-drag;
 }
 
-/* ── Krypt sprite (8-frame idle strip, 48×48 per frame) ──
-   Frame stepping is driven by the Web Animations API in KryptSprite.tsx;
+/* ── Mascot sprite (8-frame idle strip, 48×48 per frame) ──
+   Frame stepping is driven by the Web Animations API in MascotSprite.tsx;
    this just sets up crisp pixel scaling. */
-.krypt-sprite {
+.pocketed-sprite {
   display: inline-block;
   image-rendering: pixelated;
 }
 
 /* Soft "alive" bob for the lounging pet + a glowing blue drop shadow. */
-.krypt-pet {
-  animation: krypt-bob 2.8s ease-in-out infinite;
+.pocketed-pet {
+  animation: pocketed-bob 2.8s ease-in-out infinite;
   filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.45));
 }
-@keyframes krypt-bob {
+@keyframes pocketed-bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-2px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .krypt-pet {
+  .pocketed-pet {
     animation: none;
   }
 }
 
 @layer components {
-  .krypt-card {
-    @apply rounded-xl border border-krypt-border bg-krypt-surface p-5;
+  .pocketed-card {
+    @apply rounded-xl border border-pocketed-border bg-pocketed-surface p-5;
   }
-  .krypt-card-hover {
-    @apply transition-colors hover:border-krypt-borderHi;
+  .pocketed-card-hover {
+    @apply transition-colors hover:border-pocketed-borderHi;
   }
-  .krypt-input {
-    @apply w-full rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-krypt-dim focus:border-krypt-indigo;
+  .pocketed-input {
+    @apply w-full rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-pocketed-dim focus:border-pocketed-indigo;
   }
-  .krypt-label {
-    @apply mb-1 block text-xs font-medium uppercase tracking-wider text-krypt-muted;
+  .pocketed-label {
+    @apply mb-1 block text-xs font-medium uppercase tracking-wider text-pocketed-muted;
   }
-  .krypt-help {
-    @apply mt-1 text-xs text-krypt-dim;
+  .pocketed-help {
+    @apply mt-1 text-xs text-pocketed-dim;
   }
-  .krypt-btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-md border border-krypt-border px-3 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  .pocketed-btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-md border border-pocketed-border px-3 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .krypt-btn-default {
-    @apply krypt-btn bg-krypt-surface2 hover:border-krypt-borderHi hover:bg-white/5;
+  .pocketed-btn-default {
+    @apply pocketed-btn bg-pocketed-surface2 hover:border-pocketed-borderHi hover:bg-white/5;
   }
-  .krypt-btn-primary {
-    @apply krypt-btn border-transparent bg-gradient-to-r from-krypt-indigo via-krypt-purple to-krypt-pink shadow-krypt-soft hover:shadow-krypt-strong;
+  .pocketed-btn-primary {
+    @apply pocketed-btn border-transparent bg-gradient-to-r from-pocketed-indigo via-pocketed-purple to-pocketed-pink shadow-pocketed-soft hover:shadow-pocketed-strong;
   }
-  .krypt-btn-danger {
-    @apply krypt-btn border-krypt-loss/40 bg-krypt-loss/10 text-krypt-loss hover:border-krypt-loss hover:bg-krypt-loss/15;
+  .pocketed-btn-danger {
+    @apply pocketed-btn border-pocketed-loss/40 bg-pocketed-loss/10 text-pocketed-loss hover:border-pocketed-loss hover:bg-pocketed-loss/15;
   }
-  .krypt-btn-ghost {
-    @apply krypt-btn border-transparent bg-transparent hover:bg-white/5;
+  .pocketed-btn-ghost {
+    @apply pocketed-btn border-transparent bg-transparent hover:bg-white/5;
   }
-  .krypt-pill {
-    @apply inline-flex items-center gap-1 rounded-full border border-krypt-border bg-krypt-surface2 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider;
+  .pocketed-pill {
+    @apply inline-flex items-center gap-1 rounded-full border border-pocketed-border bg-pocketed-surface2 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider;
   }
-  .krypt-section-title {
-    @apply mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-krypt-muted;
+  .pocketed-section-title {
+    @apply mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-pocketed-muted;
   }
-  .krypt-table {
+  .pocketed-table {
     @apply w-full text-sm;
   }
-  .krypt-table th {
-    @apply border-b border-krypt-border px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-krypt-muted;
+  .pocketed-table th {
+    @apply border-b border-pocketed-border px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-pocketed-muted;
   }
-  .krypt-table td {
-    @apply border-b border-krypt-border/50 px-3 py-2 text-white/90;
+  .pocketed-table td {
+    @apply border-b border-pocketed-border/50 px-3 py-2 text-white/90;
   }
-  .krypt-table tr:hover td {
+  .pocketed-table tr:hover td {
     @apply bg-white/[0.02];
   }
 }

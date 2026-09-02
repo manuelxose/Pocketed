@@ -257,7 +257,7 @@ def _log_plaintext_at_rest_once() -> None:
 
 
 def _credentials_dir() -> Path:
-    base = os.environ.get("KRYPT_POLYBOT_USERDATA")
+    base = os.environ.get("POCKETED_USERDATA")
     if base:
         return Path(base) / "credentials"
     return Path(__file__).resolve().parent / "credentials"

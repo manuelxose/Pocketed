@@ -4,7 +4,7 @@ import session_key
 
 
 def _seed_active_key(tmp_path, monkeypatch, daily_cap):
-    monkeypatch.setenv("KRYPT_POLYBOT_USERDATA", str(tmp_path))
+    monkeypatch.setenv("POCKETED_USERDATA", str(tmp_path))
     address, priv_hex = session_key.generate_session_key()
     policy = {
         "allowedCaller": "0xE111180000d2663C0091e4f400237545B87B996B",

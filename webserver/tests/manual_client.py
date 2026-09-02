@@ -28,7 +28,7 @@ async def main() -> None:
         nonce = (await client.post("/auth/nonce")).json()["nonce"]
         msg = SiweMessage(
             domain="127.0.0.1", address=account.address,
-            statement="Sign in to Krypt PolyBot (manual test)",
+            statement="Sign in to Pocketed (manual test)",
             uri=f"{BASE_URL}/auth", version="1", chain_id=137, nonce=nonce,
             issued_at=datetime.now(timezone.utc).isoformat(),
         )

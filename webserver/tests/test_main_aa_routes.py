@@ -43,7 +43,7 @@ def _login(client) -> tuple[str, str]:
     account = Account.create()
     nonce = client.post("/auth/nonce").json()["nonce"]
     msg = SiweMessage(
-        domain="testserver", address=account.address, statement="Sign in to Krypt PolyBot",
+        domain="testserver", address=account.address, statement="Sign in to Pocketed",
         uri="http://testserver/auth", version="1", chain_id=137, nonce=nonce,
         issued_at=datetime.now(timezone.utc).isoformat(),
     )

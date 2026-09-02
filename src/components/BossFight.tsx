@@ -168,7 +168,7 @@ export function BossWidget() {
       <button
         onClick={() => setOpen(true)}
         title={`Boss fight — ${g.won ? 'all bosses defeated!' : NAMES[g.idx]}. Click for the arena.`}
-        className="hidden items-center rounded-lg border border-krypt-border bg-krypt-surface/60 px-1.5 transition-colors hover:border-krypt-purple/50 lg:flex"
+        className="hidden items-center rounded-lg border border-pocketed-border bg-pocketed-surface/60 px-1.5 transition-colors hover:border-pocketed-purple/50 lg:flex"
       >
         <canvas ref={canvasRef} width={WW} height={WH} style={{ width: WW / 2, height: WH / 2 }} />
       </button>
@@ -208,28 +208,28 @@ function BossArena({ onClose, sprite }: { onClose: () => void; sprite: HTMLImage
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4 backdrop-blur-sm" onMouseDown={onClose}>
       <div
-        className="w-full max-w-2xl rounded-2xl border border-krypt-border bg-krypt-surface p-5 shadow-krypt-strong"
+        className="w-full max-w-2xl rounded-2xl border border-pocketed-border bg-pocketed-surface p-5 shadow-pocketed-strong"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center gap-2">
-          <Swords className="h-5 w-5 text-krypt-purple" />
+          <Swords className="h-5 w-5 text-pocketed-purple" />
           <h3 className="font-pixel text-[11px] uppercase tracking-[0.18em] text-white">Boss Fight</h3>
-          <button onClick={onClose} className="krypt-btn-ghost ml-auto" aria-label="Close"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="pocketed-btn-ghost ml-auto" aria-label="Close"><X className="h-4 w-4" /></button>
         </div>
 
-        <div className="rounded-xl border border-krypt-border bg-krypt-void/60 bg-krypt-radial">
+        <div className="rounded-xl border border-pocketed-border bg-pocketed-void/60 bg-pocketed-radial">
           <canvas ref={canvasRef} width={AW} height={AH} className="w-full" style={{ aspectRatio: `${AW}/${AH}` }} />
         </div>
 
         <div className="mt-4 flex items-end justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-krypt-muted">
+            <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">
               {g.won ? 'Final boss' : `Boss ${g.idx + 1} of ${MIL.length}`}
             </div>
             <div className="text-lg font-semibold text-white" style={{ color: COLORS[g.idx] }}>{NAMES[g.idx]}</div>
           </div>
           <div className="text-right">
-            <div className="text-[11px] uppercase tracking-wider text-krypt-muted">
+            <div className="text-[11px] uppercase tracking-wider text-pocketed-muted">
               {g.won ? 'You beat them all' : 'Profit to defeat'}
             </div>
             <div className="font-mono text-lg text-white">
@@ -252,14 +252,14 @@ function BossArena({ onClose, sprite }: { onClose: () => void; sprite: HTMLImage
                     opacity: beaten ? 1 : current ? 1 : 0.5,
                   }}
                 />
-                <span className={`text-[9px] ${current ? 'text-white' : 'text-krypt-dim'}`}>
+                <span className={`text-[9px] ${current ? 'text-white' : 'text-pocketed-dim'}`}>
                   {m >= 1000 ? `${m / 1000}k` : m}
                 </span>
               </div>
             );
           })}
         </div>
-        <p className="mt-3 text-center text-[11px] text-krypt-dim">
+        <p className="mt-3 text-center text-[11px] text-pocketed-dim">
           Your all-time profit is the damage. Keep trading green to take down {g.won ? 'no one left!' : NAMES[g.idx]}.
         </p>
       </div>

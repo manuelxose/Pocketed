@@ -22,7 +22,7 @@ import {
 const ScriptEditor = lazy(() =>
   import('../components/ScriptEditor').then((m) => ({ default: m.ScriptEditor })));
 
-const NEW_SCRIPT_TEMPLATE = `# krypt-script v1
+const NEW_SCRIPT_TEMPLATE = `# pocketed-script v1
 # name: My Strategy
 # description: Describe what this strategy does.
 
@@ -55,17 +55,17 @@ const STATE_LABEL: Record<string, string> = {
   running: 'RUNNING',
 };
 const STATE_TONE: Record<string, string> = {
-  off: 'text-krypt-dim',
-  blocked: 'text-krypt-warn',
-  error: 'text-krypt-loss',
-  starting: 'text-krypt-muted',
-  running: 'text-krypt-win',
+  off: 'text-pocketed-dim',
+  blocked: 'text-pocketed-warn',
+  error: 'text-pocketed-loss',
+  starting: 'text-pocketed-muted',
+  running: 'text-pocketed-win',
 };
 
 const SEVERITY_TONE: Record<string, string> = {
-  critical: 'border-krypt-loss/40 bg-krypt-loss/10 text-krypt-loss',
-  warning: 'border-krypt-warn/40 bg-krypt-warn/10 text-krypt-warn',
-  info: 'border-krypt-border bg-krypt-surface2/40 text-krypt-muted',
+  critical: 'border-pocketed-loss/40 bg-pocketed-loss/10 text-pocketed-loss',
+  warning: 'border-pocketed-warn/40 bg-pocketed-warn/10 text-pocketed-warn',
+  info: 'border-pocketed-border bg-pocketed-surface2/40 text-pocketed-muted',
 };
 
 export function ScriptsPage() {
@@ -324,15 +324,15 @@ export function ScriptsPage() {
       subtitle="Write (or AI-generate) your own strategies, backtest them on your recorded data, then let them trade under hard safety rails. Scripts run independently — no other engine has to be switched on."
       actions={(
         <>
-          <button onClick={() => void openPack()} className="krypt-btn-default inline-flex items-center gap-2">
+          <button onClick={() => void openPack()} className="pocketed-btn-default inline-flex items-center gap-2">
             <Bot className="h-4 w-4" /> AI Context Pack
           </button>
-          <button onClick={() => void importScript()} className="krypt-btn-default inline-flex items-center gap-2">
+          <button onClick={() => void importScript()} className="pocketed-btn-default inline-flex items-center gap-2">
             <FileUp className="h-4 w-4" /> Import
           </button>
           <button
             onClick={() => void createScript(NEW_SCRIPT_TEMPLATE)}
-            className="krypt-btn-primary inline-flex items-center gap-2"
+            className="pocketed-btn-primary inline-flex items-center gap-2"
           >
             <Plus className="h-4 w-4" /> New script
           </button>
@@ -348,12 +348,12 @@ export function ScriptsPage() {
             />
             <div>
               <div className="text-sm font-semibold text-white">Scripts live</div>
-              <div className="text-[11px] text-krypt-dim">
+              <div className="text-[11px] text-pocketed-dim">
                 Master switch for REAL orders. Shadow scripts run either way.
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-[11px] text-krypt-muted">
+          <div className="flex flex-wrap items-center gap-4 text-[11px] text-pocketed-muted">
             <Rail label="Max entry" suffix="¢" value={config?.scriptMaxEntryCents ?? 97} onCommit={(v) => void patchConfig.mutateAsync({ scriptMaxEntryCents: v })} />
             <Rail label="Max size" suffix=" lots" value={config?.scriptMaxContracts ?? 20} onCommit={(v) => void patchConfig.mutateAsync({ scriptMaxContracts: v })} />
             <Rail label="Max open/script" value={config?.scriptMaxOpen ?? 2} onCommit={(v) => void patchConfig.mutateAsync({ scriptMaxOpen: v })} />
@@ -365,7 +365,7 @@ export function ScriptsPage() {
               title="Widest real bid/ask a decide_market() entry may cross, checked against the live book at submit. A wide book can eat a thin-margin strategy's whole edge before it starts. 0 = off."
               onCommit={(v) => void patchConfig.mutateAsync({ scriptMarketMaxSpreadCents: v })}
             />
-            <span className="text-krypt-dim">(these apply to every script and cannot be raised from inside one)</span>
+            <span className="text-pocketed-dim">(these apply to every script and cannot be raised from inside one)</span>
           </div>
         </div>
       </Card>
@@ -373,7 +373,7 @@ export function ScriptsPage() {
       <div className="flex min-h-[560px] gap-4">
         <div className="w-64 shrink-0 space-y-2">
           {scripts.length === 0 && (
-            <div className="rounded-xl border border-dashed border-krypt-border p-4 text-xs leading-relaxed text-krypt-dim">
+            <div className="rounded-xl border border-dashed border-pocketed-border p-4 text-xs leading-relaxed text-pocketed-dim">
               No scripts yet. Create one, or open the <b className="text-white">AI Context Pack</b>,
               paste it into ChatGPT/Claude/any AI, describe a strategy, and paste the result back.
             </div>
@@ -385,35 +385,35 @@ export function ScriptsPage() {
               className={cls(
                 'w-full rounded-xl border p-3 text-left transition-colors',
                 s.id === selId
-                  ? 'border-krypt-purple/60 bg-krypt-purple/10'
-                  : 'border-krypt-border bg-krypt-surface hover:border-krypt-purple/30',
+                  ? 'border-pocketed-purple/60 bg-pocketed-purple/10'
+                  : 'border-pocketed-border bg-pocketed-surface hover:border-pocketed-purple/30',
               )}
             >
               <div className="flex items-center gap-2">
-                <Code2 className="h-3.5 w-3.5 shrink-0 text-krypt-purple" />
+                <Code2 className="h-3.5 w-3.5 shrink-0 text-pocketed-purple" />
                 <span className="truncate text-sm text-white">{s.name}</span>
                 {s.audit && !s.audit.ok && (
                   <ShieldAlert
-                    className="h-3.5 w-3.5 shrink-0 text-krypt-loss"
+                    className="h-3.5 w-3.5 shrink-0 text-pocketed-loss"
                     aria-label={`${s.audit.critical} critical risk finding(s)`}
                   />
                 )}
-                {s.lastError && <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-krypt-loss shadow-[0_0_6px_currentColor]" />}
+                {s.lastError && <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-pocketed-loss shadow-[0_0_6px_currentColor]" />}
               </div>
               <div className="mt-1 flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1.5">
                   <span className={STATE_TONE[s.status?.state ?? 'off']}>
                     {STATE_LABEL[s.status?.state ?? 'off']}
                   </span>
-                  <span className={s.dryRun ? 'text-krypt-purple' : 'text-krypt-loss'}>
+                  <span className={s.dryRun ? 'text-pocketed-purple' : 'text-pocketed-loss'}>
                     {s.dryRun ? 'shadow' : 'LIVE'}
                   </span>
                 </span>
                 {(s.dryRun ? s.shadowStats : s.stats) && (
-                  <span className="font-mono text-krypt-dim">
+                  <span className="font-mono text-pocketed-dim">
                     {(s.dryRun ? s.shadowStats! : s.stats!).wins}W/
                     {(s.dryRun ? s.shadowStats! : s.stats!).losses}L{' '}
-                    <span className={(s.dryRun ? s.shadowStats! : s.stats!).pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>
+                    <span className={(s.dryRun ? s.shadowStats! : s.stats!).pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>
                       {fmtUsd((s.dryRun ? s.shadowStats! : s.stats!).pnlUsd, { sign: true })}
                     </span>
                   </span>
@@ -429,13 +429,13 @@ export function ScriptsPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="mr-auto min-w-0">
                   <div className="truncate text-sm font-semibold text-white">
-                    {sel.name}{dirty && <span className="text-krypt-warn"> •</span>}
+                    {sel.name}{dirty && <span className="text-pocketed-warn"> •</span>}
                   </div>
                   {sel.description && (
-                    <div className="truncate text-[11px] text-krypt-dim">{sel.description}</div>
+                    <div className="truncate text-[11px] text-pocketed-dim">{sel.description}</div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 text-[11px] text-krypt-muted">
+                <label className="flex items-center gap-1.5 text-[11px] text-pocketed-muted">
                   <Toggle checked={sel.enabled} onChange={(v) => void setEnabled(sel, v)} />
                   Enabled
                 </label>
@@ -444,8 +444,8 @@ export function ScriptsPage() {
                   className={cls(
                     'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors',
                     sel.dryRun
-                      ? 'border-krypt-border bg-krypt-purple/10 text-krypt-purple'
-                      : 'border-krypt-loss/50 bg-krypt-loss/10 text-krypt-loss',
+                      ? 'border-pocketed-border bg-pocketed-purple/10 text-pocketed-purple'
+                      : 'border-pocketed-loss/50 bg-pocketed-loss/10 text-pocketed-loss',
                   )}
                   title={sel.dryRun
                     ? 'Shadow — records what it would trade. Click to arm for real orders.'
@@ -459,8 +459,8 @@ export function ScriptsPage() {
                   className={cls(
                     'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors',
                     (audit ?? sel.audit)?.ok === false
-                      ? 'border-krypt-loss/50 bg-krypt-loss/10 text-krypt-loss'
-                      : 'border-krypt-border text-krypt-muted hover:text-white',
+                      ? 'border-pocketed-loss/50 bg-pocketed-loss/10 text-pocketed-loss'
+                      : 'border-pocketed-border text-pocketed-muted hover:text-white',
                   )}
                   title="What this script's code does — network, filesystem, credential and dynamic-execution access. Scripts are full Python, so read this before enabling one you didn't write."
                 >
@@ -471,21 +471,21 @@ export function ScriptsPage() {
                     ? `Risk (${(audit ?? sel.audit)!.critical})`
                     : 'Risk'}
                 </button>
-                <button onClick={() => void exportScript()} className="rounded-md border border-krypt-border p-1.5 text-krypt-dim hover:text-white" title="Export this script to a .py file">
+                <button onClick={() => void exportScript()} className="rounded-md border border-pocketed-border p-1.5 text-pocketed-dim hover:text-white" title="Export this script to a .py file">
                   <FileUp className="h-3.5 w-3.5 rotate-180" />
                 </button>
-                <button onClick={() => void validate()} disabled={busy !== null} className="krypt-btn-default text-xs">
+                <button onClick={() => void validate()} disabled={busy !== null} className="pocketed-btn-default text-xs">
                   Validate
                 </button>
-                <button onClick={() => void save()} disabled={busy !== null || !dirty} className="krypt-btn-primary text-xs">
+                <button onClick={() => void save()} disabled={busy !== null || !dirty} className="pocketed-btn-primary text-xs">
                   {busy === 'save' ? 'Saving…' : 'Save'}
                 </button>
                 {confirmDelete ? (
-                  <button onClick={() => void doDelete()} className="inline-flex items-center gap-1 rounded-md border border-krypt-loss/60 bg-krypt-loss/10 px-2.5 py-1.5 text-xs text-krypt-loss">
+                  <button onClick={() => void doDelete()} className="inline-flex items-center gap-1 rounded-md border border-pocketed-loss/60 bg-pocketed-loss/10 px-2.5 py-1.5 text-xs text-pocketed-loss">
                     <Trash2 className="h-3.5 w-3.5" /> Confirm delete
                   </button>
                 ) : (
-                  <button onClick={() => setConfirmDelete(true)} className="rounded-md border border-krypt-border p-1.5 text-krypt-dim hover:text-krypt-loss" title="Delete script">
+                  <button onClick={() => setConfirmDelete(true)} className="rounded-md border border-pocketed-border p-1.5 text-pocketed-dim hover:text-pocketed-loss" title="Delete script">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 )}
@@ -494,20 +494,20 @@ export function ScriptsPage() {
               <StatusLine script={sel} onScope={(a) => void applyAssets(a)} />
 
               {sel.lastError && (
-                <div className="flex items-start gap-2 rounded-lg border border-krypt-loss/40 bg-krypt-loss/10 px-3 py-2 text-[11px] text-krypt-loss">
+                <div className="flex items-start gap-2 rounded-lg border border-pocketed-loss/40 bg-pocketed-loss/10 px-3 py-2 text-[11px] text-pocketed-loss">
                   <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span className="min-w-0 break-words">Last error: {sel.lastError}</span>
                 </div>
               )}
               {errors.map((e, i) => (
-                <div key={i} className="rounded-lg border border-krypt-loss/40 bg-krypt-loss/10 px-3 py-1.5 text-[11px] text-krypt-loss">{e}</div>
+                <div key={i} className="rounded-lg border border-pocketed-loss/40 bg-pocketed-loss/10 px-3 py-1.5 text-[11px] text-pocketed-loss">{e}</div>
               ))}
               {warnings.map((w, i) => (
-                <div key={i} className="rounded-lg border border-krypt-warn/40 bg-krypt-warn/10 px-3 py-1.5 text-[11px] text-krypt-warn">{w}</div>
+                <div key={i} className="rounded-lg border border-pocketed-warn/40 bg-pocketed-warn/10 px-3 py-1.5 text-[11px] text-pocketed-warn">{w}</div>
               ))}
 
               <div className="h-[340px]">
-                <Suspense fallback={<div className="grid h-full place-items-center text-xs text-krypt-dim">Loading editor…</div>}>
+                <Suspense fallback={<div className="grid h-full place-items-center text-xs text-pocketed-dim">Loading editor…</div>}>
                   <ScriptEditor
                     value={code}
                     onChange={(c) => { setCode(c); setDirty(true); }}
@@ -527,7 +527,7 @@ export function ScriptsPage() {
                     }}
                     className={cls(
                       'rounded-md px-3 py-1.5 text-xs transition-colors',
-                      tab === t ? 'bg-white/[0.08] text-white' : 'text-krypt-muted hover:text-white',
+                      tab === t ? 'bg-white/[0.08] text-white' : 'text-pocketed-muted hover:text-white',
                     )}
                   >
                     {t === 'shadow' ? `Shadow${shadow?.length ? ` (${shadow.length})` : ''}`
@@ -545,7 +545,7 @@ export function ScriptsPage() {
                         onClick={() => setBtDays(d)}
                         className={cls(
                           'rounded px-2 py-1 text-[11px]',
-                          btDays === d ? 'bg-krypt-purple/20 text-krypt-purple' : 'text-krypt-dim hover:text-white',
+                          btDays === d ? 'bg-pocketed-purple/20 text-pocketed-purple' : 'text-pocketed-dim hover:text-white',
                         )}
                       >
                         {d}d
@@ -554,7 +554,7 @@ export function ScriptsPage() {
                     <button
                       onClick={() => void runBacktest()}
                       disabled={busy !== null}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-krypt-purple/40 bg-krypt-purple/10 px-3 py-1.5 text-xs text-krypt-purple hover:bg-krypt-purple/20 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-pocketed-purple/40 bg-pocketed-purple/10 px-3 py-1.5 text-xs text-pocketed-purple hover:bg-pocketed-purple/20 disabled:opacity-50"
                     >
                       <FlaskConical className="h-3.5 w-3.5" />
                       {busy === 'backtest' ? 'Replaying…' : 'Run backtest'}
@@ -574,15 +574,15 @@ export function ScriptsPage() {
               {tab === 'risk' && <AuditPanel audit={audit ?? sel.audit} stale={code !== sel.code} />}
               {tab === 'docs' && <DocsPanel docs={docs ?? null} />}
               {tab === 'log' && (
-                <div className="max-h-56 overflow-y-auto rounded-lg border border-krypt-border bg-krypt-void/50 p-3 font-mono text-[11px] leading-relaxed text-krypt-muted">
+                <div className="max-h-56 overflow-y-auto rounded-lg border border-pocketed-border bg-pocketed-void/50 p-3 font-mono text-[11px] leading-relaxed text-pocketed-muted">
                   {selLogs.length === 0
-                    ? <span className="text-krypt-dim">No log lines yet — call log("…") in your script; lines appear here while it runs live.</span>
+                    ? <span className="text-pocketed-dim">No log lines yet — call log("…") in your script; lines appear here while it runs live.</span>
                     : selLogs.map((l, i) => <div key={i}>{l}</div>)}
                 </div>
               )}
             </>
           ) : (
-            <div className="grid flex-1 place-items-center rounded-xl border border-dashed border-krypt-border text-sm text-krypt-dim">
+            <div className="grid flex-1 place-items-center rounded-xl border border-dashed border-pocketed-border text-sm text-pocketed-dim">
               Select or create a script
             </div>
           )}
@@ -591,12 +591,12 @@ export function ScriptsPage() {
 
       {armModal && sel && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onMouseDown={() => setArmModal(false)}>
-          <div className="w-full max-w-md rounded-xl border border-krypt-loss/50 bg-krypt-surface p-5" onMouseDown={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 text-krypt-loss">
+          <div className="w-full max-w-md rounded-xl border border-pocketed-loss/50 bg-pocketed-surface p-5" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 text-pocketed-loss">
               <Zap className="h-5 w-5" />
               <h3 className="text-sm font-semibold">Arm “{sel.name}” for real orders?</h3>
             </div>
-            <div className="mt-3 space-y-2 text-xs leading-relaxed text-krypt-muted">
+            <div className="mt-3 space-y-2 text-xs leading-relaxed text-pocketed-muted">
               <p>
                 In shadow mode this script runs against live ticks and records every order it
                 <i> would</i> have placed. Arming it means the next time it fires, it spends
@@ -606,12 +606,12 @@ export function ScriptsPage() {
                 <p>
                   Its shadow record so far: <b className="text-white">{sel.shadowStats.n}</b> order(s),{' '}
                   {sel.shadowStats.wins}W / {sel.shadowStats.losses}L, simulated{' '}
-                  <b className={sel.shadowStats.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>
+                  <b className={sel.shadowStats.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>
                     {fmtUsd(sel.shadowStats.pnlUsd)}
                   </b>.
                 </p>
               ) : (
-                <p className="text-krypt-warn">
+                <p className="text-pocketed-warn">
                   This script has <b>no shadow record yet</b> — nothing has been observed about how it
                   behaves on live data. Consider letting it run in shadow first.
                 </p>
@@ -627,25 +627,25 @@ export function ScriptsPage() {
                 from then on this script can retune the crypto engine and switch engines off.
               </p>
               {sel.audit && !sel.audit.ok && (
-                <div className="rounded-lg border border-krypt-loss/50 bg-krypt-loss/15 p-2.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-krypt-loss">
+                <div className="rounded-lg border border-pocketed-loss/50 bg-pocketed-loss/15 p-2.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-pocketed-loss">
                     <ShieldAlert className="h-3.5 w-3.5" />
                     The risk audit flagged this script
                   </div>
-                  <p className="mt-1 text-krypt-muted">
+                  <p className="mt-1 text-pocketed-muted">
                     {sel.audit.critical} critical finding(s):{' '}
                     {sel.audit.categories.join(', ')}. Scripts run as full Python inside the
-                    process holding your <b className="text-krypt-warn">decrypted wallet key</b>.
+                    process holding your <b className="text-pocketed-warn">decrypted wallet key</b>.
                     Do not arm code you have not read — check the Risk tab first.
                   </p>
                 </div>
               )}
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setArmModal(false)} className="krypt-btn-default">Cancel</button>
+              <button onClick={() => setArmModal(false)} className="pocketed-btn-default">Cancel</button>
               <button
                 onClick={() => void applyDryRun(false)}
-                className="rounded-md border border-krypt-loss/60 bg-krypt-loss/15 px-3 py-1.5 text-xs font-semibold text-krypt-loss"
+                className="rounded-md border border-pocketed-loss/60 bg-pocketed-loss/15 px-3 py-1.5 text-xs font-semibold text-pocketed-loss"
               >
                 Arm for real orders
               </button>
@@ -656,15 +656,15 @@ export function ScriptsPage() {
 
       {showPack && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onMouseDown={() => setShowPack(false)}>
-          <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl border border-krypt-border bg-krypt-surface p-5" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl border border-pocketed-border bg-pocketed-surface p-5" onMouseDown={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-krypt-purple" />
+                <Bot className="h-4 w-4 text-pocketed-purple" />
                 <h3 className="text-sm font-semibold text-white">AI Context Pack</h3>
               </div>
-              <button onClick={() => setShowPack(false)} className="text-krypt-dim hover:text-white"><X className="h-4 w-4" /></button>
+              <button onClick={() => setShowPack(false)} className="text-pocketed-dim hover:text-white"><X className="h-4 w-4" /></button>
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-krypt-dim">
+            <p className="mt-2 text-[11px] leading-relaxed text-pocketed-dim">
               1. Copy the pack. 2. Paste it into <b className="text-white">any</b> AI chat (ChatGPT, Claude, Gemini…)
               and describe the strategy you want. 3. Paste the AI's reply below — the script is imported,
               validated, and ready to backtest. It includes your live script API, field docs, safety rails,
@@ -674,7 +674,7 @@ export function ScriptsPage() {
               <button
                 onClick={() => void copyPack()}
                 disabled={!packText}
-                className="krypt-btn-primary inline-flex items-center gap-2 text-xs disabled:opacity-50"
+                className="pocketed-btn-primary inline-flex items-center gap-2 text-xs disabled:opacity-50"
               >
                 <ClipboardCopy className="h-3.5 w-3.5" />
                 {packText ? 'Copy context pack' : 'Generating…'}
@@ -682,37 +682,37 @@ export function ScriptsPage() {
               <button
                 onClick={() => {
                   if (!packText) return;
-                  downloadScriptFile('krypt-ai-context-pack.txt', packText);
-                  toast.success('Downloaded krypt-ai-context-pack.txt.');
+                  downloadScriptFile('pocketed-ai-context-pack.txt', packText);
+                  toast.success('Downloaded pocketed-ai-context-pack.txt.');
                 }}
                 disabled={!packText}
-                className="krypt-btn-default inline-flex items-center gap-2 text-xs disabled:opacity-50"
+                className="pocketed-btn-default inline-flex items-center gap-2 text-xs disabled:opacity-50"
                 title="Save the full pack as a .txt (handy for AI apps that take file uploads)"
               >
                 <FileDown className="h-3.5 w-3.5" /> Export .txt
               </button>
               {packText && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-krypt-win">
+                <span className="inline-flex items-center gap-1 text-[11px] text-pocketed-win">
                   <CheckCircle2 className="h-3.5 w-3.5" /> {Math.round(packText.length / 1000)}k chars, built from your live config + data
                 </span>
               )}
             </div>
-            <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border border-krypt-border bg-krypt-void/50 p-3 font-mono text-[10px] leading-relaxed text-krypt-dim whitespace-pre-wrap">
+            <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border border-pocketed-border bg-pocketed-void/50 p-3 font-mono text-[10px] leading-relaxed text-pocketed-dim whitespace-pre-wrap">
               {packText ? `${packText.slice(0, 2500)}\n…` : 'Building the pack from your config, sandbox and recorded data…'}
             </div>
             <div className="mt-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-krypt-muted">Paste the AI's reply</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-pocketed-muted">Paste the AI's reply</div>
               <textarea
                 value={pasteText}
                 onChange={(e) => setPasteText(e.target.value)}
                 placeholder={'Paste the AI response here (the ```python block is extracted automatically)…'}
-                className="krypt-input mt-1.5 h-24 w-full resize-none font-mono text-[11px]"
+                className="pocketed-input mt-1.5 h-24 w-full resize-none font-mono text-[11px]"
               />
               <div className="mt-2 flex justify-end">
                 <button
                   onClick={() => void importPaste()}
                   disabled={!pasteText.trim() || busy !== null}
-                  className="krypt-btn-primary inline-flex items-center gap-2 text-xs disabled:opacity-50"
+                  className="pocketed-btn-primary inline-flex items-center gap-2 text-xs disabled:opacity-50"
                 >
                   <Play className="h-3.5 w-3.5" /> Import as script
                 </button>
@@ -744,26 +744,26 @@ function StatusLine({ script, onScope }: {
   return (
     <div className={cls(
       'rounded-lg border px-3 py-2 text-[11px]',
-      st.state === 'running' ? 'border-krypt-win/30 bg-krypt-win/[0.06]'
-        : st.state === 'blocked' ? 'border-krypt-warn/40 bg-krypt-warn/10'
-          : st.state === 'error' ? 'border-krypt-loss/40 bg-krypt-loss/10'
-            : 'border-krypt-border bg-krypt-surface2/30',
+      st.state === 'running' ? 'border-pocketed-win/30 bg-pocketed-win/[0.06]'
+        : st.state === 'blocked' ? 'border-pocketed-warn/40 bg-pocketed-warn/10'
+          : st.state === 'error' ? 'border-pocketed-loss/40 bg-pocketed-loss/10'
+            : 'border-pocketed-border bg-pocketed-surface2/30',
     )}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className={cls('font-semibold uppercase tracking-wide', STATE_TONE[st.state])}>
           {STATE_LABEL[st.state]}
         </span>
-        <span className="min-w-0 flex-1 text-krypt-muted">{st.detail}</span>
+        <span className="min-w-0 flex-1 text-pocketed-muted">{st.detail}</span>
         <button
           onClick={() => setEditScope((v) => !v)}
-          className="shrink-0 text-krypt-purple hover:underline"
+          className="shrink-0 text-pocketed-purple hover:underline"
           title="Which coins this script's decide() hook is offered. This is the script's own setting — the 15m Crypto tab's asset checkboxes do not affect it."
         >
           Coins: {scope ? scope.join(', ') : 'all'}
         </button>
       </div>
       {editScope && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-krypt-border/60 pt-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-pocketed-border/60 pt-2">
           {SCRIPT_ASSETS.map((a) => {
             const on = !scope || scope.includes(a);
             return (
@@ -772,14 +772,14 @@ function StatusLine({ script, onScope }: {
                 onClick={() => toggleAsset(a)}
                 className={cls(
                   'rounded px-2 py-0.5 font-mono text-[10px] transition-colors',
-                  on ? 'bg-krypt-purple/20 text-krypt-purple' : 'bg-krypt-surface2 text-krypt-dim',
+                  on ? 'bg-pocketed-purple/20 text-pocketed-purple' : 'bg-pocketed-surface2 text-pocketed-dim',
                 )}
               >
                 {a}
               </button>
             );
           })}
-          <span className="ml-2 text-[10px] text-krypt-dim">
+          <span className="ml-2 text-[10px] text-pocketed-dim">
             This script only. Independent of the 15m Crypto engine.
           </span>
         </div>
@@ -791,24 +791,24 @@ function StatusLine({ script, onScope }: {
 function AuditPanel({ audit, stale }: { audit: ScriptAudit | null; stale: boolean }) {
   if (!audit) {
     return (
-      <div className="rounded-lg border border-krypt-border p-6 text-center text-xs text-krypt-dim">
+      <div className="rounded-lg border border-pocketed-border p-6 text-center text-xs text-pocketed-dim">
         Save or validate the script to scan it.
       </div>
     );
   }
   return (
-    <div className="space-y-2 rounded-lg border border-krypt-border bg-krypt-void/40 p-3">
+    <div className="space-y-2 rounded-lg border border-pocketed-border bg-pocketed-void/40 p-3">
       <div className="flex items-start gap-2">
         {audit.ok
-          ? <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-krypt-win" />
-          : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-krypt-loss" />}
+          ? <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-pocketed-win" />
+          : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-pocketed-loss" />}
         <div className="min-w-0">
           <div className={cls('text-xs font-semibold',
-            audit.ok ? 'text-krypt-win' : 'text-krypt-loss')}>
+            audit.ok ? 'text-pocketed-win' : 'text-pocketed-loss')}>
             {audit.summary}
           </div>
           {stale && (
-            <div className="mt-0.5 text-[10px] text-krypt-warn">
+            <div className="mt-0.5 text-[10px] text-pocketed-warn">
               The editor differs from the saved script — this scan covers what is
               saved. Save or Validate to rescan.
             </div>
@@ -834,9 +834,9 @@ function AuditPanel({ audit, stale }: { audit: ScriptAudit | null; stale: boolea
         </div>
       )}
 
-      <p className="border-t border-krypt-border/60 pt-2 text-[10px] leading-relaxed text-krypt-dim">
-        Scripts run as <b className="text-krypt-muted">full Python</b>, in the same process
-        that holds your <b className="text-krypt-warn">decrypted wallet key</b>. This scan reads
+      <p className="border-t border-pocketed-border/60 pt-2 text-[10px] leading-relaxed text-pocketed-dim">
+        Scripts run as <b className="text-pocketed-muted">full Python</b>, in the same process
+        that holds your <b className="text-pocketed-warn">decrypted wallet key</b>. This scan reads
         the source and reports what it recognizes — it is a smoke detector, not a lock, and it
         cannot see through deliberately obfuscated code (which is why obfuscation is itself
         reported as critical). Read anything you did not write, especially code an AI generated
@@ -849,11 +849,11 @@ function AuditPanel({ audit, stale }: { audit: ScriptAudit | null; stale: boolea
 
 function BacktestResult({ res, busy }: { res: ScriptBacktest | null; busy: boolean }) {
   if (busy) {
-    return <div className="rounded-lg border border-krypt-border p-6 text-center text-xs text-krypt-dim">Replaying your script over every recorded window…</div>;
+    return <div className="rounded-lg border border-pocketed-border p-6 text-center text-xs text-pocketed-dim">Replaying your script over every recorded window…</div>;
   }
   if (!res) {
     return (
-      <div className="rounded-lg border border-dashed border-krypt-border p-6 text-center text-xs leading-relaxed text-krypt-dim">
+      <div className="rounded-lg border border-dashed border-pocketed-border p-6 text-center text-xs leading-relaxed text-pocketed-dim">
         Run a backtest to replay this script over the app's recorded real-book ticks —
         taker fills at the recorded ask, Polymarket fees included, same safety rails as live.
       </div>
@@ -862,7 +862,7 @@ function BacktestResult({ res, busy }: { res: ScriptBacktest | null; busy: boole
   return (
     <div className="space-y-2">
       {res.scriptError && (
-        <div className="rounded-lg border border-krypt-loss/40 bg-krypt-loss/10 px-3 py-2 text-[11px] text-krypt-loss">
+        <div className="rounded-lg border border-pocketed-loss/40 bg-pocketed-loss/10 px-3 py-2 text-[11px] text-pocketed-loss">
           Script died mid-run: {res.scriptError}
         </div>
       )}
@@ -877,16 +877,16 @@ function BacktestResult({ res, busy }: { res: ScriptBacktest | null; busy: boole
       {Object.keys(res.byAsset).length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(res.byAsset).map(([a, st]) => (
-            <span key={a} className="rounded bg-krypt-surface2 px-1.5 py-0.5 font-mono text-[10px] text-krypt-dim">
+            <span key={a} className="rounded bg-pocketed-surface2 px-1.5 py-0.5 font-mono text-[10px] text-pocketed-dim">
               {a} {st.wins}/{st.n}{' '}
-              <span className={st.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>{fmtUsd(st.pnlUsd, { sign: true })}</span>
+              <span className={st.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>{fmtUsd(st.pnlUsd, { sign: true })}</span>
             </span>
           ))}
         </div>
       )}
       {res.signalResult && (
-        <div className="rounded-lg border border-krypt-border/70 bg-krypt-surface2/30 p-2">
-          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-krypt-muted">
+        <div className="rounded-lg border border-pocketed-border/70 bg-pocketed-surface2/30 p-2">
+          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-pocketed-muted">
             Whale / momentum signal replay (decide_signal)
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
@@ -898,19 +898,19 @@ function BacktestResult({ res, busy }: { res: ScriptBacktest | null; busy: boole
           </div>
           <ul className="mt-1.5 space-y-0.5">
             {(res.signalResult.caveats ?? []).map((c, i) => (
-              <li key={i} className="text-[10px] leading-relaxed text-krypt-warn/70">⚠ {c}</li>
+              <li key={i} className="text-[10px] leading-relaxed text-pocketed-warn/70">⚠ {c}</li>
             ))}
           </ul>
         </div>
       )}
       {(res.scriptLogs?.length ?? 0) > 0 && (
-        <div className="max-h-32 overflow-y-auto rounded-lg border border-krypt-border bg-krypt-void/50 p-2 font-mono text-[10px] text-krypt-muted">
+        <div className="max-h-32 overflow-y-auto rounded-lg border border-pocketed-border bg-pocketed-void/50 p-2 font-mono text-[10px] text-pocketed-muted">
           {res.scriptLogs!.map((l, i) => <div key={i}>{l}</div>)}
         </div>
       )}
       <ul className="space-y-0.5">
         {res.caveats.map((c, i) => (
-          <li key={i} className="text-[10px] leading-relaxed text-krypt-warn/80">⚠ {c}</li>
+          <li key={i} className="text-[10px] leading-relaxed text-pocketed-warn/80">⚠ {c}</li>
         ))}
       </ul>
     </div>
@@ -920,43 +920,43 @@ function BacktestResult({ res, busy }: { res: ScriptBacktest | null; busy: boole
 function DocsPanel({ docs }: { docs: ScriptApiDocs | null }) {
   const [showExamples, setShowExamples] = useState(false);
   if (!docs) {
-    return <div className="rounded-lg border border-krypt-border p-6 text-center text-xs text-krypt-dim">Loading the API reference…</div>;
+    return <div className="rounded-lg border border-pocketed-border p-6 text-center text-xs text-pocketed-dim">Loading the API reference…</div>;
   }
   return (
-    <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-lg border border-krypt-border bg-krypt-void/40 p-4">
+    <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-lg border border-pocketed-border bg-pocketed-void/40 p-4">
       <div className="flex items-center gap-2 text-sm font-semibold text-white">
-        <BookOpen className="h-4 w-4 text-krypt-purple" /> Script API
-        <span className="text-[10px] font-normal text-krypt-dim">
+        <BookOpen className="h-4 w-4 text-pocketed-purple" /> Script API
+        <span className="text-[10px] font-normal text-pocketed-dim">
           — generated live from the engine; always current
         </span>
       </div>
-      <pre className="whitespace-pre-wrap rounded-lg bg-krypt-surface2/50 p-3 font-mono text-[10.5px] leading-relaxed text-krypt-muted">
+      <pre className="whitespace-pre-wrap rounded-lg bg-pocketed-surface2/50 p-3 font-mono text-[10.5px] leading-relaxed text-pocketed-muted">
         {docs.contract}
       </pre>
 
-      <div className="text-xs font-semibold uppercase tracking-wide text-krypt-muted">
+      <div className="text-xs font-semibold uppercase tracking-wide text-pocketed-muted">
         ctx fields ({docs.fields.length})
       </div>
       <table className="w-full text-left text-[11px]">
         <tbody>
           {docs.fields.map((f) => (
-            <tr key={f.name} className="border-t border-krypt-border/50 align-top">
-              <td className="whitespace-nowrap py-1 pr-3 font-mono text-krypt-purple">ctx["{f.name}"]</td>
-              <td className="py-1 pr-3 text-krypt-muted">{f.doc}</td>
+            <tr key={f.name} className="border-t border-pocketed-border/50 align-top">
+              <td className="whitespace-nowrap py-1 pr-3 font-mono text-pocketed-purple">ctx["{f.name}"]</td>
+              <td className="py-1 pr-3 text-pocketed-muted">{f.doc}</td>
               <td className="py-1">
                 {f.backtestable
-                  ? <span className="rounded bg-krypt-win/10 px-1.5 py-0.5 text-[9px] uppercase text-krypt-win">backtestable</span>
-                  : <span className="rounded bg-krypt-warn/10 px-1.5 py-0.5 text-[9px] uppercase text-krypt-warn">live-only</span>}
+                  ? <span className="rounded bg-pocketed-win/10 px-1.5 py-0.5 text-[9px] uppercase text-pocketed-win">backtestable</span>
+                  : <span className="rounded bg-pocketed-warn/10 px-1.5 py-0.5 text-[9px] uppercase text-pocketed-warn">live-only</span>}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="text-xs font-semibold uppercase tracking-wide text-krypt-muted">
+      <div className="text-xs font-semibold uppercase tracking-wide text-pocketed-muted">
         Language &amp; runtime
       </div>
-      <div className="space-y-1 text-[11px] leading-relaxed text-krypt-muted">
+      <div className="space-y-1 text-[11px] leading-relaxed text-pocketed-muted">
         <div>
           Scripts are <b className="text-white">full Python</b> — imports, classes and the
           standard library all work. What the code does is <i>reviewed</i>, not restricted:
@@ -965,7 +965,7 @@ function DocsPanel({ docs }: { docs: ScriptApiDocs | null }) {
         <div>
           Injected without an import:{' '}
           {(docs.injected ?? []).map((b) => (
-            <span key={b} className="mr-1 rounded bg-krypt-surface2 px-1.5 py-0.5 font-mono text-[10px] text-krypt-dim">{b}</span>
+            <span key={b} className="mr-1 rounded bg-pocketed-surface2 px-1.5 py-0.5 font-mono text-[10px] text-pocketed-dim">{b}</span>
           ))}
         </div>
         <div>
@@ -976,8 +976,8 @@ function DocsPanel({ docs }: { docs: ScriptApiDocs | null }) {
         </div>
       </div>
 
-      <div className="text-xs font-semibold uppercase tracking-wide text-krypt-muted">Safety rails (current values)</div>
-      <div className="text-[11px] text-krypt-muted">
+      <div className="text-xs font-semibold uppercase tracking-wide text-pocketed-muted">Safety rails (current values)</div>
+      <div className="text-[11px] text-pocketed-muted">
         Max entry <b className="text-white">{docs.rails.maxEntryCents}¢</b> · max order{' '}
         <b className="text-white">{docs.rails.maxContracts}</b> contracts · max open/script{' '}
         <b className="text-white">{docs.rails.maxOpen}</b> · daily loss stop{' '}
@@ -986,13 +986,13 @@ function DocsPanel({ docs }: { docs: ScriptApiDocs | null }) {
         These apply to every script and cannot be raised from inside one.
       </div>
 
-      <button onClick={() => setShowExamples(!showExamples)} className="text-[11px] text-krypt-purple underline-offset-2 hover:underline">
+      <button onClick={() => setShowExamples(!showExamples)} className="text-[11px] text-pocketed-purple underline-offset-2 hover:underline">
         {showExamples ? 'Hide' : 'Show'} example scripts ({docs.examples.length})
       </button>
       {showExamples && docs.examples.map((ex) => (
         <div key={ex.name}>
           <div className="mb-1 text-[11px] font-semibold text-white">{ex.name}</div>
-          <pre className="overflow-x-auto rounded-lg bg-krypt-surface2/50 p-3 font-mono text-[10.5px] leading-relaxed text-krypt-muted">{ex.code}</pre>
+          <pre className="overflow-x-auto rounded-lg bg-pocketed-surface2/50 p-3 font-mono text-[10.5px] leading-relaxed text-pocketed-muted">{ex.code}</pre>
         </div>
       ))}
     </div>
@@ -1012,13 +1012,13 @@ function Rail({ label, value, suffix, title, onCommit }: {
   };
   return (
     <label className="flex items-center gap-1" title={title}>
-      <span className={title ? 'decoration-krypt-dim/60 underline-offset-2 hover:underline' : undefined}>{label}</span>
+      <span className={title ? 'decoration-pocketed-dim/60 underline-offset-2 hover:underline' : undefined}>{label}</span>
       <input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-        className="w-14 rounded border border-krypt-border bg-krypt-void/60 px-1.5 py-0.5 text-center font-mono text-[11px] text-white outline-none focus:border-krypt-purple/60"
+        className="w-14 rounded border border-pocketed-border bg-pocketed-void/60 px-1.5 py-0.5 text-center font-mono text-[11px] text-white outline-none focus:border-pocketed-purple/60"
       />
       {suffix && <span>{suffix}</span>}
     </label>
@@ -1033,7 +1033,7 @@ function ShadowLedger({
   onRefresh: () => void;
 }) {
   if (orders === null) {
-    return <div className="p-4 text-xs text-krypt-dim">Loading…</div>;
+    return <div className="p-4 text-xs text-pocketed-dim">Loading…</div>;
   }
 
   const real = orders.filter((o) => !o.refused);
@@ -1042,33 +1042,33 @@ function ShadowLedger({
   const wins = settled.filter((o) => o.won).length;
 
   return (
-    <div className="rounded-lg border border-krypt-border bg-krypt-void/50">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-krypt-border px-3 py-2 text-[11px]">
-        <span className="text-krypt-muted">
+    <div className="rounded-lg border border-pocketed-border bg-pocketed-void/50">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-pocketed-border px-3 py-2 text-[11px]">
+        <span className="text-pocketed-muted">
           <b className="text-white">{real.length}</b> would-be order(s)
         </span>
-        <span className="text-krypt-muted">
+        <span className="text-pocketed-muted">
           <b className="text-white">{settled.length}</b> settled ·{' '}
           {wins}W/{settled.length - wins}L
         </span>
-        <span className="text-krypt-muted">
+        <span className="text-pocketed-muted">
           simulated{' '}
-          <b className={pnl >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>
+          <b className={pnl >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>
             {fmtUsd(pnl, { sign: true })}
           </b>
         </span>
         {orders.length > real.length && (
-          <span className="text-krypt-dim">
+          <span className="text-pocketed-dim">
             {orders.length - real.length} refused by rails
           </span>
         )}
-        <button onClick={onRefresh} className="ml-auto text-krypt-purple hover:underline">
+        <button onClick={onRefresh} className="ml-auto text-pocketed-purple hover:underline">
           Refresh
         </button>
       </div>
 
       {orders.length === 0 ? (
-        <div className="p-4 text-xs leading-relaxed text-krypt-dim">
+        <div className="p-4 text-xs leading-relaxed text-pocketed-dim">
           {dryRun
             ? 'Nothing yet. The script is in shadow, so this fills in as it finds entries — a selective strategy can legitimately go hours or days without firing. Entries settle automatically once the market resolves.'
             : 'This script is armed for real orders, so its trades appear in Positions and History rather than here. The shadow ledger only records what a script in Shadow mode would have done.'}
@@ -1076,7 +1076,7 @@ function ShadowLedger({
       ) : (
         <div className="max-h-56 overflow-y-auto">
           <table className="w-full text-left text-[11px]">
-            <thead className="sticky top-0 bg-krypt-surface text-krypt-dim">
+            <thead className="sticky top-0 bg-pocketed-surface text-pocketed-dim">
               <tr>
                 <th className="px-3 py-1.5 font-normal">When</th>
                 <th className="px-3 py-1.5 font-normal">Market</th>
@@ -1088,9 +1088,9 @@ function ShadowLedger({
                 <th className="px-3 py-1.5 font-normal">Why</th>
               </tr>
             </thead>
-            <tbody className="font-mono text-krypt-muted">
+            <tbody className="font-mono text-pocketed-muted">
               {orders.map((o) => (
-                <tr key={o.id} className="border-t border-krypt-border/50">
+                <tr key={o.id} className="border-t border-pocketed-border/50">
                   <td className="whitespace-nowrap px-3 py-1.5">
                     {(o.at || '').replace('T', ' ').slice(5, 16)}
                   </td>
@@ -1104,21 +1104,21 @@ function ShadowLedger({
                   </td>
                   <td className="px-3 py-1.5">
                     {o.refused
-                      ? <span className="text-krypt-dim">refused</span>
+                      ? <span className="text-pocketed-dim">refused</span>
                       : !o.resolved
-                        ? <span className="text-krypt-purple">open</span>
+                        ? <span className="text-pocketed-purple">open</span>
                         : o.won
-                          ? <span className="text-krypt-win">won</span>
-                          : <span className="text-krypt-loss">lost</span>}
+                          ? <span className="text-pocketed-win">won</span>
+                          : <span className="text-pocketed-loss">lost</span>}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     {o.pnlUsd === null || o.pnlUsd === undefined ? '—' : (
-                      <span className={o.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>
+                      <span className={o.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>
                         {fmtUsd(o.pnlUsd, { sign: true })}
                       </span>
                     )}
                   </td>
-                  <td className="max-w-[15rem] truncate px-3 py-1.5 text-krypt-dim">
+                  <td className="max-w-[15rem] truncate px-3 py-1.5 text-pocketed-dim">
                     {o.refused ? o.note : o.reason}
                   </td>
                 </tr>
@@ -1139,7 +1139,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       className={cls(
         'relative h-5 w-9 shrink-0 rounded-full border transition-colors',
-        checked ? 'border-krypt-purple/60 bg-krypt-purple/40' : 'border-krypt-border bg-krypt-surface2',
+        checked ? 'border-pocketed-purple/60 bg-pocketed-purple/40' : 'border-pocketed-border bg-pocketed-surface2',
       )}
     >
       <span
@@ -1154,10 +1154,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'good' | 'bad' }) {
   return (
-    <div className="rounded-lg bg-krypt-surface2/60 p-2">
-      <div className="text-[10px] uppercase tracking-wide text-krypt-dim">{label}</div>
-      <div className={cls('font-mono text-sm', tone === 'good' ? 'text-krypt-win' : tone === 'bad' ? 'text-krypt-loss' : 'text-white')}>{value}</div>
-      {sub && <div className="text-[10px] text-krypt-dim">{sub}</div>}
+    <div className="rounded-lg bg-pocketed-surface2/60 p-2">
+      <div className="text-[10px] uppercase tracking-wide text-pocketed-dim">{label}</div>
+      <div className={cls('font-mono text-sm', tone === 'good' ? 'text-pocketed-win' : tone === 'bad' ? 'text-pocketed-loss' : 'text-white')}>{value}</div>
+      {sub && <div className="text-[10px] text-pocketed-dim">{sub}</div>}
     </div>
   );
 }

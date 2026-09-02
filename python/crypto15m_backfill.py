@@ -63,7 +63,7 @@ async def _fetch_candles_coinbase(asset: str, client: httpx.AsyncClient, end_ms:
     end_iso = datetime.fromtimestamp(end_s, tz=timezone.utc).isoformat()
     url = _COINBASE_URL.format(asset)
     params = {"granularity": 60, "start": start_iso, "end": end_iso}
-    headers = {"User-Agent": "KryptPolyBot/1.0"}
+    headers = {"User-Agent": "Pocketed/1.0"}
     for attempt in (1, 2):
         resp = await client.get(url, params=params, headers=headers, timeout=15.0)
         if resp.status_code == 429 and attempt == 1:
@@ -99,7 +99,7 @@ _COINBASE_MAX = 300
 async def _fetch_series_coinbase(asset: str, client: httpx.AsyncClient,
                                  start_ms: int, end_ms: int) -> dict[int, tuple[float, float]]:
     url = _COINBASE_URL.format(asset)
-    headers = {"User-Agent": "KryptPolyBot/1.0"}
+    headers = {"User-Agent": "Pocketed/1.0"}
     out: dict[int, tuple[float, float]] = {}
     step = _COINBASE_MAX * 60
     cur = start_ms // 1000

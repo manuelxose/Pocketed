@@ -12,7 +12,7 @@ def _build_signed_message(account, nonce: str) -> tuple[str, str]:
     msg = SiweMessage(
         domain="localhost",
         address=account.address,
-        statement="Sign in to Krypt PolyBot",
+        statement="Sign in to Pocketed",
         uri="http://localhost/auth",
         version="1",
         chain_id=137,

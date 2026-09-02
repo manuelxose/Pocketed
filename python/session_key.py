@@ -404,7 +404,7 @@ def build_enable_typed_data(kernel_address: str, session_key_address: str, polic
 
     ⚠ THIS IS A LOCAL CONSENT RECORD ONLY — NOT AN ON-CHAIN PAYLOAD. ⚠
 
-    The `EnableSessionKey` struct and the "Krypt PolyBot Session Key" domain
+    The `EnableSessionKey` struct and the "Pocketed Session Key" domain
     below are bespoke to this application. They have NO relationship to
     Kernel's real plugin-enable typed data (`@zerodev/sdk`'s
     `ValidatorApproved` / `Enable` struct over
@@ -433,7 +433,7 @@ def build_enable_typed_data(kernel_address: str, session_key_address: str, polic
         },
         "primaryType": "EnableSessionKey",
         "domain": {
-            "name": "Krypt PolyBot Session Key",
+            "name": "Pocketed Session Key",
             "version": "1",
             "chainId": _auth.CHAIN_ID,
             "verifyingContract": kernel_address,

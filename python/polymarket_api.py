@@ -64,7 +64,7 @@ async def _get_client() -> httpx.AsyncClient:
             timeout=REQUEST_TIMEOUT,
             headers={
                 "Accept": "application/json",
-                "User-Agent": "KryptPolyBot/1.0",
+                "User-Agent": "Pocketed/1.0",
             },
             limits=httpx.Limits(max_connections=48, max_keepalive_connections=24),
             follow_redirects=True,

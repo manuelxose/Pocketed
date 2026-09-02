@@ -38,7 +38,7 @@ def parse_header(code: str) -> dict:
             continue
         body = s.lstrip("#").strip()
         low = body.lower()
-        if low.startswith("krypt-script"):
+        if low.startswith("pocketed-script") or low.startswith("krypt-script"):
             meta["version"] = body.split()[-1] if len(body.split()) > 1 else "v1"
         elif low.startswith("name:"):
             meta["name"] = body[5:].strip()

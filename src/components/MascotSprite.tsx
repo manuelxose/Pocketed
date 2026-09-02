@@ -5,7 +5,7 @@ import spriteUrl from '../assets/spritebluey.png';
 const FRAMES = 8;
 const DURATION = 900;
 
-interface KryptSpriteProps {
+interface MascotSpriteProps {
   size?: number;
 
   pet?: boolean;
@@ -14,7 +14,7 @@ interface KryptSpriteProps {
   title?: string;
 }
 
-export function KryptSprite({ size = 48, pet = false, className, style, title }: KryptSpriteProps) {
+export function MascotSprite({ size = 48, pet = false, className, style, title }: MascotSpriteProps) {
   const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -34,9 +34,9 @@ export function KryptSprite({ size = 48, pet = false, className, style, title }:
     <span
       ref={ref}
       role="img"
-      aria-label={title ?? 'Krypt mascot'}
+      aria-label={title ?? 'Pocketed mascot'}
       title={title}
-      className={`krypt-sprite${pet ? ' krypt-pet' : ''}${className ? ` ${className}` : ''}`}
+      className={`mascot-sprite${pet ? ' mascot-pet' : ''}${className ? ` ${className}` : ''}`}
       style={{
         width: size,
         height: size,

@@ -12,37 +12,37 @@ export function WhyNotTrading() {
   const c15Blocks = Object.entries(st.c15?.blockReasons || {});
 
   return (
-    <div className="rounded-xl border border-krypt-border bg-krypt-surface2/40 p-3">
+    <div className="rounded-xl border border-pocketed-border bg-pocketed-surface2/40 p-3">
       <div className="mb-2 text-sm font-semibold text-white">Why isn&apos;t it trading?</div>
 
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-krypt-dim">Main engine</div>
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-pocketed-dim">Main engine</div>
       <ul className="space-y-1">
         {st.main.map((g) => (
           <li key={g.id} className="flex items-start gap-2 text-xs">
             <span className={cls(
               'mt-0.5 inline-block h-2 w-2 flex-none rounded-full',
-              g.state === 'ok' ? 'bg-krypt-win' : g.state === 'off' ? 'bg-krypt-dim/50' : 'bg-krypt-loss',
+              g.state === 'ok' ? 'bg-pocketed-win' : g.state === 'off' ? 'bg-pocketed-dim/50' : 'bg-pocketed-loss',
             )} />
-            <span className={g.state === 'blocked' ? 'text-white' : 'text-krypt-dim'}>
+            <span className={g.state === 'blocked' ? 'text-white' : 'text-pocketed-dim'}>
               {g.label}
-              {g.reason && <span className="ml-1 text-krypt-loss">— {g.reason}</span>}
+              {g.reason && <span className="ml-1 text-pocketed-loss">— {g.reason}</span>}
             </span>
           </li>
         ))}
       </ul>
       {filters.length > 0 && (
-        <p className="mt-1.5 text-[11px] text-krypt-dim">
+        <p className="mt-1.5 text-[11px] text-pocketed-dim">
           Last scan: {st.mainCandidates} candidates, {st.mainPlaced} placed. Top skip reasons:{' '}
           {filters.map(([why, n]) => `${why} (×${n})`).join(' · ')}
         </p>
       )}
 
-      <div className="mb-1 mt-3 text-[11px] font-semibold uppercase tracking-wide text-krypt-dim">15-minute crypto</div>
+      <div className="mb-1 mt-3 text-[11px] font-semibold uppercase tracking-wide text-pocketed-dim">15-minute crypto</div>
       {!st.c15.enabled ? (
-        <p className="text-xs text-krypt-dim">Feature is off (open positions are still managed).</p>
+        <p className="text-xs text-pocketed-dim">Feature is off (open positions are still managed).</p>
       ) : (
         <>
-          <p className="text-xs text-krypt-dim">
+          <p className="text-xs text-pocketed-dim">
             {st.c15.live
               ? 'LIVE — entries armed.'
               : 'Monitor-only: wallet not connected.'}
@@ -50,14 +50,14 @@ export function WhyNotTrading() {
           {c15Blocks.length > 0 && (
             <ul className="mt-1 space-y-0.5">
               {c15Blocks.map(([asset, why]) => (
-                <li key={asset} className="text-[11px] text-krypt-dim">
+                <li key={asset} className="text-[11px] text-pocketed-dim">
                   <span className="font-mono text-white">{asset}</span> — {why}
                 </li>
               ))}
             </ul>
           )}
           {c15Blocks.length === 0 && st.c15.live && (
-            <p className="mt-1 text-[11px] text-krypt-dim">No blocked assets this tick — waiting for a signal to qualify.</p>
+            <p className="mt-1 text-[11px] text-pocketed-dim">No blocked assets this tick — waiting for a signal to qualify.</p>
           )}
         </>
       )}

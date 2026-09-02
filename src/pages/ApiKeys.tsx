@@ -32,9 +32,9 @@ export function ApiKeysPage() {
   return (
     <Page
       title="Wallet"
-      subtitle="Connect a Polygon wallet to trade on Polymarket. Your private key is stored locally (encrypted with your Windows account) under %APPDATA%/Krypt PolyBot/credentials and never sent off-machine."
+      subtitle="Connect a Polygon wallet to trade on Polymarket. Your private key is stored locally (encrypted with your Windows account) under %APPDATA%/Pocketed/credentials and never sent off-machine."
       actions={
-        <button onClick={() => void refetch()} className="krypt-btn-default" title="Re-read credential status from disk">
+        <button onClick={() => void refetch()} className="pocketed-btn-default" title="Re-read credential status from disk">
           <RefreshCcw className="h-4 w-4" /> Refresh
         </button>
       }
@@ -46,7 +46,7 @@ export function ApiKeysPage() {
           <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
             <div className={cls(
               'grid h-10 w-10 shrink-0 place-items-center rounded-lg',
-              authStatus?.authOk ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
+              authStatus?.authOk ? 'bg-pocketed-win/10 text-pocketed-win' : 'bg-pocketed-loss/10 text-pocketed-loss',
             )}>
               {authStatus?.authOk ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
             </div>
@@ -54,7 +54,7 @@ export function ApiKeysPage() {
               <div className="text-sm text-white">
                 {authStatus?.authOk ? 'Connected · Polygon mainnet' : 'Not connected'}
               </div>
-              <div className="mt-0.5 text-xs text-krypt-muted">
+              <div className="mt-0.5 text-xs text-pocketed-muted">
                 {cred?.address
                   ? <>Wallet <span className="font-mono text-white">{cred.address}</span></>
                   : 'The bot signs CLOB orders locally with your wallet key. Connect a funded wallet to trade.'}
@@ -71,8 +71,8 @@ export function ApiKeysPage() {
 
       <Section title="Security notes">
         <Card>
-          <ul className="list-disc space-y-1.5 pl-5 text-xs text-krypt-muted">
-            <li>Your private key is written to <span className="font-mono text-white">%APPDATA%/Krypt PolyBot/credentials/wallet.mainnet.key</span>, encrypted at rest with the Windows user keystore (DPAPI).</li>
+          <ul className="list-disc space-y-1.5 pl-5 text-xs text-pocketed-muted">
+            <li>Your private key is written to <span className="font-mono text-white">%APPDATA%/Pocketed/credentials/wallet.mainnet.key</span>, encrypted at rest with the Windows user keystore (DPAPI).</li>
             <li>The Python backend derives Polymarket CLOB API credentials from your key and signs every order locally (EIP-712). Nothing is sent anywhere but Polymarket.</li>
             <li>Use a dedicated trading wallet funded only with what you intend to trade. Anyone with this key controls those funds.</li>
             <li>Click &quot;Delete&quot; before uninstalling if you want the key gone.</li>
@@ -85,13 +85,13 @@ export function ApiKeysPage() {
 
 function ReferralBanner() {
   return (
-    <div className="mb-4 flex flex-col items-start gap-3 rounded-xl border border-krypt-purple/40 bg-gradient-to-r from-krypt-indigo/10 via-krypt-purple/10 to-krypt-pink/10 p-4 md:flex-row md:items-center">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-krypt-glow shadow-krypt-soft">
+    <div className="mb-4 flex flex-col items-start gap-3 rounded-xl border border-pocketed-purple/40 bg-gradient-to-r from-pocketed-indigo/10 via-pocketed-purple/10 to-pocketed-pink/10 p-4 md:flex-row md:items-center">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-pocketed-glow shadow-pocketed-soft">
         <Gift className="h-5 w-5 text-white" />
       </div>
       <div className="flex-1 text-sm">
         <div className="font-medium text-white">No Polymarket account yet?</div>
-        <div className="mt-0.5 text-xs text-krypt-muted">
+        <div className="mt-0.5 text-xs text-pocketed-muted">
           Sign up with our link — deposit $20 and place a first trade for up to $50 in trading
           credits (Polymarket&apos;s current new-user offer). Then fund the wallet with USDC and
           export its private key to connect it here.
@@ -99,7 +99,7 @@ function ReferralBanner() {
       </div>
       <button
         onClick={() => window.open(POLYMARKET_REFERRAL_URL, '_blank', 'noopener,noreferrer')}
-        className="krypt-btn-primary"
+        className="pocketed-btn-primary"
       >
         <Gift className="h-4 w-4" /> Sign up <ExternalLink className="h-3 w-3" />
       </button>
@@ -223,46 +223,46 @@ function WalletSlot({ status, onSaved }: SlotProps) {
     <Section title="Wallet key">
       <Card>
         <div className="mb-3 flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-md border border-krypt-purple/30 bg-krypt-purple/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-krypt-purple">
+          <span className="inline-flex items-center gap-1 rounded-md border border-pocketed-purple/30 bg-pocketed-purple/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pocketed-purple">
             <Wallet className="h-3 w-3" /> Polygon
           </span>
           <div className="text-sm font-semibold text-white">Trading wallet</div>
           <span className={cls(
             'ml-auto rounded-md px-2 py-0.5 text-[10px] uppercase tracking-wider',
             has
-              ? 'border border-krypt-win/30 bg-krypt-win/10 text-krypt-win'
-              : 'border border-krypt-border bg-krypt-surface2 text-krypt-muted',
+              ? 'border border-pocketed-win/30 bg-pocketed-win/10 text-pocketed-win'
+              : 'border border-pocketed-border bg-pocketed-surface2 text-pocketed-muted',
           )}>
             {has ? 'connected' : 'empty'}
           </span>
         </div>
 
         {has && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-krypt-border bg-krypt-surface2 px-3 py-2 text-xs text-krypt-muted">
-            <KeyRound className="h-3.5 w-3.5 text-krypt-win" />
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-pocketed-border bg-pocketed-surface2 px-3 py-2 text-xs text-pocketed-muted">
+            <KeyRound className="h-3.5 w-3.5 text-pocketed-win" />
             <div className="flex-1">
               <div>
                 Signer <span className="font-mono text-white">{status?.addressPreview || '—'}</span>
-                <span className="mx-2 text-krypt-dim">·</span>
-                API creds {status?.hasApiCreds ? <span className="text-krypt-win">derived</span> : <span className="text-krypt-warn">derive on connect</span>}
+                <span className="mx-2 text-pocketed-dim">·</span>
+                API creds {status?.hasApiCreds ? <span className="text-pocketed-win">derived</span> : <span className="text-pocketed-warn">derive on connect</span>}
               </div>
               {status?.funder && (
                 <div className="mt-0.5">
                   Deposit wallet{' '}
                   <span className="font-mono text-white">{status.funder.slice(0, 6)}…{status.funder.slice(-4)}</span>
-                  <span className="mx-2 text-krypt-dim">·</span>
-                  <span className="text-krypt-win">{SIGNATURE_TYPE_LABELS[status.signatureType ?? 0] ?? `type ${status.signatureType}`}</span>
-                  <span className="mx-2 text-krypt-dim">·</span>
-                  <span className="text-krypt-dim">detected from the chain</span>
+                  <span className="mx-2 text-pocketed-dim">·</span>
+                  <span className="text-pocketed-win">{SIGNATURE_TYPE_LABELS[status.signatureType ?? 0] ?? `type ${status.signatureType}`}</span>
+                  <span className="mx-2 text-pocketed-dim">·</span>
+                  <span className="text-pocketed-dim">detected from the chain</span>
                 </div>
               )}
               {status?.walletMode === 'error' && (
-                <div className="mt-0.5 text-krypt-loss">
+                <div className="mt-0.5 text-pocketed-loss">
                   Deposit-wallet setting unreadable: {status.metaError || 'unknown error'}. Re-save your
                   deposit wallet address below.
                 </div>
               )}
-              <div className="text-[10px] text-krypt-dim">
+              <div className="text-[10px] text-pocketed-dim">
                 Paste a new key below to replace, or click Delete to remove.
               </div>
             </div>
@@ -270,11 +270,11 @@ function WalletSlot({ status, onSaved }: SlotProps) {
         )}
 
         {has && status?.keyStoredUnencrypted && (
-          <div className="mb-3 flex items-start gap-2 rounded-lg border border-krypt-loss/50 bg-krypt-loss/10 px-3 py-2 text-xs text-krypt-loss">
+          <div className="mb-3 flex items-start gap-2 rounded-lg border border-pocketed-loss/50 bg-pocketed-loss/10 px-3 py-2 text-xs text-pocketed-loss">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
               <div className="font-semibold">Private key stored unencrypted</div>
-              <div className="mt-0.5 text-krypt-muted">
+              <div className="mt-0.5 text-pocketed-muted">
                 No OS keystore (Windows DPAPI / macOS Keychain / Secret Service) was
                 available, so your wallet key is saved in plaintext on this machine.
                 Anyone with access to this device — or to a backup/cloud-sync of it —
@@ -285,26 +285,26 @@ function WalletSlot({ status, onSaved }: SlotProps) {
           </div>
         )}
 
-        <label className="krypt-label mt-1 flex items-center justify-between">
+        <label className="pocketed-label mt-1 flex items-center justify-between">
           Wallet private key (0x-hex)
           <button
             type="button"
             onClick={() => setShowKey((v) => !v)}
-            className="text-xs text-krypt-muted hover:text-white"
+            className="text-xs text-pocketed-muted hover:text-white"
           >
             {showKey ? <><EyeOff className="mr-1 inline h-3 w-3" />hide</> : <><Eye className="mr-1 inline h-3 w-3" />show</>}
           </button>
         </label>
         <input
           type={showKey ? 'text' : 'password'}
-          className="krypt-input font-mono"
+          className="pocketed-input font-mono"
           placeholder={has ? 'paste a new key to replace the connected wallet' : '0x' + 'x'.repeat(64)}
           value={privateKey}
           onChange={(e) => setPrivateKey(e.target.value)}
           autoComplete="off"
           spellCheck={false}
         />
-        <p className="krypt-help">
+        <p className="pocketed-help">
           <strong className="text-white">Polymarket account (email/Google login):</strong> export your
           key on Polymarket (Settings → Export private key) and add your deposit-wallet address below.
           <br />
@@ -312,23 +312,23 @@ function WalletSlot({ status, onSaved }: SlotProps) {
           signed by a bare wallet address, so the bot cannot trade without one.
         </p>
 
-        <div className="mt-4 rounded-lg border border-krypt-purple/40 bg-krypt-purple/5 p-3">
-          <label className="krypt-label flex flex-wrap items-center gap-2">
+        <div className="mt-4 rounded-lg border border-pocketed-purple/40 bg-pocketed-purple/5 p-3">
+          <label className="pocketed-label flex flex-wrap items-center gap-2">
             Deposit wallet address
-            <span className="rounded bg-krypt-purple/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-krypt-purple">
+            <span className="rounded bg-pocketed-purple/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pocketed-purple">
               needed for Polymarket logins
             </span>
           </label>
           <input
             type="text"
-            className="krypt-input font-mono"
+            className="pocketed-input font-mono"
             placeholder="0x… your Polymarket deposit wallet"
             value={funder}
             onChange={(e) => setFunder(e.target.value)}
             autoComplete="off"
             spellCheck={false}
           />
-          <p className="krypt-help">
+          <p className="pocketed-help">
             <strong className="text-white">This is where your Polymarket balance lives.</strong> Copy the
             Polygon <span className="font-mono">0x…</span> address from your Polymarket profile / deposit
             screen (not the Solana one) and paste it here — without it the bot reads your bare signer
@@ -340,14 +340,14 @@ function WalletSlot({ status, onSaved }: SlotProps) {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <button onClick={save} disabled={busy} className="krypt-btn-primary">
+          <button onClick={save} disabled={busy} className="pocketed-btn-primary">
             <Save className="h-4 w-4" /> Save &amp; connect
           </button>
-          <button onClick={test} disabled={busy || !has} className="krypt-btn-default">
+          <button onClick={test} disabled={busy || !has} className="pocketed-btn-default">
             <ShieldCheck className="h-4 w-4" /> Test
           </button>
           {has && (
-            <button onClick={clear} disabled={busy} className="krypt-btn-danger ml-auto">
+            <button onClick={clear} disabled={busy} className="pocketed-btn-danger ml-auto">
               <Trash2 className="h-4 w-4" /> Delete
             </button>
           )}

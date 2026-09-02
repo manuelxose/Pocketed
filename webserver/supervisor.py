@@ -99,7 +99,7 @@ class WorkerProcess:
             self.data_dir.mkdir(parents=True, exist_ok=True)
             env = {
                 **os.environ,
-                "KRYPT_POLYBOT_USERDATA": str(self.data_dir),
+                "POCKETED_USERDATA": str(self.data_dir),
                 "PYTHONUNBUFFERED": "1",
                 "PYTHONIOENCODING": "utf-8",
             }

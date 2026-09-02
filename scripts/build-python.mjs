@@ -18,17 +18,17 @@ for (const d of ['build', 'dist']) {
 }
 
 console.log('>> Running PyInstaller from spec (this takes ~60s)');
-run(VENV_PY, ['-m', 'PyInstaller', '--noconfirm', 'krypt-polybot-backend.spec']);
+run(VENV_PY, ['-m', 'PyInstaller', '--noconfirm', 'pocketed-backend.spec']);
 
-const out = join(PY_DIR, 'dist', 'krypt-polybot-backend');
+const out = join(PY_DIR, 'dist', 'pocketed-backend');
 if (!existsSync(out)) {
   console.error('!! PyInstaller did not produce', out);
   process.exit(1);
 }
 
 const exe = join(out, process.platform === 'win32'
-  ? 'krypt-polybot-backend.exe'
-  : 'krypt-polybot-backend');
+  ? 'pocketed-backend.exe'
+  : 'pocketed-backend');
 console.log('>> Selftest: verifying frozen bundle can import deps + sign an order');
 const st = spawnSync(exe, ['--selftest'], { stdio: 'inherit', windowsHide: true });
 if (st.error) {
@@ -45,4 +45,4 @@ if (st.status !== 0) {
   process.exit(1);
 }
 
-console.log('>> OK \u2014 backend bundled + selftest PASSED at python/dist/krypt-polybot-backend');
+console.log('>> OK \u2014 backend bundled + selftest PASSED at python/dist/pocketed-backend');

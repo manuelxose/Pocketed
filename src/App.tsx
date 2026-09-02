@@ -40,13 +40,13 @@ function Shell() {
   const showOnboarding = onboarding ? !onboarding.acceptedDisclaimer : false;
 
   return (
-    <div className="flex h-full w-full flex-col bg-krypt-radial bg-krypt-void">
+    <div className="flex h-full w-full flex-col bg-pocketed-radial bg-pocketed-void">
       <TitleBar />
       <div className="flex h-[calc(100%-2.25rem)] w-full">
         <Sidebar page={page} setPage={setPage} />
         <main className="relative flex flex-1 flex-col overflow-hidden">
           <TopBar />
-          <div className="flex-1 overflow-hidden bg-krypt-radial-r">
+          <div className="flex-1 overflow-hidden bg-pocketed-radial-r">
             <PageRouter page={page} setPage={setPage} />
           </div>
         </main>

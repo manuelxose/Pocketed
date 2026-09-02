@@ -232,7 +232,7 @@ def load_resolved_signals(conn: sqlite3.Connection) -> list[dict]:
 def resolve_db_path(arg_db: Optional[str]) -> Path:
     if arg_db:
         return Path(arg_db)
-    env = os.environ.get("KRYPT_POLYBOT_USERDATA")
+    env = os.environ.get("POCKETED_USERDATA")
     if env:
         return Path(env) / "data" / "krypt-polybot.db"
     appdata = os.environ.get("APPDATA")
@@ -272,7 +272,7 @@ def _money(x: float) -> str:
 def format_report(report: dict, source_label: str) -> str:
     o = report["overall"]
     L = []
-    L.append("═══ Krypt PolyBot — fee-aware signal backtest ═══")
+    L.append("═══ Pocketed — fee-aware signal backtest ═══")
     L.append(f"source: {source_label}")
     _fc = report.get("fee_coeff")
     L.append(
@@ -519,7 +519,7 @@ def _crypto15m_verdict(n: int, favorite: dict, contrarian: dict,
 
 def format_crypto15m_report(report: dict, source_label: str) -> str:
     fc = report.get("fee_coeff")
-    L = ["═══ Krypt PolyBot — 15-minute crypto backtest ═══",
+    L = ["═══ Pocketed — 15-minute crypto backtest ═══",
          f"source: {source_label}",
          "fee model: taker fee rate × P·(1−P) "
          + (f"(forced rate {float(fc):.4f})" if fc is not None else "(crypto 0.07)"),
@@ -581,7 +581,7 @@ def main() -> int:
     except Exception:
         pass
 
-    ap = argparse.ArgumentParser(description="Fee-aware Krypt PolyBot signal backtest")
+    ap = argparse.ArgumentParser(description="Fee-aware Pocketed signal backtest")
     ap.add_argument("--db", help="path to krypt-polybot.db (default: auto-detect)")
     ap.add_argument("--fee", type=float, default=None,
                     help="force a single taker-fee rate coefficient for everything "

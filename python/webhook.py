@@ -88,7 +88,7 @@ async def _post(url: str, payload: dict) -> None:
 
 def _krypt_footer(env: str, pos_id: int | str = "?", coid: str = "") -> dict:
     return {
-        "text": f"Krypt PolyBot · {env.upper()} · pos#{pos_id}"
+        "text": f"Pocketed · {env.upper()} · pos#{pos_id}"
         + (f" · {coid[:14]}" if coid else "")
     }
 
@@ -199,7 +199,7 @@ def whale_embed(whale: dict) -> dict:
             {"name": "Confidence", "value": f"{conf:.1f}%", "inline": True},
             {"name": "Edge", "value": f"+{conf - price*100:.1f} pts", "inline": True},
         ],
-        "footer": {"text": "Krypt PolyBot · Whale Scanner"},
+        "footer": {"text": "Pocketed · Whale Scanner"},
     }
 
 
@@ -220,28 +220,28 @@ def momentum_embed(alert: dict) -> dict:
             {"name": "Confidence", "value": f"{conf:.1f}%", "inline": True},
             {"name": "Edge", "value": f"+{conf - implied:.1f} pts", "inline": True},
         ],
-        "footer": {"text": "Krypt PolyBot · Momentum Scanner"},
+        "footer": {"text": "Pocketed · Momentum Scanner"},
     }
 
 
 async def send_event(url: str, kind: str, pos: dict, env: str, note: str = "") -> None:
     if not url:
         return
-    payload = {"username": "Krypt PolyBot", "embeds": [event_embed(kind, pos, env, note)]}
+    payload = {"username": "Pocketed", "embeds": [event_embed(kind, pos, env, note)]}
     await _post(url, payload)
 
 
 async def send_whale(url: str, whale: dict) -> None:
     if not url:
         return
-    payload = {"username": "Krypt PolyBot · Whale", "embeds": [whale_embed(whale)]}
+    payload = {"username": "Pocketed · Whale", "embeds": [whale_embed(whale)]}
     await _post(url, payload)
 
 
 async def send_momentum(url: str, alert: dict) -> None:
     if not url:
         return
-    payload = {"username": "Krypt PolyBot · Momentum", "embeds": [momentum_embed(alert)]}
+    payload = {"username": "Pocketed · Momentum", "embeds": [momentum_embed(alert)]}
     await _post(url, payload)
 
 
@@ -249,7 +249,7 @@ async def send_startup(url: str, env: str, balance_usd: float, portfolio_usd: fl
     if not url:
         return
     embed = {
-        "title": f"{EMOJI['startup']} Krypt PolyBot online",
+        "title": f"{EMOJI['startup']} Pocketed online",
         "color": COLOR["startup"],
         "timestamp": _now_iso(),
         "description": (
@@ -258,19 +258,19 @@ async def send_startup(url: str, env: str, balance_usd: float, portfolio_usd: fl
         ),
         "footer": {"text": "krypt.cc/tools/polybot"},
     }
-    await _post(url, {"username": "Krypt PolyBot", "embeds": [embed]})
+    await _post(url, {"username": "Pocketed", "embeds": [embed]})
 
 
 async def send_shutdown(url: str, note: str = "clean exit") -> None:
     if not url:
         return
     embed = {
-        "title": f"{EMOJI['shutdown']} Krypt PolyBot offline",
+        "title": f"{EMOJI['shutdown']} Pocketed offline",
         "color": COLOR["shutdown"],
         "timestamp": _now_iso(),
         "description": str(note)[:1000],
     }
-    await _post(url, {"username": "Krypt PolyBot", "embeds": [embed]})
+    await _post(url, {"username": "Pocketed", "embeds": [embed]})
 
 
 def _fmt_pnl(v: float) -> str:
@@ -304,7 +304,7 @@ def stats_embed(snap: dict, env: str) -> dict:
         else COLOR["stats"]
     )
     return {
-        "title": f"{EMOJI['stats']} Krypt PolyBot · Hourly Stats",
+        "title": f"{EMOJI['stats']} Pocketed · Hourly Stats",
         "color": color,
         "timestamp": _now_iso(),
         "description": (
@@ -331,7 +331,7 @@ def stats_embed(snap: dict, env: str) -> dict:
             {"name": "Total opened",
              "value": f"{total_opened}", "inline": True},
         ],
-        "footer": {"text": f"Krypt PolyBot · {env.upper()} · Hourly Stats"},
+        "footer": {"text": f"Pocketed · {env.upper()} · Hourly Stats"},
     }
 
 
@@ -339,7 +339,7 @@ async def send_stats(url: str, snap: dict, env: str) -> None:
     if not url:
         return
     payload = {
-        "username": "Krypt PolyBot · Stats",
+        "username": "Pocketed · Stats",
         "appVersion": APP_VERSION,
         "embeds": [stats_embed(snap, env)],
     }

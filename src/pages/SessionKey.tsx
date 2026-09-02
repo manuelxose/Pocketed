@@ -63,48 +63,48 @@ export function SessionKeyPage() {
       <Section title="Session key">
         <Card>
           <div className="mb-3 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-md border border-krypt-purple/30 bg-krypt-purple/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-krypt-purple">
+            <span className="inline-flex items-center gap-1 rounded-md border border-pocketed-purple/30 bg-pocketed-purple/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pocketed-purple">
               <KeyRound className="h-3 w-3" /> ERC-4337
             </span>
             <div className="text-sm font-semibold text-white">Auto-trading</div>
             <span className={
               active
-                ? 'ml-auto rounded-md border border-krypt-win/30 bg-krypt-win/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-krypt-win'
-                : 'ml-auto rounded-md border border-krypt-border bg-krypt-surface2 px-2 py-0.5 text-[10px] uppercase tracking-wider text-krypt-muted'
+                ? 'ml-auto rounded-md border border-pocketed-win/30 bg-pocketed-win/10 px-2 py-0.5 text-[10px] uppercase tracking-wider text-pocketed-win'
+                : 'ml-auto rounded-md border border-pocketed-border bg-pocketed-surface2 px-2 py-0.5 text-[10px] uppercase tracking-wider text-pocketed-muted'
             }>
               {active ? 'active' : 'inactive'}
             </span>
           </div>
 
           {sessionKeyAddress && (
-            <div className="mb-3 rounded-lg border border-krypt-border bg-krypt-surface2 px-3 py-2 text-xs text-krypt-muted">
+            <div className="mb-3 rounded-lg border border-pocketed-border bg-pocketed-surface2 px-3 py-2 text-xs text-pocketed-muted">
               Session key <span className="font-mono text-white">{sessionKeyAddress}</span>
             </div>
           )}
 
-          <label className="krypt-label" htmlFor="daily-cap-input">Daily USD cap</label>
+          <label className="pocketed-label" htmlFor="daily-cap-input">Daily USD cap</label>
           <input
             id="daily-cap-input"
             type="number"
             min={1}
             step={1}
-            className="krypt-input font-mono"
+            className="pocketed-input font-mono"
             value={dailyCapUsd}
             onChange={(e) => setDailyCapUsd(e.target.value)}
             disabled={busy}
           />
-          <p className="krypt-help">
+          <p className="pocketed-help">
             The bot signs CLOB orders with this session key, capped at the daily USD amount
             above. There is no &quot;unlimited&quot; option — the backend rejects a cap of 0 or
             less.
           </p>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <button onClick={() => void activate()} disabled={busy} className="krypt-btn-primary">
+            <button onClick={() => void activate()} disabled={busy} className="pocketed-btn-primary">
               <Power className="h-4 w-4" /> {active ? 'Re-activate' : 'Activate auto-trading'}
             </button>
             {active && (
-              <button onClick={() => void revoke()} disabled={busy} className="krypt-btn-danger ml-auto">
+              <button onClick={() => void revoke()} disabled={busy} className="pocketed-btn-danger ml-auto">
                 <ShieldOff className="h-4 w-4" /> Revoke
               </button>
             )}
@@ -114,7 +114,7 @@ export function SessionKeyPage() {
 
       <Section title="Security notes">
         <Card>
-          <ul className="list-disc space-y-1.5 pl-5 text-xs text-krypt-muted">
+          <ul className="list-disc space-y-1.5 pl-5 text-xs text-pocketed-muted">
             <li>Activating signs an EIP-712 typed message with your connected wallet (MetaMask or similar) authorizing a scoped session key — your main wallet key never leaves your device.</li>
             <li>The session key can only call the Polymarket CTF Exchange contracts and is capped at the daily USD limit you set.</li>
             <li>Revoke instantly disables the session key server-side.</li>

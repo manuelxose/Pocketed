@@ -57,7 +57,7 @@ function drawCard(ctx: CanvasRenderingContext2D, sprite: HTMLImageElement, frame
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,0.95)';
   ctx.font = '34px "Press Start 2P", monospace';
-  ctx.fillText('KRYPT POLYBOT', W / 2, 140);
+  ctx.fillText('POCKETED', W / 2, 140);
   ctx.font = '500 30px "Chakra Petch", sans-serif';
   ctx.fillStyle = 'rgba(161,161,170,0.9)';
   ctx.fillText('A U T O - T R A D E R   S T A T S', W / 2, 192);
@@ -141,9 +141,9 @@ export function FlexStatsCard({ onClose }: { onClose: () => void }) {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'krypt-stats.png'; a.click();
+      a.href = url; a.download = 'pocketed-stats.png'; a.click();
       URL.revokeObjectURL(url);
-      toast.success('Saved krypt-stats.png');
+      toast.success('Saved pocketed-stats.png');
     }, 'image/png');
   };
 
@@ -166,17 +166,17 @@ export function FlexStatsCard({ onClose }: { onClose: () => void }) {
           ref={canvasRef}
           width={W}
           height={H}
-          className="rounded-2xl border border-krypt-border shadow-krypt-strong"
+          className="rounded-2xl border border-pocketed-border shadow-pocketed-strong"
           style={{ width: 312, height: 390 }}
         />
         <div className="flex items-center gap-2">
-          <button onClick={save} className="krypt-btn-primary">
+          <button onClick={save} className="pocketed-btn-primary">
             <Download className="h-4 w-4" /> Save Image
           </button>
-          <button onClick={copy} className="krypt-btn-default">
+          <button onClick={copy} className="pocketed-btn-default">
             <Copy className="h-4 w-4" /> Copy
           </button>
-          <button onClick={onClose} className="krypt-btn-ghost" aria-label="Close">
+          <button onClick={onClose} className="pocketed-btn-ghost" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>

@@ -1,6 +1,6 @@
 # Backend tests
 
-Fast, hermetic unit tests for the Krypt PolyBot Python backend.
+Fast, hermetic unit tests for the Pocketed Python backend.
 
 ## Run
 
@@ -18,7 +18,7 @@ cd python
 ```
 
 `conftest.py` (in `python/`) puts the backend modules on `sys.path` and
-points `KRYPT_POLYBOT_USERDATA` at a throwaway temp dir, so the suite
+points `POCKETED_USERDATA` at a throwaway temp dir, so the suite
 never touches your real `<userData>` DB, logs, or credentials.
 
 ## What's covered

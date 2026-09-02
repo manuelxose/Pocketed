@@ -113,7 +113,7 @@ export function Crypto15mPage() {
       subtitle="Polymarket 15-minute crypto markets. A configurable momentum strategy — tune the entry window, favorite threshold, delta filter, and stop-loss below."
       actions={
         <>
-          <div className="inline-flex overflow-hidden rounded-md border border-krypt-border">
+          <div className="inline-flex overflow-hidden rounded-md border border-pocketed-border">
             {(['simple', 'advanced'] as const).map((m) => (
               <button
                 key={m}
@@ -124,8 +124,8 @@ export function Crypto15mPage() {
                 className={cls(
                   'px-3 py-1.5 text-xs capitalize transition-colors',
                   uiMode === m
-                    ? 'bg-krypt-glow text-white'
-                    : 'bg-krypt-surface2 text-krypt-muted hover:text-white',
+                    ? 'bg-pocketed-glow text-white'
+                    : 'bg-pocketed-surface2 text-pocketed-muted hover:text-white',
                 )}
               >
                 {m}
@@ -134,7 +134,7 @@ export function Crypto15mPage() {
           </div>
           <button
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 rounded-md border border-krypt-border bg-krypt-surface2 px-3 py-1.5 text-xs text-krypt-muted transition-colors hover:border-krypt-purple/40 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-md border border-pocketed-border bg-pocketed-surface2 px-3 py-1.5 text-xs text-pocketed-muted transition-colors hover:border-pocketed-purple/40 hover:text-white"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh
@@ -142,7 +142,7 @@ export function Crypto15mPage() {
         </>
       }
     >
-      <div className="mb-4 rounded-xl border border-krypt-border bg-krypt-surface p-3">
+      <div className="mb-4 rounded-xl border border-pocketed-border bg-pocketed-surface p-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="min-w-[260px] flex-1">
             <Switch
@@ -168,13 +168,13 @@ export function Crypto15mPage() {
           </div>
         </div>
         {status && enabled && !authed && (
-          <div className="mt-2 text-[11px] text-krypt-warn">
+          <div className="mt-2 text-[11px] text-pocketed-warn">
             Enabled, but Polymarket isn't connected — connect your wallet on the
-            <span className="text-krypt-muted"> Wallet</span> page to start trading.
+            <span className="text-pocketed-muted"> Wallet</span> page to start trading.
           </div>
         )}
         {enabled && status?.modelCalibration && !status.modelCalibration.ok && (
-          <div className="mt-2 rounded-lg border border-krypt-loss/40 bg-krypt-loss/10 px-3 py-2 text-[11px] leading-relaxed text-krypt-loss">
+          <div className="mt-2 rounded-lg border border-pocketed-loss/40 bg-pocketed-loss/10 px-3 py-2 text-[11px] leading-relaxed text-pocketed-loss">
             ⛔ <span className="font-semibold">Model calibration degraded</span> — high-confidence
             calls hit {Math.round((status.modelCalibration.rate ?? 0) * 100)}% over the last{' '}
             {status.modelCalibration.n} windows, and the statistical floor on that record
@@ -186,9 +186,9 @@ export function Crypto15mPage() {
         {enabled && (status?.byStrategy?.length ?? 0) > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {status!.byStrategy!.map((st) => (
-              <span key={st.strategy} className="rounded bg-krypt-surface2 px-1.5 py-0.5 font-mono text-[10px] text-krypt-dim" title={st.fees_usd > 0 ? `fees $${st.fees_usd.toFixed(2)}` : undefined}>
+              <span key={st.strategy} className="rounded bg-pocketed-surface2 px-1.5 py-0.5 font-mono text-[10px] text-pocketed-dim" title={st.fees_usd > 0 ? `fees $${st.fees_usd.toFixed(2)}` : undefined}>
                 {st.strategy} {st.wins}/{st.n}{' '}
-                <span className={st.pnl_usd >= 0 ? 'text-krypt-win' : 'text-krypt-loss'}>
+                <span className={st.pnl_usd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss'}>
                   {st.pnl_usd >= 0 ? '+' : ''}${st.pnl_usd.toFixed(2)}
                 </span>
               </span>
@@ -198,7 +198,7 @@ export function Crypto15mPage() {
       </div>
 
       {status?.haltReason && (
-        <div className="mb-4 rounded-lg border border-krypt-warn/50 bg-krypt-warn/10 px-3 py-2 text-xs text-krypt-warn">
+        <div className="mb-4 rounded-lg border border-pocketed-warn/50 bg-pocketed-warn/10 px-3 py-2 text-xs text-pocketed-warn">
           <span className="font-semibold">Engine paused by circuit-breaker: </span>
           {status.haltReason}
         </div>
@@ -219,7 +219,7 @@ export function Crypto15mPage() {
       {uiMode === 'advanced' && <BacktestPanel />}
 
       {err && (
-        <div className="mb-4 rounded-lg border border-krypt-loss/40 bg-krypt-loss/10 px-3 py-2 text-xs text-krypt-loss">
+        <div className="mb-4 rounded-lg border border-pocketed-loss/40 bg-pocketed-loss/10 px-3 py-2 text-xs text-pocketed-loss">
           {err}
         </div>
       )}
@@ -229,7 +229,7 @@ export function Crypto15mPage() {
       {snap && snap.assets.length > 0
         && snap.assets.every((a) => !a.hasMarket)
         && snap.assets.some((a) => /unreachable|blocked|region/i.test(a.error || '')) && (
-        <div className="mb-4 rounded-lg border border-krypt-warn/40 bg-krypt-warn/10 px-3 py-2 text-xs text-krypt-warn">
+        <div className="mb-4 rounded-lg border border-pocketed-warn/40 bg-pocketed-warn/10 px-3 py-2 text-xs text-pocketed-warn">
           <strong>Polymarket market data is unreachable.</strong> Spot prices come from a
           different source (so they still show), but the markets load from Polymarket's API,
           which may be unavailable in your region. Your wallet and funds are unaffected.
@@ -278,10 +278,10 @@ function MarketControls({
     void onPatch({ crypto15mAssets: next });
   };
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-krypt-border bg-krypt-surface p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-pocketed-border bg-pocketed-surface p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] uppercase tracking-wider text-krypt-dim">Window</span>
-        <div className="inline-flex overflow-hidden rounded-lg border border-krypt-border">
+        <span className="text-[11px] uppercase tracking-wider text-pocketed-dim">Window</span>
+        <div className="inline-flex overflow-hidden rounded-lg border border-pocketed-border">
           {C15_INTERVALS.map((iv) => (
             <button
               key={iv.id}
@@ -290,8 +290,8 @@ function MarketControls({
               className={cls(
                 'px-3 py-1 text-xs transition-colors',
                 interval === iv.id
-                  ? 'bg-krypt-glow text-white'
-                  : 'bg-krypt-surface2 text-krypt-muted hover:text-white',
+                  ? 'bg-pocketed-glow text-white'
+                  : 'bg-pocketed-surface2 text-pocketed-muted hover:text-white',
               )}
             >
               {iv.label}
@@ -300,7 +300,7 @@ function MarketControls({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[11px] uppercase tracking-wider text-krypt-dim">Trade</span>
+        <span className="mr-1 text-[11px] uppercase tracking-wider text-pocketed-dim">Trade</span>
         {C15_ALL_ASSETS.map((s) => (
           <button
             key={s}
@@ -309,8 +309,8 @@ function MarketControls({
             className={cls(
               'rounded-md border px-2 py-0.5 text-[11px] font-semibold transition-colors',
               enabledAssets.includes(s)
-                ? 'border-krypt-purple/40 bg-krypt-purple/10 text-white'
-                : 'border-krypt-border bg-krypt-surface2 text-krypt-dim line-through',
+                ? 'border-pocketed-purple/40 bg-pocketed-purple/10 text-white'
+                : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-dim line-through',
             )}
             title={enabledAssets.includes(s) ? `Trading ${s} — click to disable` : `${s} disabled — click to enable`}
           >
@@ -385,27 +385,27 @@ function Crypto15mRules({ config }: { config?: TraderConfig | null }) {
   };
   return (
     <div className="mb-4">
-      <div className="mb-3 rounded-lg border border-krypt-border bg-krypt-surface2/40 p-3">
-        <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-krypt-muted">
+      <div className="mb-3 rounded-lg border border-pocketed-border bg-pocketed-surface2/40 p-3">
+        <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-pocketed-muted">
           Example strategies — learning templates
         </div>
-        <p className="mb-2 text-xs text-krypt-dim">
+        <p className="mb-2 text-xs text-pocketed-dim">
           One-click rule-sets that show how to wire the underlying MACD/RSI signals into an entry.
-          These are <span className="font-semibold text-krypt-warn">illustrations, not proven edges</span> —
+          These are <span className="font-semibold text-pocketed-warn">illustrations, not proven edges</span> —
           nothing here is backtested. Load one, watch it on the cards, then run the 15m backtest
           (<span className="font-mono">python backtest.py</span>) before trusting it with money.
         </p>
         <div className="flex flex-col gap-2">
           {C15_EXAMPLE_STRATEGIES.map((ex) => (
-            <div key={ex.id} className="flex items-start justify-between gap-3 rounded-md border border-krypt-border bg-krypt-surface px-3 py-2">
+            <div key={ex.id} className="flex items-start justify-between gap-3 rounded-md border border-pocketed-border bg-pocketed-surface px-3 py-2">
               <div>
                 <div className="text-sm font-semibold text-white">{ex.name}</div>
-                <div className="text-xs text-krypt-dim">{ex.blurb}</div>
+                <div className="text-xs text-pocketed-dim">{ex.blurb}</div>
               </div>
               <button
                 onClick={() => void loadExample(ex)}
                 disabled={loading === ex.id}
-                className="shrink-0 rounded-md border border-krypt-accent/50 bg-krypt-accent/10 px-3 py-1 text-xs font-semibold text-krypt-accent hover:bg-krypt-accent/20 disabled:opacity-50"
+                className="shrink-0 rounded-md border border-pocketed-accent/50 bg-pocketed-accent/10 px-3 py-1 text-xs font-semibold text-pocketed-accent hover:bg-pocketed-accent/20 disabled:opacity-50"
               >
                 {loading === ex.id ? 'Loading…' : 'Load'}
               </button>
@@ -435,10 +435,10 @@ function Crypto15mRules({ config }: { config?: TraderConfig | null }) {
 function ModePill({ mode }: { mode: 'OFF' | 'WAITING' | 'LIVE' }) {
   const sty =
     mode === 'LIVE'
-      ? 'border-krypt-loss/50 bg-krypt-loss/15 text-krypt-loss'
+      ? 'border-pocketed-loss/50 bg-pocketed-loss/15 text-pocketed-loss'
       : mode === 'WAITING'
-        ? 'border-krypt-warn/50 bg-krypt-warn/15 text-krypt-warn'
-        : 'border-krypt-border bg-krypt-surface2 text-krypt-muted';
+        ? 'border-pocketed-warn/50 bg-pocketed-warn/15 text-pocketed-warn'
+        : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-muted';
   return (
     <span className={cls('rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider', sty)}>
       {mode}
@@ -448,9 +448,9 @@ function ModePill({ mode }: { mode: 'OFF' | 'WAITING' | 'LIVE' }) {
 
 function KV({ label, value, accent }: { label: string; value: string; accent?: 'good' | 'bad' }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-krypt-dim">
+    <span className="inline-flex items-center gap-1.5 text-pocketed-dim">
       {label}
-      <span className={cls('font-mono', accent === 'good' ? 'text-krypt-win' : accent === 'bad' ? 'text-krypt-loss' : 'text-white')}>
+      <span className={cls('font-mono', accent === 'good' ? 'text-pocketed-win' : accent === 'bad' ? 'text-pocketed-loss' : 'text-white')}>
         {value}
       </span>
     </span>
@@ -590,25 +590,25 @@ function StrategySettings({
   });
 
   return (
-    <div className="mb-4 rounded-xl border border-krypt-border bg-krypt-surface p-4">
+    <div className="mb-4 rounded-xl border border-pocketed-border bg-pocketed-surface p-4">
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-krypt-muted">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-pocketed-muted">
           <SlidersHorizontal className="h-3.5 w-3.5" /> Strategy settings
         </span>
-        <span className="text-[11px] text-krypt-dim">changes apply live</span>
+        <span className="text-[11px] text-pocketed-dim">changes apply live</span>
         <div className="ml-auto flex items-center gap-3">
           {liveSignals > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-krypt-win/10 px-2 py-0.5 text-[11px] font-semibold text-krypt-win">
+            <span className="inline-flex items-center gap-1 rounded-full bg-pocketed-win/10 px-2 py-0.5 text-[11px] font-semibold text-pocketed-win">
               <Zap className="h-3 w-3" /> {liveSignals} live signal{liveSignals === 1 ? '' : 's'}
             </span>
           )}
           {!hoursOk && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-krypt-warn/10 px-2 py-0.5 text-[11px] font-semibold text-krypt-warn">
+            <span className="inline-flex items-center gap-1 rounded-full bg-pocketed-warn/10 px-2 py-0.5 text-[11px] font-semibold text-pocketed-warn">
               outside trading hours
             </span>
           )}
-          <span className={cls('inline-flex items-center gap-1.5 text-[11px]', spotOk ? 'text-krypt-muted' : 'text-krypt-warn')}>
-            <span className={cls('h-1.5 w-1.5 rounded-full', spotOk ? 'bg-krypt-win' : 'bg-krypt-warn')} />
+          <span className={cls('inline-flex items-center gap-1.5 text-[11px]', spotOk ? 'text-pocketed-muted' : 'text-pocketed-warn')}>
+            <span className={cls('h-1.5 w-1.5 rounded-full', spotOk ? 'bg-pocketed-win' : 'bg-pocketed-warn')} />
             spot: {spotSource}{spotOk ? '' : ' (down)'}
           </span>
         </div>
@@ -621,7 +621,7 @@ function StrategySettings({
             onClick={() => void applyPreset(p)}
             disabled={savingPreset !== null}
             title={p.hint}
-            className="rounded-md border border-krypt-border bg-krypt-surface2 px-2.5 py-1 text-[11px] text-krypt-muted transition-colors hover:border-krypt-purple/40 hover:text-white disabled:opacity-50"
+            className="rounded-md border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1 text-[11px] text-pocketed-muted transition-colors hover:border-pocketed-purple/40 hover:text-white disabled:opacity-50"
           >
             {p.name}
           </button>
@@ -629,13 +629,13 @@ function StrategySettings({
         <button
           onClick={() => setSaveProfileOpen(true)}
           title="Save these crypto settings as a profile (Profiles → Crypto market)"
-          className="ml-auto inline-flex items-center gap-1 rounded-md border border-krypt-border bg-krypt-surface2 px-2.5 py-1 text-[11px] text-krypt-muted transition-colors hover:border-krypt-purple/40 hover:text-white"
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1 text-[11px] text-pocketed-muted transition-colors hover:border-pocketed-purple/40 hover:text-white"
         >
           <FolderPlus className="h-3 w-3" /> Save as profile
         </button>
         <button
           onClick={resetDefaults}
-          className="inline-flex items-center gap-1 rounded-md border border-krypt-border bg-krypt-surface2 px-2.5 py-1 text-[11px] text-krypt-dim transition-colors hover:border-krypt-warn/40 hover:text-krypt-warn"
+          className="inline-flex items-center gap-1 rounded-md border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1 text-[11px] text-pocketed-dim transition-colors hover:border-pocketed-warn/40 hover:text-pocketed-warn"
         >
           <RotateCcw className="h-3 w-3" /> Reset
         </button>
@@ -652,7 +652,7 @@ function StrategySettings({
       />
 
       {config?.crypto15mUseRules && (
-        <div className="mb-3 rounded-lg border border-krypt-warn/40 bg-krypt-warn/10 px-3 py-2 text-[11px] leading-relaxed text-krypt-warn">
+        <div className="mb-3 rounded-lg border border-pocketed-warn/40 bg-pocketed-warn/10 px-3 py-2 text-[11px] leading-relaxed text-pocketed-warn">
           <span className="font-semibold">Custom entry rules are ON</span> — the conditions in
           “Custom entry rules (advanced)” decide entry. The <span className="font-mono">Entry window</span> and
           {' '}<span className="font-mono">Min move Δ</span> here are <span className="font-semibold">ignored</span>;
@@ -660,7 +660,7 @@ function StrategySettings({
           as a safety floor/cap.
           <button
             onClick={() => void update({ crypto15mUseRules: false })}
-            className="ml-1.5 rounded border border-krypt-warn/50 px-1.5 py-0.5 font-semibold underline-offset-2 transition-colors hover:bg-krypt-warn/20"
+            className="ml-1.5 rounded border border-pocketed-warn/50 px-1.5 py-0.5 font-semibold underline-offset-2 transition-colors hover:bg-pocketed-warn/20"
           >
             Turn rules off
           </button>
@@ -747,12 +747,12 @@ function StrategySettings({
               onCommit={(v) => void update({ crypto15mTakeProfitTotal: v })}
             />
           </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-krypt-dim">
+          <p className="mt-2 text-[11px] leading-relaxed text-pocketed-dim">
             Pick a preset above, tune the direction and entry band, set your bet
             size and safety caps, flip the executor on — that&apos;s it.
             Take-profits, streak sizing, indicator gates, model tuning, custom
             rules, and backtesting live in{' '}
-            <span className="font-semibold text-krypt-muted">Advanced</span> (top right).
+            <span className="font-semibold text-pocketed-muted">Advanced</span> (top right).
           </p>
         </>
       )}
@@ -1031,7 +1031,7 @@ function StrategySettings({
 
       <SizingPreview sizing={sizing} mode={sizingMode} orderSize={config?.crypto15mOrderSize ?? 5} />
       {dir === 'contrarian' && (
-        <p className="mt-2 text-[11px] text-krypt-warn/90">
+        <p className="mt-2 text-[11px] text-pocketed-warn/90">
           Contrarian: when a side is an extreme favorite (≥ threshold) the executor buys the CHEAP opposite side — a low-win, high-payoff longshot. Set stop-loss to 0 to hold to settlement.
         </p>
       )}
@@ -1051,33 +1051,33 @@ function SizingPreview({ sizing, mode, orderSize }: {
   const belowMin = estContracts >= 1 && estContracts < MIN_CONTRACTS;
   const balanceLimited = known && (mode === 'balance_pct' || estContracts < orderSize);
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-krypt-border bg-krypt-surface2 px-3 py-2 text-[11px]">
-      <span className="inline-flex items-center gap-1.5 font-semibold uppercase tracking-wider text-krypt-dim">
+    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-pocketed-border bg-pocketed-surface2 px-3 py-2 text-[11px]">
+      <span className="inline-flex items-center gap-1.5 font-semibold uppercase tracking-wider text-pocketed-dim">
         <Wallet className="h-3.5 w-3.5" /> Per bet
       </span>
       <span className="font-mono text-sm text-white">≈ {fmtUsd(estCostUsd)}</span>
-      <span className="text-krypt-muted">
+      <span className="text-pocketed-muted">
         {estContracts} contract{estContracts === 1 ? '' : 's'} @ ~{estPriceCents}¢
       </span>
       {mode === 'balance_pct' && (
-        <span className="text-krypt-dim">
+        <span className="text-pocketed-dim">
           {(balancePct * 100).toFixed(1)}% of {known ? fmtUsd(balanceUsd) : 'balance'}
         </span>
       )}
       {maxLossPct > 0 && (
-        <span className="text-krypt-dim">
+        <span className="text-pocketed-dim">
           max risk {(maxLossPct * 100).toFixed(1)}%{known ? ` · ${fmtUsd(balanceUsd * maxLossPct)}` : ''}
         </span>
       )}
       {streakMult != null && streakMult !== 1 && (
-        <span className={streakMult > 1 ? 'text-krypt-warn' : 'text-krypt-dim'}>
+        <span className={streakMult > 1 ? 'text-pocketed-warn' : 'text-pocketed-dim'}>
           streak ×{streakMult.toFixed(2)}
         </span>
       )}
-      {known && <span className="ml-auto text-krypt-dim">balance {fmtUsd(balanceUsd)}</span>}
-      {note && <span className="w-full text-krypt-warn">{note}</span>}
+      {known && <span className="ml-auto text-pocketed-dim">balance {fmtUsd(balanceUsd)}</span>}
+      {note && <span className="w-full text-pocketed-warn">{note}</span>}
       {belowMin && (
-        <span className="w-full text-krypt-loss">
+        <span className="w-full text-pocketed-loss">
           {balanceLimited
             ? `Your ${fmtUsd(balanceUsd)} balance only funds ${estContracts} contract${estContracts === 1 ? '' : 's'} at ~${estPriceCents}¢ — below Polymarket's ${MIN_CONTRACTS}-contract minimum, so orders won't place. Add funds to trade.`
             : `Below Polymarket's ${MIN_CONTRACTS}-contract minimum — orders won't place. Raise your order size to ${MIN_CONTRACTS}+ contracts.`}
@@ -1112,10 +1112,10 @@ function NumField({
   };
 
   return (
-    <label className="block rounded-lg border border-krypt-border bg-krypt-surface2 px-2.5 py-1.5" title={hint}>
-      <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-krypt-dim">
+    <label className="block rounded-lg border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1.5" title={hint}>
+      <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-pocketed-dim">
         <span>{label}</span>
-        {suffix && <span className="text-krypt-dim/70">{suffix}</span>}
+        {suffix && <span className="text-pocketed-dim/70">{suffix}</span>}
       </div>
       <input
         type="number"
@@ -1143,15 +1143,15 @@ function SelectField({
   hint?: string;
 }) {
   return (
-    <label className="block rounded-lg border border-krypt-border bg-krypt-surface2 px-2.5 py-1.5" title={hint}>
-      <div className="text-[9px] uppercase tracking-wider text-krypt-dim">{label}</div>
+    <label className="block rounded-lg border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1.5" title={hint}>
+      <div className="text-[9px] uppercase tracking-wider text-pocketed-dim">{label}</div>
       <select
         value={value}
         onChange={(e) => onCommit(e.target.value)}
         className="mt-0.5 w-full cursor-pointer bg-transparent font-mono text-sm text-white outline-none"
       >
         {options.map(([v, lbl]) => (
-          <option key={v} value={v} className="bg-krypt-surface text-white">{lbl}</option>
+          <option key={v} value={v} className="bg-pocketed-surface text-white">{lbl}</option>
         ))}
       </select>
     </label>
@@ -1172,24 +1172,24 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
   const ring = cls(
     a.enabled === false && 'opacity-50',
     state === 'signal'
-      ? 'border-krypt-win/60 shadow-[0_0_22px_rgba(34,197,94,0.18)]'
+      ? 'border-pocketed-win/60 shadow-[0_0_22px_rgba(34,197,94,0.18)]'
       : state === 'window'
-        ? 'border-krypt-warn/50'
-        : 'border-krypt-border',
+        ? 'border-pocketed-warn/50'
+        : 'border-pocketed-border',
   );
 
   const upFav = a.favorite === 'up';
   const downFav = a.favorite === 'down';
 
   return (
-    <div className={cls('krypt-card flex flex-col gap-3 border', ring)}>
+    <div className={cls('pocketed-card flex flex-col gap-3 border', ring)}>
       <div className="flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-krypt-surface2 text-krypt-purple">
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-pocketed-surface2 text-pocketed-purple">
           <Bitcoin className="h-4 w-4" />
         </div>
         <div className="leading-tight">
           <div className="text-sm font-semibold text-white">{a.asset}</div>
-          <div className="font-mono text-[10px] text-krypt-dim">{a.series}</div>
+          <div className="font-mono text-[10px] text-pocketed-dim">{a.series}</div>
         </div>
         <div className="ml-auto">
           <StatePill state={state} />
@@ -1197,11 +1197,11 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
       </div>
 
       {a.error ? (
-        <div className="rounded-md border border-krypt-loss/30 bg-krypt-loss/5 px-2 py-1.5 text-[11px] text-krypt-loss">
+        <div className="rounded-md border border-pocketed-loss/30 bg-pocketed-loss/5 px-2 py-1.5 text-[11px] text-pocketed-loss">
           {a.error}
         </div>
       ) : !a.hasMarket ? (
-        <div className="py-2 text-center text-xs text-krypt-dim">No open contract right now.</div>
+        <div className="py-2 text-center text-xs text-pocketed-dim">No open contract right now.</div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2">
@@ -1209,10 +1209,10 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
             <SideBox label="DOWN" prob={a.downProb} fav={downFav} />
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-krypt-muted">
+            <span className="text-pocketed-muted">
               closes in <span className="font-mono text-white">{fmtMins(a.minsLeft)}</span>
             </span>
-            <span className="text-krypt-muted">
+            <span className="text-pocketed-muted">
               entry <span className="font-mono text-white">{pct(a.entryCost)}</span>
             </span>
           </div>
@@ -1220,8 +1220,8 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
             <div className={cls(
               'flex items-center justify-between rounded-md border px-2 py-1 text-[11px]',
               a.arbSignal
-                ? 'border-krypt-win/50 bg-krypt-win/10 text-krypt-win'
-                : 'border-krypt-border bg-krypt-surface2 text-krypt-dim',
+                ? 'border-pocketed-win/50 bg-pocketed-win/10 text-pocketed-win'
+                : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-dim',
             )}>
               <span>Up+Down asks</span>
               <span className="font-mono">
@@ -1236,29 +1236,29 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
             <div className={cls(
               'flex items-center justify-between rounded-md border px-2 py-1 text-[11px]',
               (a.edgeNetCents ?? -1) >= 2
-                ? 'border-krypt-purple/50 bg-krypt-purple/10 text-krypt-purple'
-                : 'border-krypt-border bg-krypt-surface2 text-krypt-dim',
+                ? 'border-pocketed-purple/50 bg-pocketed-purple/10 text-pocketed-purple'
+                : 'border-pocketed-border bg-pocketed-surface2 text-pocketed-dim',
             )}>
               <span>Model</span>
               <span className="font-mono">
                 {Math.round(a.modelProb * 100)}%{a.modelProb >= 0.5 ? '↑' : '↓'}
                 {a.edgeNetCents != null && (
-                  <span className={cls('ml-2', a.edgeNetCents >= 0 ? 'text-krypt-win' : 'text-krypt-loss')}>
+                  <span className={cls('ml-2', a.edgeNetCents >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss')}>
                     {a.edgeNetCents >= 0 ? '+' : ''}{a.edgeNetCents.toFixed(1)}¢
                   </span>
                 )}
-                {!a.spotLive && <span className="ml-2 text-krypt-dim">rest spot</span>}
+                {!a.spotLive && <span className="ml-2 text-pocketed-dim">rest spot</span>}
               </span>
             </div>
           )}
           {a.bookImbalance != null && (
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-krypt-muted">Order-flow (Up book)</span>
+              <span className="text-pocketed-muted">Order-flow (Up book)</span>
               <span className={cls(
                 'font-mono',
-                a.bookImbalance > 0.15 ? 'text-krypt-win'
-                  : a.bookImbalance < -0.15 ? 'text-krypt-loss'
-                    : 'text-krypt-dim',
+                a.bookImbalance > 0.15 ? 'text-pocketed-win'
+                  : a.bookImbalance < -0.15 ? 'text-pocketed-loss'
+                    : 'text-pocketed-dim',
               )}>
                 {a.bookImbalance > 0 ? '+' : ''}{a.bookImbalance.toFixed(2)}
                 {a.bookImbalance > 0.15 ? ' buy' : a.bookImbalance < -0.15 ? ' sell' : ''}
@@ -1267,12 +1267,12 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
           )}
           {a.peersAgree != null && (
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-krypt-muted">Peers agree ({a.favorite})</span>
+              <span className="text-pocketed-muted">Peers agree ({a.favorite})</span>
               <span className={cls(
                 'font-mono',
-                a.peersAgree >= 0.6 ? 'text-krypt-win'
-                  : a.peersAgree <= 0.3 ? 'text-krypt-loss'
-                    : 'text-krypt-dim',
+                a.peersAgree >= 0.6 ? 'text-pocketed-win'
+                  : a.peersAgree <= 0.3 ? 'text-pocketed-loss'
+                    : 'text-pocketed-dim',
               )}>
                 {Math.round(a.peersAgree * 100)}%
               </span>
@@ -1280,10 +1280,10 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
           )}
           {a.macdHist != null && (
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-krypt-muted">MACD (underlying)</span>
+              <span className="text-pocketed-muted">MACD (underlying)</span>
               <span className={cls(
                 'font-mono',
-                a.macdHist > 0 ? 'text-krypt-win' : a.macdHist < 0 ? 'text-krypt-loss' : 'text-krypt-dim',
+                a.macdHist > 0 ? 'text-pocketed-win' : a.macdHist < 0 ? 'text-pocketed-loss' : 'text-pocketed-dim',
               )}>
                 {a.macdHist > 0 ? 'bull' : a.macdHist < 0 ? 'bear' : 'flat'}
                 {a.macdCross === 1 ? ' ↑' : a.macdCross === -1 ? ' ↓' : ''}
@@ -1296,16 +1296,16 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
             const gap = a.wsAsk - gammaC;
             return (
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-krypt-muted">
+                <span className="text-pocketed-muted">
                   Real book {a.priceSource === 'ws'
-                    ? <span className="text-krypt-win">● deciding</span>
-                    : <span className="text-krypt-dim">(ref)</span>}
+                    ? <span className="text-pocketed-win">● deciding</span>
+                    : <span className="text-pocketed-dim">(ref)</span>}
                 </span>
                 <span className={cls(
                   'font-mono',
-                  Math.abs(gap) >= 5 ? 'text-krypt-loss' : 'text-krypt-dim',
+                  Math.abs(gap) >= 5 ? 'text-pocketed-loss' : 'text-pocketed-dim',
                 )}>
-                  {a.wsAsk}¢ <span className="text-krypt-muted">vs {gammaC}¢ Gamma</span>
+                  {a.wsAsk}¢ <span className="text-pocketed-muted">vs {gammaC}¢ Gamma</span>
                   {` (${gap >= 0 ? '+' : ''}${gap}¢)`}
                 </span>
               </div>
@@ -1314,7 +1314,7 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
         </>
       )}
 
-      <div className="-mx-5 -mb-5 mt-1 grid grid-cols-3 gap-px border-t border-krypt-border bg-krypt-border/40 text-center text-[11px]">
+      <div className="-mx-5 -mb-5 mt-1 grid grid-cols-3 gap-px border-t border-pocketed-border bg-pocketed-border/40 text-center text-[11px]">
         <Foot label="Spot" value={fmtSpot(a.spotUsd)} />
         <Foot label="Open" value={fmtSpot(a.open15mUsd)} />
         <Foot label="Δ move" value={fmtDelta(a.deltaUsd)} />
@@ -1326,27 +1326,27 @@ function AssetCard({ a }: { a: Crypto15mAsset }) {
 function StatePill({ state }: { state: CardState }) {
   if (state === 'signal') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-krypt-win/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-krypt-win">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-krypt-win shadow-[0_0_8px_currentColor]" />
+      <span className="inline-flex items-center gap-1 rounded-full bg-pocketed-win/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-pocketed-win">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-pocketed-win shadow-[0_0_8px_currentColor]" />
         Signal
       </span>
     );
   }
   if (state === 'window') {
     return (
-      <span className="rounded-full bg-krypt-warn/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-krypt-warn">
+      <span className="rounded-full bg-pocketed-warn/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pocketed-warn">
         In window
       </span>
     );
   }
   if (state === 'watching') {
     return (
-      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-krypt-muted">
+      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-pocketed-muted">
         watching
       </span>
     );
   }
-  return <span className="text-[10px] uppercase tracking-wider text-krypt-dim">idle</span>;
+  return <span className="text-[10px] uppercase tracking-wider text-pocketed-dim">idle</span>;
 }
 
 function SideBox({
@@ -1358,12 +1358,12 @@ function SideBox({
         'rounded-lg border px-2 py-1.5 text-center',
         fav
           ? good
-            ? 'border-krypt-win/40 bg-krypt-win/10'
-            : 'border-krypt-loss/40 bg-krypt-loss/10'
-          : 'border-krypt-border bg-krypt-surface2',
+            ? 'border-pocketed-win/40 bg-pocketed-win/10'
+            : 'border-pocketed-loss/40 bg-pocketed-loss/10'
+          : 'border-pocketed-border bg-pocketed-surface2',
       )}
     >
-      <div className={cls('text-[10px] uppercase tracking-wider', fav ? (good ? 'text-krypt-win' : 'text-krypt-loss') : 'text-krypt-dim')}>
+      <div className={cls('text-[10px] uppercase tracking-wider', fav ? (good ? 'text-pocketed-win' : 'text-pocketed-loss') : 'text-pocketed-dim')}>
         {label}{fav ? ' ★' : ''}
       </div>
       <div className="font-mono text-lg text-white">{pct(prob)}</div>
@@ -1373,8 +1373,8 @@ function SideBox({
 
 function Foot({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-krypt-surface px-2 py-2">
-      <div className="text-[9px] uppercase tracking-wider text-krypt-dim">{label}</div>
+    <div className="bg-pocketed-surface px-2 py-2">
+      <div className="text-[9px] uppercase tracking-wider text-pocketed-dim">{label}</div>
       <div className="mt-0.5 font-mono text-white">{value}</div>
     </div>
   );
@@ -1394,9 +1394,9 @@ const C15_SKIP_LABELS: Record<string, { label: string; tip: string }> = {
 function PositionsTable({ title, rows }: { title: string; rows: Crypto15mPosition[] }) {
   return (
     <div>
-      <h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-krypt-muted">{title}</h3>
-      <div className="overflow-hidden rounded-xl border border-krypt-border">
-        <table className="krypt-table">
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.16em] text-pocketed-muted">{title}</h3>
+      <div className="overflow-hidden rounded-xl border border-pocketed-border">
+        <table className="pocketed-table">
           <thead>
             <tr>
               <th>Asset</th>
@@ -1426,35 +1426,35 @@ function PositionRow({ p }: { p: Crypto15mPosition }) {
       <td>
         <span className={cls(
           'rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase',
-          p.side === 'up' ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
+          p.side === 'up' ? 'bg-pocketed-win/10 text-pocketed-win' : 'bg-pocketed-loss/10 text-pocketed-loss',
         )}>
           {p.side || p.direction}
         </span>
       </td>
-      <td className="text-xs text-krypt-muted">
+      <td className="text-xs text-pocketed-muted">
         {p.settling ? (
-          <span className="text-krypt-warn" title="Window closed — waiting on Polymarket's on-chain settlement to index (usually under ~2 min).">
+          <span className="text-pocketed-warn" title="Window closed — waiting on Polymarket's on-chain settlement to index (usually under ~2 min).">
             resolving…
           </span>
         ) : reason ? (
           <span
-            className={p.status === 'canceled' || p.status === 'error' ? 'text-krypt-dim' : undefined}
+            className={p.status === 'canceled' || p.status === 'error' ? 'text-pocketed-dim' : undefined}
             title={reason.tip}
           >
             {reason.label}
           </span>
         ) : p.status === 'error' ? (
-          <span className="text-krypt-loss" title={p.error || 'Order error'}>error</span>
+          <span className="text-pocketed-loss" title={p.error || 'Order error'}>error</span>
         ) : (
           <>{p.status}</>
         )}
       </td>
       <td className="font-mono text-xs">{p.filledContracts}/{p.targetContracts}</td>
       <td className="font-mono text-xs">{entryC ? `${Math.round(entryC)}¢` : '—'}</td>
-      <td className="font-mono text-xs text-krypt-muted">{fmtUsd(p.costUsd)}</td>
+      <td className="font-mono text-xs text-pocketed-muted">{fmtUsd(p.costUsd)}</td>
       <td className={cls(
         'font-mono text-xs',
-        p.pnlUsd === null ? 'text-krypt-dim' : p.pnlUsd >= 0 ? 'text-krypt-win' : 'text-krypt-loss',
+        p.pnlUsd === null ? 'text-pocketed-dim' : p.pnlUsd >= 0 ? 'text-pocketed-win' : 'text-pocketed-loss',
       )}>
         {p.pnlUsd === null ? '—' : fmtUsd(p.pnlUsd, { sign: true })}
       </td>

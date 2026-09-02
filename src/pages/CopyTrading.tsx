@@ -1,16 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Copy, FolderPlus, Plus, Trash2, Wallet, X } from 'lucide-react';
-import type { CopyStatus, TraderConfig } from '@shared/types';
+import type { TraderConfig } from '@shared/types';
 import { useToast } from '../state/ToastProvider';
 import { Card, NameDialog, NumberInput, Page, Section, Switch } from '../components/common';
 import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
 import { usePositionsQuery } from '../hooks/useAccountData';
-
-const POLL_MS = 8000;
-
-let cachedStatus: CopyStatus | null = null;
+import { useCopyStatusQuery } from '../hooks/useCopyTrading';
 
 const isAddr = (s: string): boolean => /^0x[0-9a-fA-F]{40}$/.test(s.trim());
 
@@ -20,31 +17,16 @@ export function CopyTradingPage() {
   const patchConfig = usePatchConfigMutation();
   const saveProfileMutation = useSaveProfileMutation();
   const toast = useToast();
-  const [status, setStatus] = useState<CopyStatus | null>(cachedStatus);
+  const { data: status = null, refetch: refetchStatus } = useCopyStatusQuery();
   const [addr, setAddr] = useState('');
   const [busy, setBusy] = useState(false);
   const [saveProfileOpen, setSaveProfileOpen] = useState(false);
-  const timer = useRef<number | null>(null);
-
-  async function load() {
-    try {
-      const s = await window.krypt.copy.status();
-      cachedStatus = s;
-      setStatus(s);
-    } catch {}
-  }
-
-  useEffect(() => {
-    void load();
-    timer.current = window.setInterval(load, POLL_MS);
-    return () => { if (timer.current) window.clearInterval(timer.current); };
-  }, []);
 
   const update = async (patch: Partial<TraderConfig>): Promise<void> => {
     setBusy(true);
     try {
       await patchConfig.mutateAsync(patch);
-      void load();
+      void refetchStatus();
     } finally {
       setBusy(false);
     }

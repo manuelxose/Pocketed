@@ -55,3 +55,19 @@ def test_export_nonexistent_profile_returns_404(authed_client):
 def test_import_malformed_json_returns_400(authed_client):
     resp = authed_client.post("/profiles/import", json={"json": "{not valid json"})
     assert resp.status_code == 400
+
+
+def test_get_onboarding_requires_auth(client):
+    resp = client.get("/onboarding")
+    assert resp.status_code == 401
+
+
+def test_get_and_patch_onboarding_roundtrip(authed_client):
+    resp = authed_client.get("/onboarding")
+    assert resp.status_code == 200
+    assert resp.json() == {"acceptedDisclaimer": False}
+    resp2 = authed_client.patch("/onboarding", json={"acceptedDisclaimer": True})
+    assert resp2.status_code == 200
+    assert resp2.json() == {"acceptedDisclaimer": True}
+    resp3 = authed_client.get("/onboarding")
+    assert resp3.json() == {"acceptedDisclaimer": True}

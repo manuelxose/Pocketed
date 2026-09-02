@@ -6,7 +6,7 @@ import { useToast } from '../state/ToastProvider';
 import { Card, Page, Section, Switch } from '../components/common';
 
 export function SettingsPage() {
-  const { config, refresh, state, backend } = useApp();
+  const { config, refresh, backend } = useApp();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
@@ -50,25 +50,6 @@ export function SettingsPage() {
                 ? ' — open positions keep their management passes; a restart briefly interrupts them.'
                 : ' — a restart usually clears a stuck backend.'}
             </div>
-          </div>
-        </Card>
-      </Section>
-
-      <Section title="App preferences">
-        <Card>
-          <div className="grid gap-2 md:grid-cols-2">
-            <Switch
-              label="Start with Windows"
-              description="Launch Krypt PolyBot at login (silent if Start Minimized is on)."
-              checked={!!state?.startWithWindows}
-              onChange={(v) => window.krypt.state.setStartWithWindows(v).then(refresh.state)}
-            />
-            <Switch
-              label="Start minimized to tray"
-              description="If autostarted, hide to tray on launch. Open from the tray icon."
-              checked={!!state?.startMinimized}
-              onChange={(v) => window.krypt.state.setStartMinimized(v).then(refresh.state)}
-            />
           </div>
         </Card>
       </Section>

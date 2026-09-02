@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
-import { AppStateProvider, useApp } from './state/AppStateProvider';
+import { AppStateProvider } from './state/AppStateProvider';
 import { ToastProvider } from './state/ToastProvider';
 import { OnboardingModal } from './pages/Onboarding';
+import { useOnboardingQuery } from './hooks/useOnboarding';
 import { DashboardPage } from './pages/Dashboard';
 import { MainEnginePage } from './pages/MainEngine';
 import { SettingsPage } from './pages/Settings';
@@ -42,9 +43,9 @@ export default function App() {
 
 function Shell() {
   const [page, setPage] = useState<PageId>('dashboard');
-  const { state } = useApp();
+  const { data: onboarding } = useOnboardingQuery();
 
-  const showOnboarding = state ? !state.acceptedDisclaimer : false;
+  const showOnboarding = onboarding ? !onboarding.acceptedDisclaimer : false;
 
   return (
     <div className="flex h-full w-full flex-col bg-krypt-radial bg-krypt-void">

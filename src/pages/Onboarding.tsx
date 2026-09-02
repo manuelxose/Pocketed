@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { ArrowRight, ExternalLink, Gift, ShieldAlert, Youtube } from 'lucide-react';
 import { useToast } from '../state/ToastProvider';
 import { POLYMARKET_REFERRAL_URL, KRYPT_YOUTUBE_GUIDE } from '../utils/links';
+import { useAcceptDisclaimerMutation } from '../hooks/useOnboarding';
 
 export function OnboardingModal({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [accepted, setAccepted] = useState(false);
   const [eligible, setEligible] = useState(false);
   const toast = useToast();
+  const acceptDisclaimer = useAcceptDisclaimerMutation();
 
   const finish = async (): Promise<void> => {
     if (!accepted || !eligible) {
       toast.warn('Please tick both boxes to continue');
       return;
     }
-    await window.krypt.state.acceptDisclaimer();
+    await acceptDisclaimer.mutateAsync();
     toast.success('Welcome to Krypt PolyBot');
     onDone();
   };

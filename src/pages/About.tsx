@@ -4,9 +4,11 @@ import { Card, Page, Section } from '../components/common';
 import {
   POLYMARKET_REFERRAL_URL, KRYPT_DISCORD, KRYPT_HOME, KRYPT_TOOLS, KRYPT_TRADER_PAGE,
 } from '../utils/links';
+import { useResetOnboardingMutation } from '../hooks/useOnboarding';
 
 export function AboutPage() {
   const { appVersion, backend, config } = useApp();
+  const resetOnboarding = useResetOnboardingMutation();
 
   const open = (url: string) => () => void window.krypt.app.openExternal(url);
 
@@ -42,7 +44,7 @@ export function AboutPage() {
                   <FolderOpen className="h-4 w-4" /> Open data folder
                 </button>
                 <button
-                  onClick={() => void window.krypt.state.resetOnboarding()}
+                  onClick={() => void resetOnboarding.mutateAsync()}
                   className="krypt-btn-default"
                   title="Re-show the first-run setup walkthrough"
                 >

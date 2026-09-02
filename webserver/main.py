@@ -462,6 +462,18 @@ async def import_profile_route(
     return JSONResponse(profile)
 
 
+@app.get("/onboarding")
+async def get_onboarding_route(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
+    return JSONResponse(config_store.get_onboarding(_user_data_dir(wallet_address)))
+
+
+@app.patch("/onboarding")
+async def patch_onboarding_route(
+    patch: dict, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    return JSONResponse(config_store.set_onboarding(_user_data_dir(wallet_address), patch))
+
+
 async def _push_config_to_worker(wallet_address: str, cfg: dict) -> None:
     # Verified: Supervisor keeps its live workers in a plain dict,
     # `self.workers: dict[str, WorkerProcess]` (webserver/supervisor.py:~264),

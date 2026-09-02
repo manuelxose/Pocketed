@@ -2283,6 +2283,8 @@ git commit -m "feat(frontend): data domain over WS RPC, retire AppStateProvider"
 - Consumes: `useWsClient()`.
 - Produces: `useCrypto15mSnapshotQuery()` (RPC `crypto15m`), `useCrypto15mStatusQuery()` (RPC `crypto15mStatus`), `useCrypto15mHistoryQuery(opts?)` (RPC `c15History`), `useCrypto15mBacktestMutation()` (RPC `c15Backtest`), `useMainBacktestMutation()` (RPC `mainBacktest`), `useCrypto15mParlayGenerateMutation()` (RPC `c15ParlayGenerate`), `useCrypto15mParlayStatusQuery()` (RPC `c15ParlayStatus`), `useCrypto15mParlayArmMutation()` (RPC `c15ParlayArm`).
 
+**Carried-forward gap from Task 10 (ruled and parked, fix due here):** Task 10 found `src/pages/Backtest.tsx` calling `window.krypt.trading.collection()`/`window.krypt.trading.exportData()` — despite the `trading.*` namespace name, these map to worker RPC methods `collectionStats`/`exportResearch` (confirmed in `_HANDLERS`), an unrelated backtest-data-export feature that no task's Interfaces list covered. Since this task already touches `Backtest.tsx`, add `useCollectionStatsQuery()` (RPC `collectionStats`) and `useExportResearchMutation()` (RPC `exportResearch`) to `src/hooks/useCrypto15m.ts` (or a same-file sibling if that reads cleaner — your call) and rewire `Backtest.tsx`'s two call sites onto them, with the same TDD/test coverage as this task's other hooks.
+
 - [ ] **Step 1: Find every current call site**
 
 Run: `grep -rln "window\.krypt\.crypto15m\." src`

@@ -734,6 +734,90 @@ def _create_signed_order_1271(
     }
 
 
+def _create_signed_order_via_session_key(
+    *, token_id: str, side: str, price: float, size: float, neg_risk: bool,
+    expiration: int, salt: Optional[int], ts_ms: Optional[int], session_key_record: dict,
+) -> dict:
+    # Local import: session_key.py imports polymarket_auth at module level
+    # (for CHAIN_ID/NETWORK defaults evaluated at def time), so a top-level
+    # `import session_key` here would deadlock on the partially-initialized
+    # polymarket_auth module. Matches the lazy-import style already used
+    # elsewhere in this file for py_clob_client_v2 submodules.
+    import session_key as _session_key_mod
+    from eth_account.messages import encode_typed_data, _hash_eip191_message
+
+    kernel_address = session_key_record["policy"]["kernelAddress"]
+    side_u = side.upper()
+    side_int = 0 if side_u == "BUY" else 1
+    if side_u == "BUY":
+        maker_amount = _round_amt(price * size * _DECIMALS)
+        taker_amount = _round_amt(size * _DECIMALS)
+    else:
+        maker_amount = _round_amt(size * _DECIMALS)
+        taker_amount = _round_amt(price * size * _DECIMALS)
+    if salt is None:
+        salt = int(hashlib.sha256(
+            f"{kernel_address}{token_id}{time.time_ns()}".encode()
+        ).hexdigest()[:16], 16) & ((1 << 48) - 1)
+    if ts_ms is None:
+        ts_ms = time.time_ns() // 1_000_000
+    verifying = NEG_RISK_EXCHANGE_ADDRESS if neg_risk else EXCHANGE_ADDRESS
+
+    order_msg = {
+        "salt": int(salt), "maker": kernel_address, "signer": kernel_address,
+        "tokenId": int(token_id), "makerAmount": int(maker_amount),
+        "takerAmount": int(taker_amount), "side": int(side_int),
+        "signatureType": int(SIGNATURE_TYPE_POLY_1271), "timestamp": int(ts_ms),
+        "metadata": ZERO_BYTES32, "builder": ZERO_BYTES32,
+    }
+    typed = {
+        "types": {
+            "EIP712Domain": [
+                {"name": "name", "type": "string"}, {"name": "version", "type": "string"},
+                {"name": "chainId", "type": "uint256"}, {"name": "verifyingContract", "type": "address"},
+            ],
+            "Order": [
+                {"name": "salt", "type": "uint256"}, {"name": "maker", "type": "address"},
+                {"name": "signer", "type": "address"}, {"name": "tokenId", "type": "uint256"},
+                {"name": "makerAmount", "type": "uint256"}, {"name": "takerAmount", "type": "uint256"},
+                {"name": "side", "type": "uint8"}, {"name": "signatureType", "type": "uint8"},
+                {"name": "timestamp", "type": "uint256"}, {"name": "metadata", "type": "bytes32"},
+                {"name": "builder", "type": "bytes32"},
+            ],
+        },
+        "primaryType": "Order",
+        "domain": {"name": "Polymarket CTF Exchange", "version": EXCHANGE_VERSION,
+                    "chainId": CHAIN_ID, "verifyingContract": verifying},
+        "message": order_msg,
+    }
+    # `digest` here must be the FULL EIP-712 digest the CTF Exchange itself
+    # verifies via isValidSignature(orderHash, sig) — i.e. the standard
+    # keccak256(0x1901 || domainSeparator || hashStruct(order)), the exact
+    # same hash `_eip712_sign()`'s `acct.sign_message(signable)` signs on
+    # the EOA path above. `encode_typed_data(...).body` is only
+    # hashStruct(order) (no domain, no 0x1901 prefix) — NOT sufficient —
+    # so we replicate eth_account's own EIP-191 join-and-hash step via its
+    # (private but stable) `_hash_eip191_message` helper.
+    signable = encode_typed_data(full_message=typed)
+    digest = _hash_eip191_message(signable)
+    signature = _session_key_mod.sign_order_as_session_key(
+        digest,
+        session_key_record["privateKey"],
+        kernel_address,
+        session_key_record["policy"],
+        owner_address=get_address(),
+        account_deployed=False,
+    )
+    return {
+        "salt": int(salt), "maker": kernel_address, "signer": kernel_address,
+        "taker": ZERO_ADDRESS, "tokenId": str(int(token_id)),
+        "makerAmount": str(int(maker_amount)), "takerAmount": str(int(taker_amount)),
+        "expiration": str(int(expiration)), "side": side_u,
+        "signatureType": int(SIGNATURE_TYPE_POLY_1271), "signature": signature,
+        "timestamp": str(int(ts_ms)), "metadata": ZERO_BYTES32, "builder": ZERO_BYTES32,
+    }
+
+
 def create_signed_order(
     *,
     token_id: str,
@@ -745,6 +829,16 @@ def create_signed_order(
     salt: Optional[int] = None,
     ts_ms: Optional[int] = None,
 ) -> dict:
+    active_session_key = None
+    if get_signature_type() == SIGNATURE_TYPE_POLY_1271:
+        import session_key as _session_key_mod
+        active_session_key = _session_key_mod.load_active_session_key()
+    if active_session_key is not None:
+        return _create_signed_order_via_session_key(
+            token_id=token_id, side=side, price=price, size=size,
+            neg_risk=neg_risk, expiration=expiration, salt=salt, ts_ms=ts_ms,
+            session_key_record=active_session_key,
+        )
     if get_signature_type() == SIGNATURE_TYPE_POLY_1271:
         return _create_signed_order_1271(
             token_id=token_id, side=side, price=price, size=size,

@@ -137,7 +137,39 @@ Expected: PASS
 
 - [ ] **Step 5: Update `webserver/main.py` call sites and add `/auth/switch`**
 
-Find the current `/auth/verify` handler and `require_wallet_address` (uses `auth.decode_session_token(...)["sub"]` today — grep to confirm exact line before editing: `grep -n "decode_session_token\|create_session_token\|def require_wallet_address\|def verify" webserver/main.py`). Update:
+Verified current code (do not re-derive — this is exact, from `webserver/main.py`):
+
+```python
+class VerifyRequest(BaseModel):
+    message: str
+    signature: str
+
+
+@app.post("/auth/verify")
+async def verify(body: VerifyRequest) -> JSONResponse:
+    try:
+        wallet_address = auth.verify_siwe(body.message, body.signature)
+    except auth.AuthError as e:
+        raise HTTPException(status_code=401, detail=str(e)) from e
+
+    token = auth.create_session_token(wallet_address, secret=SESSION_SECRET)
+    response = JSONResponse({"walletAddress": wallet_address})
+    response.set_cookie(
+        SESSION_COOKIE_NAME, token,
+        httponly=True, secure=True, samesite="lax",
+        max_age=auth.SESSION_TTL_SECONDS,
+    )
+    return response
+
+
+async def require_wallet_address(kpb_session: str | None = Cookie(default=None)) -> str:
+    try:
+        return auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
+    except auth.AuthError as e:
+        raise HTTPException(status_code=401, detail=str(e)) from e
+```
+
+Note `decode_session_token` today returns the wallet address **string directly** (not a dict, no `["sub"]` indexing anywhere) — Task 1 Step 3 changes its return type to a `dict`, so every current caller of `decode_session_token` must change from using the return value as a string to indexing `["active"]`. `SESSION_COOKIE_NAME` is an existing module-level constant — reuse it, don't hardcode `"kpb_session"`. Keep `secure=True` in every `set_cookie` call this task adds or touches. Replace the three functions above with:
 
 ```python
 @app.post("/auth/verify")
@@ -155,8 +187,12 @@ async def verify(body: VerifyRequest, kpb_session: str | None = Cookie(default=N
     else:
         token = auth.create_session_token([address], active=address, secret=SESSION_SECRET)
 
-    resp = JSONResponse({"address": address})
-    resp.set_cookie("kpb_session", token, httponly=True, samesite="lax", max_age=auth.SESSION_TTL_SECONDS)
+    resp = JSONResponse({"walletAddress": address})
+    resp.set_cookie(
+        SESSION_COOKIE_NAME, token,
+        httponly=True, secure=True, samesite="lax",
+        max_age=auth.SESSION_TTL_SECONDS,
+    )
     return resp
 
 
@@ -174,8 +210,12 @@ async def switch_wallet(
         token = auth.switch_active_wallet(kpb_session, body.address, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=403, detail=str(e)) from e
-    resp = JSONResponse({"address": body.address})
-    resp.set_cookie("kpb_session", token, httponly=True, samesite="lax", max_age=auth.SESSION_TTL_SECONDS)
+    resp = JSONResponse({"walletAddress": body.address})
+    resp.set_cookie(
+        SESSION_COOKIE_NAME, token,
+        httponly=True, secure=True, samesite="lax",
+        max_age=auth.SESSION_TTL_SECONDS,
+    )
     return resp
 
 
@@ -189,7 +229,7 @@ async def require_wallet_address(kpb_session: str | None = Cookie(default=None))
     return payload["active"]
 ```
 
-(Keep the existing `SESSION_SECRET` source and cookie name/flags exactly as today — only replace the body of these three functions. Use the file's actual `VerifyRequest`/import names; adjust the snippet to match if they differ from the above.)
+(These three functions — `verify`, the new `switch_wallet`, and `require_wallet_address` — fully replace the current `verify`/`require_wallet_address` shown at the top of this step. `SESSION_SECRET` and `SESSION_COOKIE_NAME` are unchanged module-level constants; `VerifyRequest` is unchanged.)
 
 Add a `GET /auth/session` route returning `{"wallets": [...], "active": "..."}` for the frontend's account-switcher (reads `kpb_session` the same way, 401 if absent/invalid):
 
@@ -205,14 +245,36 @@ async def get_session(kpb_session: str | None = Cookie(default=None)) -> JSONRes
     return JSONResponse(payload)
 ```
 
-- [ ] **Step 6: Update the `/ws` endpoint's session read and any other `["sub"]` reads**
+- [ ] **Step 6: Update the `/ws` endpoint's direct `decode_session_token` call**
 
-`grep -n '\["sub"\]\|\.sub\b' webserver/main.py` — every hit reading the old single-wallet claim must switch to `require_wallet_address` (already updated) or `payload["active"]` if it decodes the token directly.
+The `/ws` endpoint decodes the cookie itself rather than using the `require_wallet_address` dependency (it needs to close the socket with a custom code on failure, not raise an `HTTPException`). Current code:
+
+```python
+    try:
+        wallet_address = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
+    except auth.AuthError:
+        await websocket.close(code=4401)
+        return
+```
+
+Change to read the new dict shape:
+
+```python
+    try:
+        wallet_address = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)["active"]
+    except auth.AuthError:
+        await websocket.close(code=4401)
+        return
+```
+
+Run `grep -n "decode_session_token" webserver/main.py` afterward — it must show exactly two call sites (`require_wallet_address` and this `/ws` one), both updated. Any additional hit is a call site this step missed.
 
 - [ ] **Step 7: Run full webserver test suite**
 
+`test_main_aa_routes.py`, `test_main_session_key_routes.py`, and `test_main_ws.py` each have a `_login(client)` helper that logs in through the real `/auth/nonce` → `/auth/verify` HTTP flow (see `test_main_aa_routes.py:28-53`) and reads `resp.json()["walletAddress"]` — they never call `create_session_token`/`decode_session_token` directly, so they need no changes for the new payload shape. If any of them fail, the cause is elsewhere (e.g. `SESSION_COOKIE_NAME` not reused correctly in Step 5's new code) — do not "fix" these tests by changing their assertions to match broken behavior.
+
 Run: `cd webserver && python -m pytest tests/ -v`
-Expected: PASS (fix any test in `test_main_aa_routes.py`/`test_main_session_key_routes.py`/`test_main_ws.py` that constructs a session token directly with the old signature — update those call sites to the new `create_session_token(wallets, active=..., secret=...)` shape).
+Expected: PASS, 38 tests (the pre-existing baseline count — confirm this matches; a different count means something outside this task's scope broke or a test was accidentally skipped).
 
 - [ ] **Step 8: Commit**
 
@@ -354,7 +416,7 @@ def test_profiles_crud(authed_client):
     assert resp3.status_code == 200
 ```
 
-(If `authed_client` doesn't exist yet as a fixture, add it to `webserver/tests/conftest.py`, following the same pattern the existing AA/session-key route tests use to get a valid `kpb_session` cookie — read `test_main_aa_routes.py`'s setup first, don't invent a second auth path.)
+`authed_client` doesn't exist yet — add it to `webserver/tests/conftest.py`, built on the exact `_login(client)` helper already in `test_main_aa_routes.py:28-53` (SIWE-signs with a freshly generated `eth_account.Account`, posts to `/auth/nonce` then `/auth/verify`, reads the cookie via `resp.cookies.get(main_module.SESSION_COOKIE_NAME)`). Do not invent a second auth path — port that helper's body into a fixture that returns a `client` with the cookie already attached (`client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)`, same as every other test file does after calling `_login`).
 
 - [ ] **Step 7: Run tests to verify they fail**
 
@@ -1293,9 +1355,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 Run: `npm test -- AuthGate`
 Expected: PASS
 
-- [ ] **Step 9: Mount in `src/main.tsx`, wrapping `WsProvider`**
+- [ ] **Step 9: Mount in `src/main.tsx`**
 
-`AuthGate` goes outermost — the WS connection must not open until a session cookie exists (the `/ws` endpoint authenticates via cookie, same as `require_wallet_address`).
+Final provider order, outermost to innermost: `QueryClientProvider` (Task 5) → `AuthGate` → `WsProvider` (Task 5) → the existing app tree. `AuthGate` sits inside `QueryClientProvider` (it doesn't use React Query itself, but nesting it there costs nothing and keeps a single provider stack) and outside `WsProvider` — the WS connection must not open until a session cookie exists, since `/ws` authenticates via that cookie the same way `require_wallet_address` does.
 
 - [ ] **Step 10: Commit**
 
@@ -2337,15 +2399,13 @@ git commit -m "feat(frontend): scripts domain over WS RPC + client-side file I/O
 **Interfaces:**
 - `useCopyStatusQuery()` — RPC `copyStatus`.
 - `useMarketUrlMutation()` — RPC `polymarketUrl`.
-- `useLogsTailQuery(limit?)` — this one has **no backing RPC method** in the verified `_HANDLERS` list (`logs.tail`/`logs.clear`/`logs.openFolder` were Electron main-process file reads of a local log file, per `electron/ipc.ts` — grep it to confirm: `grep -n "'logs:" electron/ipc.ts`). Since the worker process's stdout/stderr aren't captured anywhere the gateway can read them today, this is a real gap like Task 1/2's amendments — **do not invent a fake implementation**. Stop at Step 1 of this sub-domain and follow the Step 1a below instead of writing a hook.
+- No `logs` hook is produced this task — see the ruling below.
+
+**Ruling (pre-flight, recorded in the SDD ledger before this task was dispatched):** `logs.tail`/`logs.onAppend`/`logs.clear`/`logs.openFolder` have **no backing RPC method** in the verified `_HANDLERS` list — they were Electron main-process reads of a local log file (`electron/ipc.ts`'s `logs:*` handlers), and the worker's stdout/stderr aren't captured anywhere the gateway can read today. Building that capture path is new backend scope (a `Supervisor` ring-buffer + log-streaming surface) beyond this plan. **Decision: drop the in-app Logs page this phase, same as tray/autostart/Discord-RPC-native** (spec's already-accepted category of Electron-only regressions). Do not write a `useLogs.ts` file and do not add a logs backend. If `src/pages/Logs.tsx` exists as a route, delete the route and the page file in Step 4 below; if `Terminal.tsx` renders log tail as a secondary feature (not its main purpose), remove only that section, not the whole page — check its content before deciding.
 
 - [ ] **Step 1: Find every current call site**
 
 Run: `grep -rln "window\.krypt\.copy\.\|window\.krypt\.polymarket\.\|window\.krypt\.logs\." src`
-
-- [ ] **Step 1a: Resolve the `logs` gap before writing any logs hook**
-
-Read `electron/ipc.ts`'s `logs:*` handlers to confirm they read a local file the Electron main process wrote to (not something `python/service.py` exposes over RPC). This is a scope gap the spec didn't anticipate. Stop here and present it to the user the same way Task 1/2's amendments were surfaced during brainstorming: either (a) `webserver/`'s `Supervisor` starts capturing each worker's stdout/stderr into a ring buffer and gains a `GET /logs`/`WS logs:append`-style surface (new backend work, its own mini-design), or (b) the in-app Logs page is dropped this phase and users rely on server-side log files directly (regression, like tray/autostart). Do not proceed past this point on the `logs` domain until that's decided — implement `copy` and `polymarket` below regardless, they're unaffected.
 
 - [ ] **Step 2: Write failing tests for `copy` and `polymarket`** (same `client.request` pattern as prior tasks):
 
@@ -2384,7 +2444,7 @@ export function useMarketUrlMutation() {
 Run: `npm test -- useCopyTrading usePolymarket`
 Expected: PASS after implementation
 
-- [ ] **Step 4: Rewire `src/pages/CopyTrading.tsx`, `src/utils/polymarket.ts`, `src/utils/share.ts`** (whichever Step 1 found for `copy`/`polymarket`) — leave every `window.krypt.logs.*` call site untouched until Step 1a's decision is made.
+- [ ] **Step 4: Rewire `src/pages/CopyTrading.tsx`, `src/utils/polymarket.ts`, `src/utils/share.ts`** (whichever Step 1 found for `copy`/`polymarket`). Separately, per the ruling above: find and remove every `window.krypt.logs.*` call site — read the file it's in first (likely `src/pages/Logs.tsx` and/or `src/pages/Terminal.tsx`) and delete the page/route if logs were its sole purpose, or just the log-tail section if it was secondary to something else that stays.
 
 - [ ] **Step 5: Verify build**
 

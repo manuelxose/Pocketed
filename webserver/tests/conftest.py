@@ -20,3 +20,30 @@ def _windows_proactor_event_loop_policy():
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     yield
+
+
+# Re-exported so any test module can use `client`/`_test_session_secret`
+# without a local import, matching the pattern test_main_session_key_routes.py
+# already uses (`from webserver.tests.test_main_aa_routes import client, ...`).
+from webserver.tests.test_main_aa_routes import (  # noqa: E402
+    _login,
+    _test_session_secret,
+    client,
+)
+
+__all__ = ["_login", "_test_session_secret", "client"]
+
+
+import webserver.main as main_module  # noqa: E402
+
+
+@pytest.fixture
+def authed_client(client):
+    """A test client with a valid session cookie already attached.
+
+    Ports `_login`'s body (see test_main_aa_routes.py:28-53) into a
+    reusable fixture rather than inventing a second auth path.
+    """
+    _wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    return client

@@ -10,9 +10,9 @@ from pathlib import Path
 from fastapi import Cookie, Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from webserver import aa, auth
+from webserver import aa, auth, config_store
 from webserver.supervisor import Supervisor, WorkerStartError
 
 logger = logging.getLogger("webserver.main")
@@ -306,6 +306,151 @@ async def post_session_key_revoke(
 ) -> JSONResponse:
     result = await _session_key_worker_request(wallet_address, "revokeSessionKey", {})
     return JSONResponse(result)
+
+
+def _user_data_dir(wallet_address: str) -> str:
+    # Verified: Supervisor.get_or_create builds each worker's data dir as
+    # `self.data_root / "users" / user_id` (webserver/supervisor.py:280,
+    # where user_id is the wallet address). Reuse that exact path here so
+    # config_store.py reads/writes into the same per-user directory the
+    # worker's own DB lives in — do not duplicate or diverge from it.
+    return str(supervisor.data_root / "users" / wallet_address)
+
+
+@app.get("/config")
+async def get_config(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
+    return JSONResponse(config_store.get_config(_user_data_dir(wallet_address)))
+
+
+@app.patch("/config")
+async def patch_config(
+    patch: dict, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    cfg = config_store.patch_config(_user_data_dir(wallet_address), patch)
+    await _push_config_to_worker(wallet_address, cfg)
+    return JSONResponse(cfg)
+
+
+@app.put("/config")
+async def replace_config(
+    cfg: dict, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    new_cfg = config_store.replace_config(_user_data_dir(wallet_address), cfg)
+    await _push_config_to_worker(wallet_address, new_cfg)
+    return JSONResponse(new_cfg)
+
+
+@app.post("/config/reset")
+async def reset_config_route(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
+    cfg = config_store.reset_config(_user_data_dir(wallet_address))
+    await _push_config_to_worker(wallet_address, cfg)
+    return JSONResponse(cfg)
+
+
+@app.get("/strategies")
+async def get_strategies() -> JSONResponse:
+    return JSONResponse(config_store.list_strategies())
+
+
+@app.post("/strategies/{strategy_id}/apply")
+async def apply_strategy_route(
+    strategy_id: str, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    cfg = config_store.apply_strategy(_user_data_dir(wallet_address), strategy_id)
+    await _push_config_to_worker(wallet_address, cfg)
+    return JSONResponse(cfg)
+
+
+@app.get("/profiles")
+async def list_profiles_route(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
+    return JSONResponse(config_store.list_profiles(_user_data_dir(wallet_address)))
+
+
+class SaveProfileRequest(BaseModel):
+    name: str
+    description: str | None = None
+    scope: str = "main"
+
+
+@app.post("/profiles")
+async def save_profile_route(
+    body: SaveProfileRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    p = config_store.save_profile(_user_data_dir(wallet_address), body.name, body.description, body.scope)
+    return JSONResponse(p)
+
+
+@app.post("/profiles/{profile_id}/apply")
+async def apply_profile_route(
+    profile_id: str, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    cfg = config_store.apply_profile(_user_data_dir(wallet_address), profile_id)
+    await _push_config_to_worker(wallet_address, cfg)
+    return JSONResponse(cfg)
+
+
+class RenameProfileRequest(BaseModel):
+    name: str
+
+
+@app.patch("/profiles/{profile_id}")
+async def rename_profile_route(
+    profile_id: str, body: RenameProfileRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    return JSONResponse(config_store.rename_profile(_user_data_dir(wallet_address), profile_id, body.name))
+
+
+@app.delete("/profiles/{profile_id}")
+async def delete_profile_route(
+    profile_id: str, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    config_store.delete_profile(_user_data_dir(wallet_address), profile_id)
+    return JSONResponse({"ok": True})
+
+
+@app.post("/profiles/{profile_id}/duplicate")
+async def duplicate_profile_route(
+    profile_id: str, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    return JSONResponse(config_store.duplicate_profile(_user_data_dir(wallet_address), profile_id))
+
+
+@app.get("/profiles/{profile_id}/export")
+async def export_profile_route(
+    profile_id: str, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    return JSONResponse({"json": config_store.export_profile(_user_data_dir(wallet_address), profile_id)})
+
+
+class ImportProfileRequest(BaseModel):
+    # Field named `json_` (not `json`) to avoid shadowing BaseModel.json();
+    # the wire/JSON key stays "json" via the alias.
+    json_: str = Field(alias="json")
+
+    model_config = {"populate_by_name": True}
+
+
+@app.post("/profiles/import")
+async def import_profile_route(
+    body: ImportProfileRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    return JSONResponse(config_store.import_profile(_user_data_dir(wallet_address), body.json_))
+
+
+async def _push_config_to_worker(wallet_address: str, cfg: dict) -> None:
+    # Verified: Supervisor keeps its live workers in a plain dict,
+    # `self.workers: dict[str, WorkerProcess]` (webserver/supervisor.py:~264),
+    # with no dedicated read-only accessor. Read it directly rather than
+    # calling `get_or_create` — unlike `_session_key_worker_request` (which
+    # deliberately spawns a worker on demand for a user action), a config
+    # edit with no worker running has nothing to push to, so this must NOT
+    # spawn one.
+    worker = supervisor.workers.get(wallet_address)
+    if worker is not None:
+        try:
+            await worker.request("setConfig", {"config": cfg})
+        except Exception:
+            pass
 
 
 @app.websocket("/ws")

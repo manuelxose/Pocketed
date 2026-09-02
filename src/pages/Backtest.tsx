@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { FlaskConical, Play } from 'lucide-react';
 import {
   Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { C15_PRESET_CORE } from '@shared/c15Presets';
-import type { CollectionStats, Crypto15mBacktest, TraderConfig } from '@shared/types';
+import type { Crypto15mBacktest, TraderConfig } from '@shared/types';
 import { Card, Page, Switch } from '../components/common';
 import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 import { useProfilesQuery } from '../hooks/useProfiles';
+import {
+  useCollectionStatsQuery, useCrypto15mBacktestMutation, useExportResearchMutation, useMainBacktestMutation,
+} from '../hooks/useCrypto15m';
 
 type Engine = 'crypto15m' | 'main';
 
@@ -55,31 +58,27 @@ export function BacktestPage() {
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
   const { data: profiles = [] } = useProfilesQuery();
-  const [coll, setColl] = useState<CollectionStats | null>(null);
+  const { data: coll = null, refetch: refetchCollection } = useCollectionStatsQuery();
   const [showData, setShowData] = useState(false);
-
-  const loadCollection = async () => {
-    try {
-      setColl(await window.krypt.trading.collection());
-    } catch {}
-  };
-  useEffect(() => { void loadCollection(); }, []);
+  const c15Backtest = useCrypto15mBacktestMutation();
+  const mainBacktest = useMainBacktestMutation();
 
   const toggleC15Collection = async (on: boolean) => {
     await patchConfig.mutateAsync({ crypto15mRecordSignals: on });
-    void loadCollection();
+    void refetchCollection();
   };
 
   const toggleMainCollection = async (on: boolean) => {
     await patchConfig.mutateAsync({ mainRecordSignals: on });
-    void loadCollection();
+    void refetchCollection();
   };
 
+  const exportResearch = useExportResearchMutation();
   const [exporting, setExporting] = useState(false);
   const exportData = async () => {
     setExporting(true);
     try {
-      await window.krypt.trading.exportData();
+      await exportResearch.mutateAsync();
     } finally {
       setExporting(false);
     }
@@ -115,8 +114,8 @@ export function BacktestPage() {
     try {
       const patch = resolvePatch();
       const r = engine === 'crypto15m'
-        ? await window.krypt.crypto15m.backtest({ sinceDays: days, config: patch })
-        : await window.krypt.crypto15m.backtestMain({ sinceDays: days, config: patch });
+        ? await c15Backtest.mutateAsync({ sinceDays: days, config: patch })
+        : await mainBacktest.mutateAsync({ sinceDays: days, config: patch });
       setRes(r);
       if (!r) setErr('Engine not running — start the app backend first.');
     } catch (e: any) {

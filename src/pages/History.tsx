@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useQueryClient } from '@tanstack/react-query';
 import { History as HistoryIcon, Play, Receipt, Square, Timer, Trash2, Trophy } from 'lucide-react';
@@ -9,6 +9,7 @@ import { TickerLink } from '../components/PolymarketTicker';
 import { cls, fmtPct, fmtUsd, fmtDateTime } from '../utils/format';
 import { useConfigQuery } from '../hooks/useConfig';
 import { useAccountQuery, useBotRunsQuery, usePositionsQuery } from '../hooks/useAccountData';
+import { useCrypto15mHistoryQuery } from '../hooks/useCrypto15m';
 
 type HistoryTab = 'runs' | 'trades' | 'crypto15m';
 
@@ -21,15 +22,9 @@ export function HistoryPage() {
   const toast = useToast();
   const qc = useQueryClient();
   const [tab, setTab] = useState<HistoryTab>('runs');
-  const [c15Rows, setC15Rows] = useState<Crypto15mPosition[]>([]);
+  const { data: c15History } = useCrypto15mHistoryQuery({ limit: 300 });
+  const c15Rows: Crypto15mPosition[] = tab === 'crypto15m' ? (c15History?.rows ?? []) : [];
   const [clearing, setClearing] = useState(false);
-
-  useEffect(() => {
-    if (tab !== 'crypto15m') return;
-    void window.krypt.crypto15m.history({ limit: 300 })
-      .then((r) => setC15Rows(r?.rows ?? []))
-      .catch(() => setC15Rows([]));
-  }, [tab]);
 
   const clearHistory = async (): Promise<void> => {
     if (!window.confirm(

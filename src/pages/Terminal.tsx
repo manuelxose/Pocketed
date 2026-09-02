@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  Crypto15mSnapshot, Crypto15mStatus, Crypto15mAsset,
+  Crypto15mAsset,
   BotPosition, PnlPoint,
 } from '@shared/types';
 import { useConfigQuery } from '../hooks/useConfig';
@@ -8,9 +8,8 @@ import {
   useAccountQuery, usePnlSeriesQuery, usePositionsQuery, useScannerStatsQuery, useSignalsQuery,
 } from '../hooks/useAccountData';
 import { useBackendConnectionStatus } from '../hooks/useTrading';
+import { useCrypto15mSnapshotQuery, useCrypto15mStatusQuery } from '../hooks/useCrypto15m';
 
-let cachedSnap: Crypto15mSnapshot | null = null;
-let cachedStatus: Crypto15mStatus | null = null;
 let cachedPnl: PnlPoint[] = [];
 const modelHist: number[] = [];
 const bookHist: number[] = [];
@@ -45,8 +44,10 @@ export function TerminalPage() {
   const connected = useBackendConnectionStatus();
   const { data: config } = useConfigQuery();
   const { data: pnl = [] } = usePnlSeriesQuery(24);
-  const [snap, setSnap] = useState<Crypto15mSnapshot | null>(cachedSnap);
-  const [status, setStatus] = useState<Crypto15mStatus | null>(cachedStatus);
+  const snapshotQuery = useCrypto15mSnapshotQuery();
+  const statusQuery = useCrypto15mStatusQuery();
+  const snap = snapshotQuery.data ?? null;
+  const status = statusQuery.data ?? null;
   const ivLabel = intervalLabel(config?.crypto15mInterval);
   const [chartInfo, setChartInfo] = useState<{ sym: string; nowStr: string; active: boolean }>(
     { sym: histAsset ?? '—', nowStr: '0.50', active: histMode === 'model' });
@@ -54,23 +55,12 @@ export function TerminalPage() {
   useEffect(() => { cachedPnl = pnl; }, [pnl]);
 
   useEffect(() => {
-    let alive = true;
-
-    let snapBusy = false;
-    async function loadSnap() {
-      const api = window.krypt?.crypto15m;
-      if (!api || snapBusy) return;
-      snapBusy = true;
-      try {
-        const [s, st] = await Promise.all([api.snapshot(), api.status()]);
-        if (!alive) return;
-        cachedSnap = s; cachedStatus = st; setSnap(s); setStatus(st);
-      } catch {} finally { snapBusy = false; }
-    }
-    void loadSnap();
-    const t1 = window.setInterval(loadSnap, 2500);
-    return () => { alive = false; clearInterval(t1); };
-  }, []);
+    const t1 = window.setInterval(() => {
+      void snapshotQuery.refetch();
+      void statusQuery.refetch();
+    }, 2500);
+    return () => clearInterval(t1);
+  }, [snapshotQuery.refetch, statusQuery.refetch]);
 
   const assets: Crypto15mAsset[] = snap?.assets ?? [];
   const lead = useMemo(() => {

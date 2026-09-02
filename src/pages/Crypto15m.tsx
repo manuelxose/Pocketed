@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Bitcoin, FolderPlus, RefreshCw, RotateCcw, SlidersHorizontal, Wallet, Zap } from 'lucide-react';
 import { C15_PRESET_CORE } from '@shared/c15Presets';
 import type {
   Crypto15mAsset, Crypto15mPosition,
-  Crypto15mSizing, Crypto15mSnapshot, Crypto15mStatus, RuleCondition, TraderConfig,
+  Crypto15mSizing, RuleCondition, TraderConfig,
 } from '@shared/types';
 import { useToast } from '../state/ToastProvider';
 import { Empty, NameDialog, Page, RuleBuilder, Switch } from '../components/common';
@@ -12,11 +13,9 @@ import { BacktestPanel } from '../components/BacktestPanel';
 import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
+import { useCrypto15mSnapshotQuery, useCrypto15mStatusQuery } from '../hooks/useCrypto15m';
 
 const POLL_MS = 2500;
-
-let cachedSnap: Crypto15mSnapshot | null = null;
-let cachedStatus: Crypto15mStatus | null = null;
 
 function fmtSpot(v: number | null | undefined): string {
   if (v === null || v === undefined || Number.isNaN(v)) return '—';
@@ -43,46 +42,48 @@ function pct(v: number | null | undefined): string {
 export function Crypto15mPage() {
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
-  const [snap, setSnap] = useState<Crypto15mSnapshot | null>(cachedSnap);
-  const [status, setStatus] = useState<Crypto15mStatus | null>(cachedStatus);
-  const [loading, setLoading] = useState(cachedSnap === null);
+  const queryClient = useQueryClient();
+  const toastRef = useToast();
+  const snapshotQuery = useCrypto15mSnapshotQuery();
+  const statusQuery = useCrypto15mStatusQuery();
+  const snap = snapshotQuery.data ?? null;
+  const status = statusQuery.data ?? null;
+  const loading = snapshotQuery.isPending || statusQuery.isPending;
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<number | null>(null);
 
-  const inFlight = useRef(false);
-
   async function load() {
-    const api = window.krypt?.crypto15m;
-    if (!api) {
-      setErr('15m crypto API unavailable (restart the app after this update).');
-      setLoading(false);
-      return;
-    }
-    if (inFlight.current) return;
-    inFlight.current = true;
     try {
-      const [s, st] = await Promise.all([api.snapshot(), api.status()]);
-      cachedSnap = s;
-      cachedStatus = st;
-      setSnap(s);
-      setStatus(st);
+      await Promise.all([snapshotQuery.refetch(), statusQuery.refetch()]);
       setErr(null);
     } catch (e: any) {
       setErr(e?.message || String(e));
-    } finally {
-      inFlight.current = false;
-      setLoading(false);
     }
   }
 
   useEffect(() => {
-    void load();
     timer.current = window.setInterval(() => void load(), POLL_MS) as unknown as number;
     return () => {
       if (timer.current) window.clearInterval(timer.current);
     };
   }, []);
+
+  // One-shot toast when the worker auto-disables the executor (hit its
+  // daily/lifetime target). Populated purely by the `crypto15m:autoOff`
+  // push event routed into ['crypto15mAutoOff'] by WsProvider (Task 5) —
+  // never fetched, so we subscribe to the cache directly instead of using
+  // a query.
+  useEffect(() => {
+    const unsub = queryClient.getQueryCache().subscribe((event) => {
+      if (event.type !== 'updated') return;
+      if (event.query.queryKey.length !== 1 || event.query.queryKey[0] !== 'crypto15mAutoOff') return;
+      const d = event.query.state.data as { reason: string; gained: number; target: number } | undefined;
+      if (!d) return;
+      toastRef.warn(`Crypto executor auto-disabled: ${d.reason} (+$${d.gained.toFixed(2)} of $${d.target.toFixed(2)} target)`);
+    });
+    return unsub;
+  }, [queryClient, toastRef]);
 
   async function patchAndReload(patch: Partial<TraderConfig>) {
     setBusy(true);

@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 import type { Crypto15mBacktest } from '@shared/types';
 import { cls, fmtUsd } from '../utils/format';
+import { useCrypto15mBacktestMutation } from '../hooks/useCrypto15m';
 
 export function BacktestPanel() {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<Crypto15mBacktest | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const backtest = useCrypto15mBacktestMutation();
 
   const run = async () => {
     setBusy(true);
     setErr(null);
     try {
-      const r = await window.krypt.crypto15m.backtest({ sinceDays: 60 });
+      const r = await backtest.mutateAsync({ sinceDays: 60 });
       setRes(r);
       if (!r) setErr('Engine not running — start the app backend first.');
     } catch (e: any) {

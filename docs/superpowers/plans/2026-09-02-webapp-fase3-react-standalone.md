@@ -2099,8 +2099,8 @@ git commit -m "feat(frontend): trading/backend domain over WS RPC + config"
 **Files:**
 - Create: `src/hooks/useAccountData.ts`
 - Test: `src/hooks/useAccountData.test.ts`
-- Modify: `src/state/AppStateProvider.tsx` (final removal), every file found in Step 1, `webserver/config_store.py`, `webserver/main.py`, `src/hooks/useProfiles.ts`, `src/pages/Profiles.tsx` (Task 8 gap fix — see below)
-- Test: `webserver/tests/test_config_store.py`, `webserver/tests/test_main_config_routes.py`, `src/hooks/useProfiles.test.ts` (Task 8 gap fix)
+- Modify: `src/state/AppStateProvider.tsx` (final removal), every file found in Step 1, `webserver/config_store.py`, `webserver/main.py`, `src/hooks/useProfiles.ts`, `src/pages/Profiles.tsx` (Task 8 gap fix — see below), `src/hooks/useTrading.ts`, `src/pages/About.tsx`, `src/pages/ApiKeys.tsx`, `src/components/Sidebar.tsx`, `src/components/TopBar.tsx`, `src/components/TitleBar.tsx`, `src/pages/Dashboard.tsx`, `src/pages/MainEngine.tsx`, `src/pages/Terminal.tsx` (Task 10 gap fix — see below)
+- Test: `webserver/tests/test_config_store.py`, `webserver/tests/test_main_config_routes.py`, `src/hooks/useProfiles.test.ts` (Task 8 gap fix), `src/hooks/useTrading.test.ts` (Task 10 gap fix)
 
 **Interfaces:**
 - Consumes: `useWsClient()`; push-events `account:update`, `position:new`, `position:update`, `signal:new` already routed by `WsProvider` (Task 5) into `['account']`/`['positions']`/`['signals']` cache keys.
@@ -2112,6 +2112,12 @@ git commit -m "feat(frontend): trading/backend domain over WS RPC + config"
 3. Add `useActiveProfilesQuery()` to `src/hooks/useProfiles.ts` (`{queryKey: ['activeProfiles'], queryFn: () => fetchJson('/profiles/active')}`), and invalidate `['activeProfiles']` alongside `['config']` in `useApplyProfileMutation`'s `onSuccess` (`src/hooks/useProfiles.ts`, Task 8).
 4. Update `Profiles.tsx`'s `activeFor()` to read from `useActiveProfilesQuery().data` instead of `AppStateProvider`'s `state.active*ProfileId`.
 Write backend tests for `active_profile_ids`/`GET /profiles/active` and a frontend test for `useActiveProfilesQuery()` following this plan's established TDD pattern for each layer.
+
+**Carried-forward gap from Task 10 (ruled and parked, fix due here):** `AppStateProvider.tsx`'s `backend.info()`/`onInfo()` feeds a `BackendInfo` shape (`status`, `pid`, `startedAt`, `lastError`, `pythonOk`, `authOk`) consumed across 9 files (`About.tsx`, `ApiKeys.tsx`, `Sidebar.tsx`, `TopBar.tsx`, `TitleBar.tsx`, `Dashboard.tsx`, `MainEngine.tsx`, `Terminal.tsx`, plus `AppStateProvider.tsx` itself) — richer than Task 10's original assumption that a plain connected/disconnected boolean was enough. Task 10 correctly left it unmigrated rather than guess. Resolution (most of this is already solved, not new backend work):
+1. `authOk` is **already available** — `WsProvider`'s `EVENT_QUERY_KEYS` (Task 5) already routes the worker's `backend:authChanged` push event into the `['authStatus']` cache key with `{authOk: boolean}`. Add `useAuthStatusQuery()` to `src/hooks/useTrading.ts` (Task 10) as a read-only cache subscription: `useQuery({queryKey: ['authStatus'], queryFn: () => Promise.resolve(undefined), enabled: false})` (or the equivalent idiom already used for `crypto15mAutoOff` in Task 12 — follow that pattern, don't invent a second one) — this is populated purely by the push event, never fetched.
+2. `status`/`pid`/`startedAt`/`lastError`/`pythonOk` have no server-side equivalent (they describe the Electron main process's local child-process handle, which no longer exists once `webserver/`'s `Supervisor` owns worker lifecycle) — **drop them**, same treatment as tray/autostart/Discord-RPC-native/logs. Each of the 9 consumer files: replace any read of these fields with `useBackendConnectionStatus()` (WS connected boolean, Task 10) and/or `useAuthStatusQuery().data?.authOk` (step 1) as appropriate to what that specific UI element actually needs; remove any UI that specifically displayed `pid`/`startedAt`/`lastError` text with no fallback (e.g. a debug/diagnostics readout) rather than inventing replacement data.
+3. Remove `backend`/`onInfo`/`refreshBackend` (or whatever the exact field/method names are — read `AppStateProvider.tsx` first, don't guess) from `AppStateProvider.tsx`'s state and API surface as part of this task's final provider teardown.
+Read each of the 9 files' actual usage before editing — a file that only checks `authOk` needs a one-line hook swap; a file rendering `pid`/`lastError` in a diagnostics panel needs that panel's content reconsidered, not just its data source swapped.
 
 - [ ] **Step 1: Find every current call site**
 

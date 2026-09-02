@@ -87,4 +87,68 @@ describe('WsProvider', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('merges script:status into the ["scriptsList"] cache by id', () => {
+    let capturedClient: any;
+    function Capture() {
+      capturedClient = useWsClient();
+      return null;
+    }
+    queryClient.setQueryData(['scriptsList'], {
+      scripts: [{ id: 's1', enabled: true, lastError: null }, { id: 's2', enabled: true, lastError: null }],
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <WsProvider url="ws://test">
+            <Capture />
+          </WsProvider>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    capturedClient.__emit('script:status', { id: 's1', enabled: false, lastError: 'boom' });
+    expect(queryClient.getQueryData(['scriptsList'])).toEqual({
+      scripts: [{ id: 's1', enabled: false, lastError: 'boom' }, { id: 's2', enabled: true, lastError: null }],
+    });
+  });
+
+  it('fires a toast when script:status reports a script disabled itself', async () => {
+    let capturedClient: any;
+    function Capture() {
+      capturedClient = useWsClient();
+      return null;
+    }
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <WsProvider url="ws://test">
+            <Capture />
+          </WsProvider>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    capturedClient.__emit('script:status', { id: 's1', enabled: false, lastError: 'sandbox violation' });
+    expect(await screen.findByText('Script disabled: sandbox violation')).toBeInTheDocument();
+  });
+
+  it('appends script:log lines into ["scriptsLog", id]', () => {
+    let capturedClient: any;
+    function Capture() {
+      capturedClient = useWsClient();
+      return null;
+    }
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <WsProvider url="ws://test">
+            <Capture />
+          </WsProvider>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    capturedClient.__emit('script:log', { id: 's1', lines: ['line 1', 'line 2'] });
+    expect(queryClient.getQueryData(['scriptsLog', 's1'])).toEqual(['line 1', 'line 2']);
+    capturedClient.__emit('script:log', { id: 's1', lines: ['line 3'] });
+    expect(queryClient.getQueryData(['scriptsLog', 's1'])).toEqual(['line 1', 'line 2', 'line 3']);
+  });
 });

@@ -11,6 +11,13 @@ import { Page, Card } from '../components/common';
 import { useToast } from '../state/ToastProvider';
 import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
+import {
+  useScriptsListQuery, useSaveScriptMutation, useDeleteScriptMutation,
+  useSetScriptEnabledMutation, useSetScriptAssetsMutation, useSetScriptDryRunMutation,
+  useScriptShadowOrdersQuery, useValidateScriptMutation, useScriptBacktestMutation,
+  useScriptContextPackQuery, useScriptApiDocsQuery, useScriptLogsQuery,
+  downloadScriptFile, readScriptFile,
+} from '../hooks/useScripts';
 
 const ScriptEditor = lazy(() =>
   import('../components/ScriptEditor').then((m) => ({ default: m.ScriptEditor })));
@@ -65,7 +72,18 @@ export function ScriptsPage() {
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
   const toast = useToast();
-  const [scripts, setScripts] = useState<UserScript[]>([]);
+
+  const { data: listData } = useScriptsListQuery();
+  const scripts = useMemo(() => listData?.scripts ?? [], [listData]);
+  const saveScriptMut = useSaveScriptMutation();
+  const deleteScriptMut = useDeleteScriptMutation();
+  const setEnabledMut = useSetScriptEnabledMutation();
+  const setAssetsMut = useSetScriptAssetsMutation();
+  const setDryRunMut = useSetScriptDryRunMutation();
+  const validateMut = useValidateScriptMutation();
+  const backtestMut = useScriptBacktestMutation();
+  const { data: docs } = useScriptApiDocsQuery();
+
   const [selId, setSelId] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [dirty, setDirty] = useState(false);
@@ -75,15 +93,11 @@ export function ScriptsPage() {
   const [tab, setTab] = useState<PanelTab>('backtest');
   const [btDays, setBtDays] = useState(30);
   const [btRes, setBtRes] = useState<ScriptBacktest | null>(null);
-  const [shadow, setShadow] = useState<ScriptShadowOrder[] | null>(null);
-  const [logs, setLogs] = useState<Record<string, string[]>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [armModal, setArmModal] = useState(false);
 
   const [audit, setAudit] = useState<ScriptAudit | null>(null);
-  const [packText, setPackText] = useState<string | null>(null);
   const [showPack, setShowPack] = useState(false);
-  const [docs, setDocs] = useState<ScriptApiDocs | null>(null);
   const [pasteText, setPasteText] = useState('');
   const codeRef = useRef(code);
   codeRef.current = code;
@@ -93,45 +107,27 @@ export function ScriptsPage() {
     [scripts, selId],
   );
 
-  const refresh = async (keepSel = true) => {
-    try {
-      const r = await window.krypt.scripts.list();
-      setScripts(r.scripts);
-      if (!keepSel || !r.scripts.some((s) => s.id === selId)) {
-        setSelId(r.scripts[0]?.id ?? null);
-      }
-    } catch {}
-  };
-
+  // Reselect the first script whenever the currently-selected id disappears
+  // from the list (initial load, or after a delete) — mirrors the old
+  // refresh(keepSel=false) fallback.
   useEffect(() => {
-    void refresh(false);
-
-    window.krypt.scripts.docs().then(setDocs).catch(() => {});
-  }, []);
-
-  const loadShadow = async (id: string) => {
-    try {
-      const r = await window.krypt.scripts.shadowOrders(id, 200);
-      setShadow(r.orders);
-    } catch {
-      setShadow([]);
+    if (!listData) return;
+    if (!selId || !listData.scripts.some((s) => s.id === selId)) {
+      setSelId(listData.scripts[0]?.id ?? null);
     }
-  };
+  }, [listData, selId]);
 
-  useEffect(() => {
-    setShadow(null);
-    if (selId) void loadShadow(selId);
-  }, [selId]);
+  const { data: shadowData, refetch: refetchShadow } = useScriptShadowOrdersQuery(
+    selId, 200, { refetchInterval: tab === 'shadow' ? 15_000 : false },
+  );
+  const shadow = shadowData?.orders ?? (selId ? null : []);
 
-  useEffect(() => {
-    if (tab !== 'shadow' || !selId) return;
-    const t = setInterval(() => void loadShadow(selId), 15_000);
-    return () => clearInterval(t);
-  }, [tab, selId]);
+  const { data: selLogsRaw } = useScriptLogsQuery(selId);
+  const selLogs = selLogsRaw ?? [];
 
   const lintCode = async (src: string) => {
     if (!src.trim()) return [];
-    const r = await window.krypt.scripts.validate(src);
+    const r = await validateMut.mutateAsync(src);
     setAudit(r.audit);
     const parse = (msg: string, severity: 'error' | 'warning') => {
       const m = /^line (\d+):\s*(.*)$/.exec(msg);
@@ -144,22 +140,6 @@ export function ScriptsPage() {
       ...r.warnings.map((w) => parse(w, 'warning')),
     ];
   };
-
-  useEffect(() => {
-    const offStatus = window.krypt.scripts.onStatus((d) => {
-      setScripts((cur) => cur.map((s) => (
-        s.id === d.id ? { ...s, enabled: d.enabled, lastError: d.lastError ?? s.lastError } : s
-      )));
-      if (!d.enabled && d.lastError) toast.warn(`Script disabled: ${d.lastError.slice(0, 140)}`);
-    });
-    const offLog = window.krypt.scripts.onLog((d) => {
-      setLogs((cur) => {
-        const next = [...(cur[d.id] ?? []), ...d.lines].slice(-200);
-        return { ...cur, [d.id]: next };
-      });
-    });
-    return () => { offStatus(); offLog(); };
-  }, [toast]);
 
   useEffect(() => {
     if (sel) {
@@ -177,12 +157,11 @@ export function ScriptsPage() {
     if (!sel) return null;
     setBusy('save');
     try {
-      const r = await window.krypt.scripts.save({ id: sel.id, code: codeRef.current });
+      const r = await saveScriptMut.mutateAsync({ id: sel.id, code: codeRef.current });
       setErrors(r.errors);
       setWarnings(r.warnings);
       setAudit(r.audit ?? null);
       setDirty(false);
-      await refresh();
       if (r.errors.length) toast.warn('Saved, but the script does not validate — it was disabled.');
       else if (r.disarmed) { setTab('risk'); toast.warn('Saved and DISABLED — the new code trips the risk audit. Check the Risk tab.'); }
       else if (r.audit && !r.audit.ok) { setTab('risk'); toast.warn(`Saved. Risk audit: ${r.audit.critical} critical finding(s).`); }
@@ -199,8 +178,7 @@ export function ScriptsPage() {
   const createScript = async (initialCode: string, name?: string) => {
     setBusy('create');
     try {
-      const r = await window.krypt.scripts.save({ code: initialCode, name });
-      await refresh(false);
+      const r = await saveScriptMut.mutateAsync({ code: initialCode, name });
       setSelId(r.script.id);
       setErrors(r.errors);
       setWarnings(r.warnings);
@@ -215,7 +193,7 @@ export function ScriptsPage() {
   const validate = async () => {
     setBusy('validate');
     try {
-      const r = await window.krypt.scripts.validate(codeRef.current);
+      const r = await validateMut.mutateAsync(codeRef.current);
       setErrors(r.errors);
       setWarnings(r.warnings);
       setAudit(r.audit);
@@ -239,7 +217,7 @@ export function ScriptsPage() {
     setTab('backtest');
     try {
       if (dirty) await save();
-      const r = await window.krypt.scripts.backtest({ id: sel.id, sinceDays: btDays });
+      const r = await backtestMut.mutateAsync({ id: sel.id, sinceDays: btDays });
       setBtRes(r);
       if (!r) toast.error('Engine not running — start the backend first.');
     } catch (e: any) {
@@ -251,8 +229,7 @@ export function ScriptsPage() {
 
   const setEnabled = async (s: UserScript, enabled: boolean) => {
     try {
-      const r = await window.krypt.scripts.setEnabled(s.id, enabled);
-      setScripts((cur) => cur.map((x) => (x.id === s.id ? r.script : x)));
+      await setEnabledMut.mutateAsync({ id: s.id, enabled });
 
       if (enabled && !s.dryRun && !config?.scriptsLiveEnabled) {
         toast.info('Script enabled, but it is ARMED and the master "Scripts live" switch is off — it will not run until you turn that on.');
@@ -264,16 +241,14 @@ export function ScriptsPage() {
     }
   };
 
-  const openArmModal = async () => {
-    await refresh();
+  const openArmModal = () => {
     setArmModal(true);
   };
 
   const applyAssets = async (assets: string[] | null) => {
     if (!sel) return;
     try {
-      const r = await window.krypt.scripts.setAssets(sel.id, assets);
-      setScripts((cur) => cur.map((x) => (x.id === sel.id ? r.script : x)));
+      await setAssetsMut.mutateAsync({ id: sel.id, assets });
     } catch (e: any) {
       toast.error(e?.message || String(e));
     }
@@ -281,34 +256,23 @@ export function ScriptsPage() {
 
   const importScript = async () => {
     try {
-      const r = await window.krypt.scripts.importFile();
-      if (!r.ok) {
-        if (r.message !== 'canceled') toast.error(r.message || 'Import failed');
-        return;
-      }
-
-      await createScript(r.data ?? '');
+      const r = await readScriptFile();
+      await createScript(r.code);
       toast.success('Imported. Review it, then validate and backtest before arming.');
     } catch (e: any) {
-      toast.error(e?.message || String(e));
+      if (e?.message !== 'no file selected') toast.error(e?.message || String(e));
     }
   };
 
-  const exportScript = async () => {
+  const exportScript = () => {
     if (!sel) return;
-    try {
-      const r = await window.krypt.scripts.exportFile(sel.name, codeRef.current);
-      if (!r.ok && r.message !== 'canceled') toast.error(r.message || 'Export failed');
-    } catch (e: any) {
-      toast.error(e?.message || String(e));
-    }
+    downloadScriptFile(`${sel.name || 'strategy'}.py`, codeRef.current);
   };
 
   const applyDryRun = async (dryRun: boolean) => {
     if (!sel) return;
     try {
-      const r = await window.krypt.scripts.setDryRun(sel.id, dryRun);
-      setScripts((cur) => cur.map((x) => (x.id === sel.id ? r.script : x)));
+      await setDryRunMut.mutateAsync({ id: sel.id, dryRun });
       setArmModal(false);
       toast.info(dryRun
         ? 'Back to shadow — this script records intents instead of ordering.'
@@ -321,25 +285,21 @@ export function ScriptsPage() {
   const doDelete = async () => {
     if (!sel) return;
     try {
-      await window.krypt.scripts.delete(sel.id);
+      await deleteScriptMut.mutateAsync(sel.id);
       setConfirmDelete(false);
-      await refresh(false);
       toast.success('Script deleted.');
     } catch (e: any) {
       toast.error(e?.message || String(e));
     }
   };
 
-  const openPack = async () => {
+  // Fetches lazily — the query is only enabled once the dialog is opened
+  // (see `showPack` passed to useScriptContextPackQuery).
+  const { data: packData } = useScriptContextPackQuery(showPack);
+  const packText = packData?.text ?? null;
+
+  const openPack = () => {
     setShowPack(true);
-    if (!packText) {
-      try {
-        const r = await window.krypt.scripts.contextPack();
-        setPackText(r.text);
-      } catch (e: any) {
-        toast.error(e?.message || String(e));
-      }
-    }
   };
 
   const copyPack = async () => {
@@ -357,8 +317,6 @@ export function ScriptsPage() {
     setShowPack(false);
     setTab('backtest');
   };
-
-  const selLogs = sel ? (logs[sel.id] ?? []) : [];
 
   return (
     <Page
@@ -564,11 +522,8 @@ export function ScriptsPage() {
                   <button
                     key={t}
                     onClick={() => {
-                      if (t === 'ai') { void openPack(); return; }
+                      if (t === 'ai') { openPack(); return; }
                       setTab(t);
-                      if (t === 'docs' && !docs) {
-                        window.krypt.scripts.docs().then(setDocs).catch(() => {});
-                      }
                     }}
                     className={cls(
                       'rounded-md px-3 py-1.5 text-xs transition-colors',
@@ -612,12 +567,12 @@ export function ScriptsPage() {
                 <ShadowLedger
                   orders={shadow}
                   dryRun={sel.dryRun}
-                  onRefresh={() => void loadShadow(sel.id)}
+                  onRefresh={() => void refetchShadow()}
                 />
               )}
               {tab === 'backtest' && <BacktestResult res={btRes} busy={busy === 'backtest'} />}
               {tab === 'risk' && <AuditPanel audit={audit ?? sel.audit} stale={code !== sel.code} />}
-              {tab === 'docs' && <DocsPanel docs={docs} />}
+              {tab === 'docs' && <DocsPanel docs={docs ?? null} />}
               {tab === 'log' && (
                 <div className="max-h-56 overflow-y-auto rounded-lg border border-krypt-border bg-krypt-void/50 p-3 font-mono text-[11px] leading-relaxed text-krypt-muted">
                   {selLogs.length === 0
@@ -726,10 +681,9 @@ export function ScriptsPage() {
               </button>
               <button
                 onClick={() => {
-                  void window.krypt.scripts.exportPack().then((r) => {
-                    if (r.ok) toast.success('Saved — the file window should pop up.');
-                    else if (r.message !== 'canceled') toast.error(r.message || 'Export failed');
-                  });
+                  if (!packText) return;
+                  downloadScriptFile('krypt-ai-context-pack.txt', packText);
+                  toast.success('Downloaded krypt-ai-context-pack.txt.');
                 }}
                 disabled={!packText}
                 className="krypt-btn-default inline-flex items-center gap-2 text-xs disabled:opacity-50"

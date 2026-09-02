@@ -59,6 +59,36 @@ export function WsProvider({ url, children }: { url: string; children: React.Rea
     const unsubSignal = client.on('signal:new', (data) => {
       queryClient.setQueryData(['signals'], (old: unknown[] = []) => [data, ...old]);
     });
+    // `script:status` merges an { id, enabled, lastError } patch into the
+    // ['scriptsList'] cache's nested `scripts` array (same shape as the
+    // position:update merge above) and — since a script disabling itself is
+    // worth surfacing regardless of which page is open — fires a toast,
+    // mirroring the crypto15m:autoOff handler below.
+    const unsubScriptStatus = client.on('script:status', (data: any) => {
+      queryClient.setQueryData(
+        ['scriptsList'],
+        (old: { scripts: any[] } | undefined) => {
+          if (!old) return old;
+          return {
+            scripts: old.scripts.map((s) => (s.id === data.id
+              ? { ...s, enabled: data.enabled, lastError: data.lastError ?? s.lastError }
+              : s)),
+          };
+        },
+      );
+      if (!data?.enabled && data?.lastError) {
+        toast.warn(`Script disabled: ${String(data.lastError).slice(0, 140)}`);
+      }
+    });
+    // `script:log` appends lines to a per-script log kept at
+    // ['scriptsLog', id] — a push-only cache key (see useScriptLogsQuery),
+    // capped the same way the old onLog handler capped it (200 lines).
+    const unsubScriptLog = client.on('script:log', (data: any) => {
+      queryClient.setQueryData(
+        ['scriptsLog', data.id],
+        (old: string[] = []) => [...old, ...(data.lines ?? [])].slice(-200),
+      );
+    });
     // Always-mounted toast for the executor auto-disable event — WsProvider
     // wraps the whole app (regardless of which page is mounted), unlike the
     // old AppStateProvider-rooted subscription this replaces.
@@ -76,6 +106,8 @@ export function WsProvider({ url, children }: { url: string; children: React.Rea
       unsubPosition();
       unsubPositionUpdate();
       unsubSignal();
+      unsubScriptStatus();
+      unsubScriptLog();
       unsubAutoOff();
       client.close();
     };

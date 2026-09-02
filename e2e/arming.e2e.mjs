@@ -1,3 +1,16 @@
+// STALE — Electron was removed from this project (see commits 0026188 / f6a1700).
+// This script launches `_electron` and drives `window.krypt`, the old preload IPC
+// bridge; neither exists anymore, so it will fail immediately and is no longer
+// wired to any npm script (the former `test:e2e` script was removed).
+//
+// The scenarios here (script arming/disarming, shadow-mode defaults, the risk-audit
+// gate before arming) are partially covered at the unit level by
+// src/hooks/useScripts.test.tsx, but the end-to-end UI flow — real modal copy,
+// button clicks, console-error checks — has no replacement yet. A rewrite would
+// need to drive a regular browser against the built webapp (Playwright supports
+// this directly, no Electron required) instead of `_electron.launch`. Left in
+// place as a reference/starting point for that rewrite rather than deleted
+// outright, since it captures real product behavior worth re-testing.
 import { _electron as electron } from 'playwright-core';
 import * as fs from 'node:fs';
 import * as os from 'node:os';

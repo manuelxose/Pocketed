@@ -171,9 +171,9 @@ export function AboutPage() {
       <Section title="Credits">
         <Card>
           <p className="text-xs text-krypt-muted">
-            UI built with <span className="text-white">Electron · React · Tailwind · Recharts</span> ·
+            UI built with <span className="text-white">React · Tailwind · Recharts</span> ·
             backend in <span className="text-white">Python (httpx + cryptography)</span> ·
-            packaged with <span className="text-white">PyInstaller + electron-builder</span>.
+            packaged with <span className="text-white">PyInstaller</span>.
             Brand &amp; tooling by{' '}
             <a
               href="#"

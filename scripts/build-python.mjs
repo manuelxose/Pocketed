@@ -40,7 +40,7 @@ if (st.status !== 0) {
     '!! Frozen backend FAILED selftest (see report above). The bundle is missing\n' +
     '!! a runtime dependency or signer \u2014 refusing to ship it. Check that the build\n' +
     '!! venv has all of requirements.txt and that the .spec collects the failing\n' +
-    '!! package, then rebuild. Aborting before electron-builder.',
+    '!! package, then rebuild. Aborting before packaging.',
   );
   process.exit(1);
 }

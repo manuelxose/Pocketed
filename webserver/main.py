@@ -179,6 +179,44 @@ async def get_test_userop_status(
 
 
 CTF_EXCHANGE_V2_ADDRESS = "0xE111180000d2663C0091e4f400237545B87B996B"
+# Polymarket routes neg-risk markets through a second exchange contract.
+# Both must be in the session key's SignatureCallerPolicy or every neg-risk
+# order the bot signs would be rejected by the policy (silently, on-chain).
+NEG_RISK_CTF_EXCHANGE_V2_ADDRESS = "0xe2222d279d744050d28e00520010520000310F59"
+
+
+async def _session_key_worker_request(wallet_address: str, method: str, params: dict) -> dict:
+    """Run one session-key RPC against the user's worker, mapping failures
+    onto real HTTP statuses instead of letting them surface as a raw 500.
+
+    Mirrors the handling the older routes already have: `/ws` turns a
+    `WorkerStartError` into a client-visible backend-start failure, and
+    `/aa/*` maps upstream errors via `_gateway_status_for_aa_error`.
+
+    `service._dispatch_request` reports handler exceptions back over the
+    stdio protocol as `"{ExceptionClassName}: {message}"`, and the worker
+    re-raises them here as `RuntimeError` with that string. The session-key
+    handlers raise `ValueError` for everything that is a bad request
+    (missing signature, no pending key, non-positive cap, signature not from
+    the session owner), so that prefix is the client-error signal; anything
+    else is an upstream failure.
+    """
+    try:
+        worker = await supervisor.get_or_create(wallet_address)
+    except WorkerStartError as e:
+        raise HTTPException(
+            status_code=503, detail=f"backend worker unavailable: {e}"
+        ) from e
+    try:
+        return await worker.request(method, params)
+    except HTTPException:
+        raise
+    except asyncio.TimeoutError as e:
+        raise HTTPException(status_code=504, detail=f"{method} timed out") from e
+    except Exception as e:
+        detail = str(e)
+        status = 400 if detail.startswith("ValueError: ") else 502
+        raise HTTPException(status_code=status, detail=detail) from e
 
 
 class SessionKeyInitRequest(BaseModel):
@@ -194,11 +232,10 @@ async def post_session_key_init(
         kernel_address = await aa.compute_account_address(wallet_address, base_url=AA_SERVICE_URL)
     except aa.AAServiceError as e:
         raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
-    worker = await supervisor.get_or_create(wallet_address)
-    result = await worker.request("mintSessionKey", {
+    result = await _session_key_worker_request(wallet_address, "mintSessionKey", {
         "ownerAddress": wallet_address,
         "kernelAddress": kernel_address,
-        "allowedCaller": CTF_EXCHANGE_V2_ADDRESS,
+        "allowedCallers": [CTF_EXCHANGE_V2_ADDRESS, NEG_RISK_CTF_EXCHANGE_V2_ADDRESS],
         "validUntil": body.validUntil,
         "dailyUsdCap": body.dailyUsdCap,
     })
@@ -213,8 +250,9 @@ class SessionKeyActivateRequest(BaseModel):
 async def post_session_key_activate(
     body: SessionKeyActivateRequest, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    worker = await supervisor.get_or_create(wallet_address)
-    result = await worker.request("activateSessionKey", {"signature": body.signature})
+    result = await _session_key_worker_request(
+        wallet_address, "activateSessionKey", {"signature": body.signature}
+    )
     return JSONResponse(result)
 
 
@@ -222,8 +260,7 @@ async def post_session_key_activate(
 async def post_session_key_revoke(
     wallet_address: str = Depends(require_wallet_address),
 ) -> JSONResponse:
-    worker = await supervisor.get_or_create(wallet_address)
-    result = await worker.request("revokeSessionKey", {})
+    result = await _session_key_worker_request(wallet_address, "revokeSessionKey", {})
     return JSONResponse(result)
 
 

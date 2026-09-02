@@ -1,3 +1,52 @@
+"""Kernel v0.3.1 session keys (Fase 2b).
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║ KNOWN BLOCKING GAP — the permission validator is NEVER installed on-chain║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+`sign_order_as_session_key()` produces a signature framed as
+`0x02 || permissionId || 0xff || <session key sig over Kernel's EIP-712
+wrap>`. That framing tells the Kernel account "route this ERC-1271 check to
+the permission validator registered under `permissionId`".
+
+NOTHING IN THIS CODEBASE EVER REGISTERS THAT PERMISSION VALIDATOR ON-CHAIN:
+
+  * `build_kernel_factory_args()` below deploys the account with an EMPTY
+    `initConfig` (`bytes[] initConfig = []`) — i.e. only the ECDSA sudo
+    (owner) validator, no permission validator, no policies.
+  * `aa-service/src/kernelAccount.ts` deliberately builds the account with
+    "no hook plugin, no initConfig" so the counterfactual address stays
+    stable; nothing there installs a validator either.
+  * ZeroDev's SDK only auto-inserts an "enable" branch on the
+    `signUserOperation` path (see `@zerodev/sdk`'s
+    `toKernelPluginManager.js`). The `signTypedData` / ERC-1271 path — the
+    one Polymarket's CTF Exchange uses — has no such branch, so there is no
+    just-in-time enable either.
+
+Consequence: on a real chain, `isValidSignature()` on the Kernel account
+would look up `permissionId` and find no config, and the order signature
+would be REJECTED. Everything in this module is byte-for-byte correct
+against ZeroDev's own SDK output (see `tests/fixtures/session_key_golden.json`)
+but that only proves the encoding matches — not that the account will accept
+it. Do not describe session-key expiry / allowed-caller restrictions as
+"contract-enforced" until this gap is closed.
+
+Two viable ways to close it (both out of scope for the current fix wave):
+  1. Install at deploy time: include the permission validator's install
+     blob in `initConfig` here AND in `aa-service/src/kernelAccount.ts`.
+     This CHANGES the counterfactual account address, so it must be done
+     before any account is funded, and both implementations must agree
+     byte-for-byte or the addresses diverge.
+  2. Install after deploy: build a one-time UserOp (reusing the Fase 2a
+     `/aa/test-userop/build|submit` plumbing) signed by the owner's live
+     wallet that calls Kernel's `installModule` with the real enable
+     calldata from `@zerodev/permissions`. Leaves the address untouched but
+     needs the account deployed and gas-funded first.
+
+Separately, `build_enable_typed_data()` is a LOCAL consent record only —
+see its docstring. It authorizes nothing on-chain.
+"""
+
 from __future__ import annotations
 
 import json
@@ -88,14 +137,31 @@ def _encode_address_array(addrs: list[str]) -> bytes:
     return _u256(32) + _u256(len(addrs)) + b"".join(_addr_word(a) for a in addrs)
 
 
+def allowed_callers(policy: dict) -> list[str]:
+    """The full list of contracts this session key may be called through.
+
+    `@zerodev/permissions`' `toSignatureCallerPolicy({allowedCallers: [...]})`
+    takes an ARRAY, so a policy may legitimately pin several callers — the
+    Polymarket CTF Exchange has two of them (the regular exchange and the
+    neg-risk exchange), and an order routed to the wrong one would be
+    rejected by the policy. Accepts either the newer `allowedCallers` list
+    or the original single `allowedCaller` (kept for stored records written
+    before the list form existed)."""
+    callers = policy.get("allowedCallers")
+    if callers:
+        return [str(c) for c in callers]
+    return [str(policy["allowedCaller"])]
+
+
 def _policy_blobs(policy: dict) -> list[bytes]:
     """The `policyInfo || policyData` blobs for the two policies the
     aa-service installs on a session key: a SignatureCallerPolicy pinning
-    the allowed caller (the Polymarket CTF Exchange) and a TimestampPolicy
-    carrying the expiry. Order matters — it feeds the permission id hash."""
+    the allowed caller(s) (the Polymarket CTF Exchange contracts) and a
+    TimestampPolicy carrying the expiry. Order matters — it feeds the
+    permission id hash."""
     flag = POLICY_FLAG_FOR_ALL_VALIDATION
     caller_info = flag + _addr_bytes(SIGNATURE_CALLER_POLICY_CONTRACT)
-    caller_data = _encode_address_array([policy["allowedCaller"]])
+    caller_data = _encode_address_array(allowed_callers(policy))
     ts_info = flag + _addr_bytes(TIMESTAMP_POLICY_CONTRACT)
     # toTimestampPolicy encodes (uint48 validAfter, uint48 validUntil)
     ts_data = _u256(int(policy.get("validAfter") or 0)) + _u256(int(policy["validUntil"]))
@@ -130,7 +196,13 @@ def build_kernel_factory_args(owner_address: str, index: int = 0) -> tuple[str, 
     meta factory: deployWithFactory(address factory, bytes createData,
     bytes32 salt) where createData is
     initialize(bytes21 rootValidator, address hook, bytes validatorData,
-    bytes hookData, bytes[] initConfig)."""
+    bytes hookData, bytes[] initConfig).
+
+    KNOWN GAP (see the module docstring): `initConfig` is EMPTY here, so the
+    deployed account has only the owner's ECDSA sudo validator installed —
+    NO permission validator for any session key. Must stay byte-identical to
+    `aa-service/src/kernelAccount.ts`'s account construction, or the
+    counterfactual address computed here and there diverge."""
     from eth_utils import keccak
 
     init_selector = keccak(b"initialize(bytes21,address,bytes,bytes,bytes[])")[:4]
@@ -191,6 +263,17 @@ def sign_order_as_session_key(
          an ERC-6492 signature carrying the account's deploy factory call,
          so a verifier can counterfactually deploy and then check it.
 
+    KNOWN GAP — `account_deployed`: every caller currently hardcodes
+    `account_deployed=False` (see
+    `polymarket_auth._create_signed_order_via_session_key`), so an ERC-6492
+    wrapper is emitted unconditionally. That is correct only while the
+    Kernel account really is counterfactual. Once it is deployed (Fase 2a's
+    funding flow deploys it), a plain ERC-1271 verifier that does not
+    understand the 0x6492 magic suffix will reject the signature. A real fix
+    needs a deployment check — an `eth_getCode(kernelAddress) != 0x` probe
+    exposed by aa-service and cached per account — which is new plumbing
+    this module does not have.
+
     Note there is deliberately NO EIP-191 personal-sign prefix over the
     digest. ZeroDev's `signMessage({message:{raw}})` applies one, but the
     Polymarket CTF Exchange calls `isValidSignature(orderHash, sig)` with
@@ -198,6 +281,11 @@ def sign_order_as_session_key(
 
     Cross-checked against `tests/fixtures/session_key_golden.json`, which is
     generated by the real ZeroDev SDK.
+
+    KNOWN BLOCKING GAP (see the module docstring): the `permissionId` this
+    signature routes to has no configuration on the Kernel account, because
+    nothing in this codebase installs the permission validator on-chain.
+    The bytes are right; an on-chain verifier would still reject them.
     """
     from eth_account import Account
     from eth_account.messages import encode_typed_data
@@ -309,10 +397,26 @@ def load_session_key_record(env: str = _auth.NETWORK) -> Optional[dict]:
 
 
 def build_enable_typed_data(kernel_address: str, session_key_address: str, policy: dict) -> dict:
-    """EIP-712 payload the owner signs once via eth_signTypedData_v4 to
-    authorize `session_key_address` as a Kernel permission-validator
-    signer restricted to `policy['allowedCaller']`
-    (the Polymarket CTF Exchange), expiring at `policy['validUntil']`."""
+    """EIP-712 payload the owner signs once via `eth_signTypedData_v4` to
+    record their consent to `session_key_address` trading on their behalf,
+    restricted to `allowed_callers(policy)` (the Polymarket CTF Exchange
+    contracts) and expiring at `policy['validUntil']`.
+
+    ⚠ THIS IS A LOCAL CONSENT RECORD ONLY — NOT AN ON-CHAIN PAYLOAD. ⚠
+
+    The `EnableSessionKey` struct and the "Krypt PolyBot Session Key" domain
+    below are bespoke to this application. They have NO relationship to
+    Kernel's real plugin-enable typed data (`@zerodev/sdk`'s
+    `ValidatorApproved` / `Enable` struct over
+    `(bytes21 validator, uint256 nonce, address hook, bytes validatorData,
+    bytes hookData, bytes selectorData)`), and signing this authorizes
+    NOTHING on-chain. Its only purpose is to prove, locally and verifiably
+    (see `recover_enable_signer` below), that the owner of the Kernel
+    account actually asked for this session key — which is what
+    `/session-key/activate` checks before it will store the key. Installing
+    the validator on-chain is a separate, unimplemented step; see the module
+    docstring's KNOWN BLOCKING GAP.
+    """
     return {
         "types": {
             "EIP712Domain": [
@@ -323,7 +427,7 @@ def build_enable_typed_data(kernel_address: str, session_key_address: str, polic
             ],
             "EnableSessionKey": [
                 {"name": "sessionKeyAddress", "type": "address"},
-                {"name": "allowedCaller", "type": "address"},
+                {"name": "allowedCallers", "type": "address[]"},
                 {"name": "validUntil", "type": "uint256"},
             ],
         },
@@ -336,10 +440,32 @@ def build_enable_typed_data(kernel_address: str, session_key_address: str, polic
         },
         "message": {
             "sessionKeyAddress": session_key_address,
-            "allowedCaller": policy["allowedCaller"],
+            "allowedCallers": allowed_callers(policy),
             "validUntil": int(policy["validUntil"]),
         },
     }
+
+
+def recover_enable_signer(typed_data: dict, signature: str) -> str:
+    """Recover the address that produced `signature` over `typed_data` (the
+    exact dict `build_enable_typed_data` returned at mint time).
+
+    Uses the same `eth_account` typed-data path the signing side uses, so a
+    signature produced by any `eth_signTypedData_v4`-compatible wallet over
+    that payload recovers to the wallet's own address. Raises ValueError if
+    the signature is malformed or unrecoverable."""
+    from eth_account import Account
+    from eth_account.messages import encode_typed_data
+
+    sig = (signature or "").strip()
+    if not sig:
+        raise ValueError("signature is required")
+    try:
+        return Account.recover_message(
+            encode_typed_data(full_message=typed_data), signature=sig
+        )
+    except Exception as e:
+        raise ValueError(f"could not recover signer from signature: {e}") from e
 
 
 def load_active_session_key(env: str = _auth.NETWORK) -> Optional[dict]:
@@ -356,7 +482,13 @@ def reserve_daily_usd(amount_usd: float, env: str = _auth.NETWORK) -> bool:
     """Atomically checks and reserves `amount_usd` against the session
     key's policy['dailyUsdCap'] for the current UTC day. Returns False
     (and reserves nothing) if the cap would be exceeded; True and records
-    the spend otherwise. The counter resets when the UTC day changes."""
+    the spend otherwise. The counter resets when the UTC day changes.
+
+    There is deliberately NO "unlimited" cap: a missing or non-positive
+    `dailyUsdCap` reserves nothing and returns False (fail closed). Mint
+    time rejects such a policy outright (`service._h_mintSessionKey`), so
+    a stored record with cap <= 0 is a corrupt/hand-edited one and must not
+    be treated as permission to spend without limit."""
     record = load_session_key_record(env)
     if record is None:
         return False
@@ -365,7 +497,9 @@ def reserve_daily_usd(amount_usd: float, env: str = _auth.NETWORK) -> bool:
     if spend.get("day") != today:
         spend = {"day": today, "usedUsd": 0.0}
     cap = float(record.get("policy", {}).get("dailyUsdCap") or 0.0)
-    if cap and spend["usedUsd"] + amount_usd > cap:
+    if cap <= 0:
+        return False
+    if spend["usedUsd"] + amount_usd > cap:
         return False
     spend["usedUsd"] = spend["usedUsd"] + amount_usd
     record["dailySpend"] = spend

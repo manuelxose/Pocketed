@@ -53,7 +53,8 @@
     <section id="session-key-section">
       <h2>Fase 2b — Activate auto-trading (session key)</h2>
       <label for="daily-cap-input">Daily USD cap</label>
-      <input type="number" id="daily-cap-input" value="50" min="0" step="1">
+      <!-- There is no "unlimited" cap: the backend rejects <= 0 outright. -->
+      <input type="number" id="daily-cap-input" value="50" min="1" step="1">
       <button id="btn-activate-session-key">Activate auto-trading</button>
       <button id="btn-revoke-session-key">Revoke</button>
       <pre id="session-key-log"></pre>

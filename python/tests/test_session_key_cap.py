@@ -26,6 +26,19 @@ def test_reserve_daily_usd_rejects_spend_over_cap(tmp_path, monkeypatch):
     assert session_key.reserve_daily_usd(20.0) is False
 
 
+def test_reserve_daily_usd_treats_zero_cap_as_zero_not_unlimited(tmp_path, monkeypatch):
+    """A falsy cap used to skip the check entirely, silently granting an
+    unlimited daily budget. It must fail closed instead."""
+    _seed_active_key(tmp_path, monkeypatch, daily_cap=0.0)
+    assert session_key.reserve_daily_usd(0.01) is False
+    assert session_key.reserve_daily_usd(1_000_000.0) is False
+
+
+def test_reserve_daily_usd_rejects_negative_cap(tmp_path, monkeypatch):
+    _seed_active_key(tmp_path, monkeypatch, daily_cap=-5.0)
+    assert session_key.reserve_daily_usd(1.0) is False
+
+
 def test_reserve_daily_usd_resets_on_new_utc_day(tmp_path, monkeypatch):
     _seed_active_key(tmp_path, monkeypatch, daily_cap=100.0)
     assert session_key.reserve_daily_usd(90.0) is True

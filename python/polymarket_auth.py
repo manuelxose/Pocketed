@@ -746,12 +746,27 @@ def _create_signed_order_via_session_key(
     import session_key as _session_key_mod
     from eth_account.messages import encode_typed_data, _hash_eip191_message
 
-    notional_usd = price * size
-    if not _session_key_mod.reserve_daily_usd(notional_usd):
-        raise RuntimeError("daily USD cap exceeded for session key")
-
     kernel_address = session_key_record["policy"]["kernelAddress"]
     side_u = side.upper()
+
+    # The daily cap limits how much USDC the session key may SPEND, so only
+    # BUY orders draw it down — a SELL returns collateral and used to
+    # consume the cap as if it were an outflow, which could exhaust a day's
+    # budget without ever spending anything.
+    #
+    # KNOWN GAP: the reservation happens here, before the order is signed
+    # and long before place_limit_order actually submits it. A rejected or
+    # failed submit leaves the reserved amount debited for the rest of the
+    # UTC day. Rolling it back correctly needs a two-phase
+    # reserve/commit/release around the submit call (and a way to reconcile
+    # a reservation whose process died mid-submit), which is more than a
+    # bugfix; the cap therefore errs on the conservative side — it can
+    # under-spend, never over-spend.
+    if side_u == "BUY":
+        notional_usd = price * size
+        if not _session_key_mod.reserve_daily_usd(notional_usd):
+            raise RuntimeError("daily USD cap exceeded for session key")
+
     side_int = 0 if side_u == "BUY" else 1
     if side_u == "BUY":
         maker_amount = _round_amt(price * size * _DECIMALS)

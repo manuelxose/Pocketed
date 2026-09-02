@@ -29,12 +29,30 @@ def main() -> None:
         if method == "crash":
             sys.exit(1)
         if method == "mintSessionKey":
+            # Mirror the real handler's client-error shape (service.py reports
+            # handler exceptions as "{ExceptionClassName}: {message}") so the
+            # gateway's status mapping can be exercised.
+            if float((req.get("params") or {}).get("dailyUsdCap") or 0) <= 0:
+                _send({"type": "rpc", "id": req["id"], "ok": False,
+                       "error": "ValueError: dailyUsdCap must be greater than 0"})
+                continue
             _send({"type": "rpc", "id": req["id"], "ok": True, "result": {
                 "sessionKeyAddress": "0xSessionKeyDummy00000000000000000000000",
                 "enableTypedData": {"domain": {}, "message": {"sessionKeyAddress": "0xSessionKeyDummy00000000000000000000000"}},
             }})
             continue
         if method == "activateSessionKey":
+            sig = (req.get("params") or {}).get("signature")
+            if sig == "0xbadsignature":
+                _send({"type": "rpc", "id": req["id"], "ok": False, "error": (
+                    "ValueError: enable signature was not produced by the "
+                    "session owner (recovered 0xA, expected 0xB)"
+                )})
+                continue
+            if sig == "0xboom":
+                _send({"type": "rpc", "id": req["id"], "ok": False,
+                       "error": "RuntimeError: backend exploded"})
+                continue
             _send({"type": "rpc", "id": req["id"], "ok": True, "result": {"ok": True}})
             continue
         if method == "revokeSessionKey":

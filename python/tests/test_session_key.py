@@ -60,8 +60,61 @@ def test_build_enable_typed_data_shape():
     )
     assert typed["domain"]["chainId"] == polymarket_auth.CHAIN_ID
     assert typed["message"]["sessionKeyAddress"] == "0xSessionKeyAddr0000000000000000000000000"
-    assert typed["message"]["allowedCaller"] == policy["allowedCaller"]
+    assert typed["message"]["allowedCallers"] == [policy["allowedCaller"]]
     assert typed["message"]["validUntil"] == policy["validUntil"]
+
+
+def test_build_enable_typed_data_carries_every_allowed_caller():
+    """A neg-risk order goes through a second exchange contract; if the
+    consent payload (and the permission id built from the same policy) only
+    named one, every neg-risk order would violate the policy."""
+    policy = {
+        "allowedCallers": [
+            "0xE111180000d2663C0091e4f400237545B87B996B",
+            "0xe2222d279d744050d28e00520010520000310F59",
+        ],
+        "validUntil": 1893456000, "dailyUsdCap": 50.0,
+    }
+    typed = session_key.build_enable_typed_data(
+        "0x000000000000000000000000000000000000dEaD",
+        "0x000000000000000000000000000000000000bEEF", policy,
+    )
+    assert typed["message"]["allowedCallers"] == policy["allowedCallers"]
+    assert session_key.allowed_callers(policy) == policy["allowedCallers"]
+    # And the permission id must actually differ from the single-caller one,
+    # i.e. the second caller reaches the SignatureCallerPolicy blob.
+    single = {"allowedCaller": policy["allowedCallers"][0], "validUntil": 1893456000}
+    signer_addr = "0x000000000000000000000000000000000000bEEF"
+    assert session_key.compute_permission_id(signer_addr, policy) != \
+        session_key.compute_permission_id(signer_addr, single)
+
+
+def test_recover_enable_signer_roundtrip_and_rejection():
+    from eth_account import Account
+    from eth_account.messages import encode_typed_data
+
+    owner = Account.create()
+    other = Account.create()
+    policy = {
+        "allowedCaller": "0xE111180000d2663C0091e4f400237545B87B996B",
+        "validUntil": 1893456000, "dailyUsdCap": 50.0,
+    }
+    typed = session_key.build_enable_typed_data(
+        "0x000000000000000000000000000000000000dEaD",
+        "0x000000000000000000000000000000000000bEEF", policy,
+    )
+    signable = encode_typed_data(full_message=typed)
+
+    good = owner.sign_message(signable).signature.hex()
+    assert session_key.recover_enable_signer(typed, good).lower() == owner.address.lower()
+
+    wrong = other.sign_message(signable).signature.hex()
+    assert session_key.recover_enable_signer(typed, wrong).lower() != owner.address.lower()
+
+    with pytest.raises(ValueError):
+        session_key.recover_enable_signer(typed, "0xnot-a-signature")
+    with pytest.raises(ValueError):
+        session_key.recover_enable_signer(typed, "")
 
 
 def test_load_active_session_key_none_before_activation():

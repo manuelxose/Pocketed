@@ -134,25 +134,44 @@ cd webserver && KRYPT_POLYBOT_SESSION_SECRET=dev-secret \
 
 Open `http://127.0.0.1:8000/static/signer.html` for the smoke-test harness.
 
-## Webapp Fase 2b (in progress) — session keys, unattended trading
+## Webapp Fase 2b (in progress, NOT usable against mainnet yet) — session keys, unattended trading
 
-Closes the gap Fase 2a left open: the scanner/whale-tracker/15-min-crypto
-auto-trader can now place and cancel real Polymarket orders without the
-user's browser open. The user authorizes a Kernel permission-validator
-session key once (a single `eth_signTypedData_v4` signature, restricted
-on-chain to the Polymarket CTF Exchange as caller and to a fixed
-expiration); `python/service.py` then signs orders with that session key
-locally — no dependency on `aa-service`/the bundler being up to trade.
-See
+Aims to close the gap Fase 2a left open: letting the
+scanner/whale-tracker/15-min-crypto auto-trader place and cancel real
+Polymarket orders without the user's browser open. The user authorizes a
+session key once (a single `eth_signTypedData_v4` signature naming the
+allowed exchange contracts and an expiry); `python/service.py` then signs
+orders with that session key locally — no dependency on `aa-service`/the
+bundler being up to trade. See
 [docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md](docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md).
 
-The daily USD spend cap is software-enforced (not contract-enforced —
-see the spec's spike findings); expiration and the allowed-caller
-restriction are contract-enforced by the Kernel permission-validator.
+**Known blocking gap — nothing here installs the Kernel permission
+validator on-chain.** The account is deployed with an empty `initConfig`
+(no permission validator, no policies), and ZeroDev's ERC-1271 signing
+path has no just-in-time "enable" branch, so the signature this code
+produces routes to a permission id the account has no configuration for
+and a real verifier would reject it. Concretely, today:
 
-Open `http://127.0.0.1:8000/static/signer.html`, click "Activate
-auto-trading" after depositing USDC (Fase 2a), and the existing
-scanner/whale-tracker will start placing real orders on your behalf.
+- The daily USD spend cap is **software-enforced only** (a local counter in
+  `python/session_key.py`), as the spec's spike findings note.
+- The expiry and the allowed-caller restriction are **encoded into the
+  signature's permission id but not enforced by any deployed contract**,
+  because the validator that would enforce them is never installed. They
+  are not contract-enforced today, and must not be described as such until
+  the validator install ships.
+- The `eth_signTypedData_v4` payload the user signs
+  (`session_key.build_enable_typed_data`) is a **local consent record**
+  — it is verified on activation to prove the request came from the
+  account owner, but it is not Kernel's on-chain enable payload and
+  authorizes nothing on-chain.
+
+See the module docstring at the top of `python/session_key.py` for the two
+candidate ways to close this (install at deploy time via `initConfig`, or
+install after deploy via a one-time UserOp).
+
+`http://127.0.0.1:8000/static/signer.html`'s "Activate auto-trading"
+button exercises the whole flow end to end, but treat it as a local
+smoke test until the gap above is closed.
 
 ## Custom strategy scripts
 

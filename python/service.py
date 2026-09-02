@@ -1115,17 +1115,35 @@ _pending_session_key: dict | None = None
 async def _h_mintSessionKey(p: dict) -> dict:
     p = p or {}
     kernel_address = p["kernelAddress"]
+    callers = p.get("allowedCallers") or ([p["allowedCaller"]] if p.get("allowedCaller") else [])
+    if not callers:
+        raise ValueError("allowedCallers must name at least one contract")
+    # No "unlimited" option by design: a 0/absent cap used to fall through
+    # reserve_daily_usd's falsy check and spend without limit. Require a
+    # real positive cap up front instead.
+    daily_usd_cap = float(p.get("dailyUsdCap") or 0.0)
+    if daily_usd_cap <= 0:
+        raise ValueError("dailyUsdCap must be greater than 0")
     policy = {
-        "allowedCaller": p["allowedCaller"],
+        # `allowedCaller` is kept alongside the list purely so records
+        # written by (and read by) older code keep working.
+        "allowedCaller": callers[0],
+        "allowedCallers": [str(c) for c in callers],
         "validUntil": int(p["validUntil"]),
-        "dailyUsdCap": float(p.get("dailyUsdCap") or 0.0),
+        "dailyUsdCap": daily_usd_cap,
         "kernelAddress": kernel_address,
         "ownerAddress": p["ownerAddress"],
     }
     address, priv_hex = session_key.generate_session_key()
-    global _pending_session_key
-    _pending_session_key = {"address": address, "privateKey": priv_hex, "policy": policy}
     typed_data = session_key.build_enable_typed_data(kernel_address, address, policy)
+    global _pending_session_key
+    # The typed data is retained verbatim: activation must verify the
+    # owner's signature against the EXACT payload the wallet was asked to
+    # sign, not a re-derived approximation of it.
+    _pending_session_key = {
+        "address": address, "privateKey": priv_hex, "policy": policy,
+        "enableTypedData": typed_data,
+    }
     return {"sessionKeyAddress": address, "enableTypedData": typed_data}
 
 
@@ -1136,10 +1154,38 @@ async def _h_activateSessionKey(p: dict) -> dict:
         raise ValueError("signature is required")
     global _pending_session_key
     if _pending_session_key is None:
-        raise RuntimeError("no pending session key — call mintSessionKey first")
+        raise ValueError("no pending session key — call mintSessionKey first")
     pending = _pending_session_key
+
+    # The owner's consent signature is the ONLY thing standing between an
+    # authenticated request and a key that can sign orders unattended, so it
+    # is verified here rather than stored blind: recover the signer from the
+    # exact typed data handed out at mint time and require it to be the
+    # Kernel account's owner (the SIWE wallet the session belongs to, which
+    # _h_mintSessionKey recorded as policy["ownerAddress"]).
+    expected_owner = str(pending["policy"].get("ownerAddress") or "")
+    if not expected_owner:
+        raise ValueError("pending session key has no owner address to verify against")
+    recovered = session_key.recover_enable_signer(
+        pending["enableTypedData"], signature
+    )
+    if recovered.lower() != expected_owner.lower():
+        raise ValueError(
+            "enable signature was not produced by the session owner "
+            f"(recovered {recovered}, expected {expected_owner})"
+        )
+
     session_key.store_session_key(
         pending["address"], pending["privateKey"], pending["policy"], signature,
+    )
+    # Open the gate in polymarket_auth.create_signed_order: it only reaches
+    # for an active session key when the stored signature type is
+    # POLY_1271 and the funder is the Kernel account. Nothing else in the
+    # webapp flow can set this — setCredentials is gateway-blocked for
+    # webapp users — so without this the session-key path is unreachable.
+    polymarket_auth.set_wallet_meta(
+        funder=pending["policy"]["kernelAddress"],
+        signature_type=polymarket_auth.SIGNATURE_TYPE_POLY_1271,
     )
     _pending_session_key = None
     return {"ok": True}

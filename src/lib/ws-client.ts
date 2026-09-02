@@ -1,5 +1,11 @@
 export type WsEventHandler = (data: unknown) => void;
 
+// Builds ws(s)://<host>/ws matching the page's own scheme (http:->ws:, https:->wss:).
+export function wsUrl(): string {
+  const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${scheme}//${window.location.host}/ws`;
+}
+
 export class WsDisconnected extends Error {
   constructor(message = 'WebSocket disconnected') {
     super(message);

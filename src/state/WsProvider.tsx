@@ -1,0 +1,62 @@
+import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { WsClient } from '../lib/ws-client';
+
+const WsContext = createContext<WsClient | null>(null);
+
+export function useWsClient(): WsClient {
+  const client = useContext(WsContext);
+  if (!client) throw new Error('useWsClient must be used inside WsProvider');
+  return client;
+}
+
+// Maps a worker push-event name to the React Query cache key it updates.
+// `positions`/`signals` are lists keyed by id — new/update events merge
+// into the existing array instead of replacing it wholesale.
+const EVENT_QUERY_KEYS: Record<string, unknown[]> = {
+  'account:update': ['account'],
+  'credentials:changed': ['credentialsStatus'],
+  'backend:authChanged': ['authStatus'],
+  'backend:reconciled': ['backendReconciled'],
+  'backend:loopStalled': ['backendLoopStalled'],
+  'crypto15m:autoOff': ['crypto15mAutoOff'],
+  'data:reset': ['dataReset'],
+};
+
+export function WsProvider({ url, children }: { url: string; children: React.ReactNode }) {
+  const queryClient = useQueryClient();
+  const clientRef = useRef<WsClient | null>(null);
+  if (!clientRef.current) clientRef.current = new WsClient(url);
+  const client = clientRef.current;
+
+  useEffect(() => {
+    client.connect();
+
+    const unsubs = Object.entries(EVENT_QUERY_KEYS).map(([event, key]) =>
+      client.on(event, (data) => queryClient.setQueryData(key, data)),
+    );
+
+    const unsubPosition = client.on('position:new', (data) => {
+      queryClient.setQueryData(['positions'], (old: unknown[] = []) => [data, ...old]);
+    });
+    const unsubPositionUpdate = client.on('position:update', (data: any) => {
+      queryClient.setQueryData(['positions'], (old: any[] = []) =>
+        old.map((p) => (p.id === data.id ? data : p)),
+      );
+    });
+    const unsubSignal = client.on('signal:new', (data) => {
+      queryClient.setQueryData(['signals'], (old: unknown[] = []) => [data, ...old]);
+    });
+
+    return () => {
+      unsubs.forEach((u) => u());
+      unsubPosition();
+      unsubPositionUpdate();
+      unsubSignal();
+      client.close();
+    };
+  }, [client, queryClient]);
+
+  const value = useMemo(() => client, [client]);
+  return <WsContext.Provider value={value}>{children}</WsContext.Provider>;
+}

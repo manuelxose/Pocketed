@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useQueryClient } from '@tanstack/react-query';
-import { History as HistoryIcon, Play, Receipt, Square, Timer, Trash2, Trophy } from 'lucide-react';
+import { History as HistoryIcon, Play, Receipt, Square, Timer, Trophy } from 'lucide-react';
 import type { BotRun, Crypto15mPosition } from '@shared/types';
-import { useToast } from '../state/ToastProvider';
 import { Card, Empty, Page, ShareableStat, StatCard } from '../components/common';
 import { TickerLink } from '../components/PolymarketTicker';
 import { cls, fmtPct, fmtUsd, fmtDateTime } from '../utils/format';
@@ -19,38 +17,9 @@ export function HistoryPage() {
   const { data: config } = useConfigQuery();
   const { data: botRuns } = useBotRunsQuery(config?.network ?? null, 100);
   const runs = botRuns?.runs ?? [];
-  const toast = useToast();
-  const qc = useQueryClient();
   const [tab, setTab] = useState<HistoryTab>('runs');
   const { data: c15History } = useCrypto15mHistoryQuery({ limit: 300 });
   const c15Rows: Crypto15mPosition[] = tab === 'crypto15m' ? (c15History?.rows ?? []) : [];
-  const [clearing, setClearing] = useState(false);
-
-  const clearHistory = async (): Promise<void> => {
-    if (!window.confirm(
-      'Clear ALL trade history?\n\n'
-      + 'This permanently wipes your trade ledger, P&L charts, and run/session '
-      + 'history — and starts your session stats fresh from your current balance.\n\n'
-      + 'Your settings, strategies, and wallet are kept. Open positions stay open '
-      + 'on Polymarket. This cannot be undone.',
-    )) return;
-    setClearing(true);
-    try {
-      const r = await window.krypt.app.clearHistory();
-      if (!r.ok) {
-        toast.error(r.message || 'Failed to clear history');
-        return;
-      }
-      void qc.invalidateQueries({ queryKey: ['botRuns'] });
-      void qc.invalidateQueries({ queryKey: ['positions'] });
-      toast.success(r.message || 'History cleared');
-    } catch (e: any) {
-      toast.error(`${e?.message || e}`);
-    } finally {
-      setClearing(false);
-    }
-  };
-
   const resolved = useMemo(() => {
     const env = config?.network;
     const ts = (p: { resolvedAt: string | null; lastUpdated: string; createdAt: string }) => {
@@ -78,17 +47,6 @@ export function HistoryPage() {
     <Page
       title="History"
       subtitle="Per-run rollups (the bot's session diary) and the full settled trade ledger."
-      actions={(
-        <button
-          onClick={clearHistory}
-          disabled={clearing}
-          className="krypt-btn-default border-krypt-loss/40 text-krypt-loss hover:bg-krypt-loss/10 disabled:opacity-50"
-          title="Wipe trade history, P&L, and sessions — keeps your settings and wallet"
-        >
-          <Trash2 className="h-4 w-4" />
-          {clearing ? 'Clearing…' : 'Clear history'}
-        </button>
-      )}
     >
       <div className="mb-4 inline-flex rounded-md border border-krypt-border bg-krypt-surface2 p-0.5">
         <TabButton active={tab === 'runs'} onClick={() => setTab('runs')} icon={<HistoryIcon className="h-3.5 w-3.5" />}>

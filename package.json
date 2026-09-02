@@ -2,21 +2,11 @@
   "name": "krypt-polybot",
   "productName": "Krypt PolyBot",
   "version": "2.0.0",
-  "description": "A free, fully-featured Polymarket auto-trading bot. Whale tracker, momentum scanner, copy trading, and your own Python strategy scripts in one polished desktop app. Part of the Krypt free tools suite.",
-  "main": "dist-electron/main.js",
-  "author": {
-    "name": "Krypt",
-    "email": "hi@krypt.cc",
-    "url": "https://krypt.cc"
-  },
+  "description": "A free, fully-featured Polymarket auto-trading bot.",
+  "author": { "name": "Krypt", "email": "hi@krypt.cc", "url": "https://krypt.cc" },
   "homepage": "https://krypt.cc/tools/polybot",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/scripflipped/krypt-polybot.git"
-  },
-  "bugs": {
-    "url": "https://github.com/scripflipped/krypt-polybot/issues"
-  },
+  "repository": { "type": "git", "url": "https://github.com/scripflipped/krypt-polybot.git" },
+  "bugs": { "url": "https://github.com/scripflipped/krypt-polybot/issues" },
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -31,13 +21,9 @@
     "py:backtest15m": "node scripts/backtest.mjs --c15",
     "py:volume": "node scripts/volume-farm.mjs",
     "test:e2e": "npm run build && node e2e/arming.e2e.mjs",
-    "py:dist": "node scripts/build-python.mjs",
-    "dist": "npm run build && npm run py:dist && electron-builder"
+    "py:dist": "node scripts/build-python.mjs"
   },
-  "dependencies": {
-    "@tanstack/react-query": "^5.102.8",
-    "discord-rpc": "^4.0.1"
-  },
+  "dependencies": { "@tanstack/react-query": "^5.102.8" },
   "devDependencies": {
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/lang-python": "^6.2.1",
@@ -48,15 +34,12 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
-    "@types/discord-rpc": "^4.0.9",
     "@types/node": "^20.12.7",
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.24",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "codemirror": "^6.0.2",
-    "electron": "^30.0.1",
-    "electron-builder": "^24.13.3",
     "jsdom": "^30.0.1",
     "lucide-react": "^0.368.0",
     "playwright-core": "^1.49.0",
@@ -67,93 +50,6 @@
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5",
     "vite": "^5.2.9",
-    "vite-plugin-electron": "^0.28.4",
-    "vite-plugin-electron-renderer": "^0.14.5",
     "vitest": "^4.1.11"
-  },
-  "build": {
-    "appId": "cc.krypt.polybot",
-    "productName": "Krypt PolyBot",
-    "files": [
-      "dist/**",
-      "dist-electron/**",
-      "resources/**"
-    ],
-    "extraResources": [
-      {
-        "from": "python/dist/krypt-polybot-backend",
-        "to": "python",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "asarUnpack": [
-      "**/node_modules/discord-rpc/**",
-      "resources/**"
-    ],
-    "directories": {
-      "buildResources": "build",
-      "output": "release"
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ],
-      "icon": "resources/krypt.ico",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "build/icon.png",
-      "category": "Office",
-      "maintainer": "Krypt <hi@krypt.cc>",
-      "artifactName": "${productName}-${version}.${ext}"
-    },
-    "mac": {
-      "target": [
-        "dmg"
-      ],
-      "icon": "build/icon.png",
-      "category": "public.app-category.finance",
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 180
-        },
-        {
-          "x": 410,
-          "y": 180,
-          "type": "link",
-          "path": "/Applications"
-        },
-        {
-          "x": 270,
-          "y": 350,
-          "type": "file",
-          "path": "build/HOW TO USE.txt"
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "menuCategory": false,
-      "runAfterFinish": true,
-      "installerIcon": "resources/krypt.ico",
-      "uninstallerIcon": "resources/krypt.ico",
-      "uninstallDisplayName": "Krypt PolyBot",
-      "include": "build/installer.nsh",
-      "shortcutName": "Krypt PolyBot"
-    },
-    "publish": null
   }
 }

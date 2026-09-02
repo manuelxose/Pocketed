@@ -69,14 +69,14 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => void window.krypt.app.openExternal(POLYMARKET_REFERRAL_URL)}
+                    onClick={() => window.open(POLYMARKET_REFERRAL_URL, '_blank', 'noopener,noreferrer')}
                     className="flex items-center justify-center gap-2 rounded-lg bg-krypt-purple/90 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-krypt-purple"
                   >
                     <Gift className="h-4 w-4" /> Sign up on Polymarket
                   </button>
                   <button
                     type="button"
-                    onClick={() => void window.krypt.app.openExternal(KRYPT_YOUTUBE_GUIDE)}
+                    onClick={() => window.open(KRYPT_YOUTUBE_GUIDE, '_blank', 'noopener,noreferrer')}
                     className="flex items-center justify-center gap-2 rounded-lg border border-krypt-border bg-krypt-surface2 px-3 py-2 text-xs font-semibold text-white transition-colors hover:border-krypt-purple"
                   >
                     <Youtube className="h-4 w-4 text-krypt-loss" /> Watch the guide
@@ -105,7 +105,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
                 </p>
                 <button
                   type="button"
-                  onClick={() => void window.krypt.app.openExternal(POLYMARKET_REFERRAL_URL)}
+                  onClick={() => window.open(POLYMARKET_REFERRAL_URL, '_blank', 'noopener,noreferrer')}
                   className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-krypt-purple/90 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-krypt-purple"
                 >
                   <Gift className="h-4 w-4" /> Create my Polymarket account
@@ -113,7 +113,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => void window.krypt.app.openExternal(KRYPT_YOUTUBE_GUIDE)}
+                  onClick={() => window.open(KRYPT_YOUTUBE_GUIDE, '_blank', 'noopener,noreferrer')}
                   className="mt-2 flex items-center gap-1.5 text-[11px] text-krypt-muted transition-colors hover:text-white"
                 >
                   <Youtube className="h-3.5 w-3.5 text-krypt-loss" /> Watch the full setup video guide
@@ -184,7 +184,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
               </label>
               <button
                 type="button"
-                onClick={() => void window.krypt.app.openExternal(POLYMARKET_REFERRAL_URL)}
+                onClick={() => window.open(POLYMARKET_REFERRAL_URL, '_blank', 'noopener,noreferrer')}
                 className="flex w-full items-center gap-3 rounded-lg border border-krypt-purple/40 bg-gradient-to-r from-krypt-indigo/10 via-krypt-purple/10 to-krypt-pink/10 p-3 text-left transition-colors hover:border-krypt-purple"
               >
                 <Gift className="h-5 w-5 shrink-0 text-krypt-purple" />

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
 import type { TraderConfig } from '@shared/types';
 import { useToast } from '../state/ToastProvider';
 import { Card, Page, Section, Switch } from '../components/common';
@@ -9,7 +8,6 @@ export function SettingsPage() {
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
   const toast = useToast();
-  const [busy, setBusy] = useState(false);
 
   if (!config) return <Page title="Settings"><div className="text-krypt-muted">Loading…</div></Page>;
 
@@ -49,147 +47,7 @@ export function SettingsPage() {
           />
         </Card>
       </Section>
-
-      <DangerZone busy={busy} setBusy={setBusy} />
     </Page>
-  );
-}
-
-function DangerZone({
-  busy, setBusy,
-}: { busy: boolean; setBusy: (b: boolean) => void }) {
-  const toast = useToast();
-
-  const [showModal, setShowModal] = useState(false);
-  const [phrase, setPhrase] = useState('');
-
-  const openModal = (): void => {
-    setPhrase('');
-    setShowModal(true);
-  };
-
-  const cancel = (): void => {
-    setShowModal(false);
-    setPhrase('');
-  };
-
-  const confirm = async (): Promise<void> => {
-    if (phrase.trim() !== 'RESET') {
-      toast.error('Type RESET (uppercase) to confirm.');
-      return;
-    }
-    setShowModal(false);
-    setBusy(true);
-    try {
-      const r = await window.krypt.app.factoryReset();
-      if (r.ok) {
-        const summary = (r.data as { deleted?: Record<string, number> })?.deleted || {};
-        const detail = Object.entries(summary)
-          .filter(([k, v]) => !k.startsWith('_') && (v as number) > 0)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join(', ');
-        toast.success(detail
-          ? `Wiped — ${detail}`
-          : (r.message || 'Local data cleared (nothing to delete)'));
-      } else {
-        toast.error(r.message || 'Reset failed');
-      }
-    } catch (e: any) {
-      toast.error(`${e?.message || e}`);
-    } finally {
-      setBusy(false);
-      setPhrase('');
-    }
-  };
-
-  return (
-    <>
-      <Section title="Danger zone">
-        <Card>
-          <div className="space-y-3 rounded-xl border border-rose-500/40 bg-rose-500/5 p-4">
-            <div>
-              <div className="text-sm font-semibold text-rose-300">
-                Full reset
-              </div>
-              <p className="text-xs text-krypt-muted mt-1">
-                Wipes all locally stored trading history, P&amp;L snapshots,
-                bot runs, and signals. Your wallet, profiles, and settings are
-                preserved. Live Polymarket positions will be re-imported on the
-                next reconcile cycle. Useful for clearing inconsistent state
-                from old builds before live testing.
-              </p>
-            </div>
-            <button
-              onClick={openModal}
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/60 bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Full reset
-            </button>
-          </div>
-        </Card>
-      </Section>
-
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-          onClick={cancel}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-rose-500/50 bg-krypt-panel p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-rose-300">
-              Confirm full reset
-            </h3>
-            <div className="mt-3 space-y-2 text-sm text-krypt-muted">
-              <p>This will permanently delete:</p>
-              <ul className="ml-5 list-disc space-y-1">
-                <li>all bot positions and trade history</li>
-                <li>all bot runs (session P&amp;L)</li>
-                <li>all P&amp;L snapshots</li>
-                <li>all whale and momentum signals</li>
-              </ul>
-              <p className="pt-2">
-                Your wallet, profiles, and settings are <strong>kept</strong>.
-                Live Polymarket positions will be re-imported on the next
-                reconcile cycle.
-              </p>
-            </div>
-            <label className="mt-4 block text-xs font-semibold uppercase tracking-wider text-krypt-muted">
-              Type <span className="text-rose-300">RESET</span> to confirm
-            </label>
-            <input
-              autoFocus
-              value={phrase}
-              onChange={(e) => setPhrase(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void confirm();
-                if (e.key === 'Escape') cancel();
-              }}
-              className="mt-1 w-full rounded-lg border border-rose-500/40 bg-black/30 px-3 py-2 text-sm font-mono text-rose-100 placeholder-krypt-muted/50 outline-none focus:border-rose-400"
-              placeholder="RESET"
-            />
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={cancel}
-                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-krypt-muted hover:bg-white/10"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => void confirm()}
-                disabled={phrase.trim() !== 'RESET'}
-                className="rounded-lg border border-rose-500/60 bg-rose-500/20 px-4 py-2 text-sm font-semibold text-rose-100 hover:bg-rose-500/30 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Wipe everything
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }
 

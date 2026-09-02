@@ -98,7 +98,7 @@ function ReferralBanner() {
         </div>
       </div>
       <button
-        onClick={() => void window.krypt.app.openExternal(POLYMARKET_REFERRAL_URL)}
+        onClick={() => window.open(POLYMARKET_REFERRAL_URL, '_blank', 'noopener,noreferrer')}
         className="krypt-btn-primary"
       >
         <Gift className="h-4 w-4" /> Sign up <ExternalLink className="h-3 w-3" />

@@ -24,7 +24,7 @@ export function TickerLink({
     inFlightRef.current = true;
     try {
       const { url } = await marketUrlMutation.mutateAsync({ ticker, eventTicker, env });
-      if (url) await window.krypt.app.openExternal(url);
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
     } catch {
       // ignore
     } finally {

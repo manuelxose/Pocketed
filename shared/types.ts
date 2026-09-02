@@ -971,9 +971,3 @@ export interface SignalFilter {
   resolved?: boolean | null;
   limit?: number;
 }
-
-declare global {
-  interface Window {
-    krypt: KryptApi;
-  }
-}

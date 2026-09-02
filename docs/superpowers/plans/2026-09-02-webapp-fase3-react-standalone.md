@@ -430,11 +430,12 @@ from . import config_store
 
 
 def _user_data_dir(wallet_address: str) -> str:
-    # Mirrors whatever path Supervisor already builds for this user's DB —
-    # grep `webserver/supervisor.py` for its data-dir construction
-    # (`DATA_ROOT`/user_id) and reuse that exact helper instead of
-    # duplicating the path logic here.
-    ...
+    # Verified: Supervisor.get_or_create builds each worker's data dir as
+    # `self.data_root / "users" / user_id` (webserver/supervisor.py:280,
+    # where user_id is the wallet address). Reuse that exact path here so
+    # config_store.py reads/writes into the same per-user directory the
+    # worker's own DB lives in — do not duplicate or diverge from it.
+    return str(supervisor.data_root / "users" / wallet_address)
 
 
 @app.get("/config")
@@ -554,15 +555,20 @@ async def import_profile_route(
 
 
 async def _push_config_to_worker(wallet_address: str, cfg: dict) -> None:
-    worker = supervisor.get_running_worker(wallet_address)
+    # Verified: Supervisor keeps its live workers in a plain dict,
+    # `self.workers: dict[str, WorkerProcess]` (webserver/supervisor.py:~264),
+    # with no dedicated read-only accessor. Read it directly rather than
+    # calling `get_or_create` — unlike `_session_key_worker_request` (which
+    # deliberately spawns a worker on demand for a user action), a config
+    # edit with no worker running has nothing to push to, so this must NOT
+    # spawn one.
+    worker = supervisor.workers.get(wallet_address)
     if worker is not None:
         try:
             await worker.request("setConfig", {"config": cfg})
         except Exception:
             pass
 ```
-
-(`supervisor.get_running_worker` — grep `webserver/supervisor.py` for the actual accessor name; use whatever the `Supervisor` class already exposes to fetch a user's live `WorkerProcess` without spawning one, matching the read-only lookup `/session-key/*` routes already do in `_session_key_worker_request`.)
 
 - [ ] **Step 9: Run tests to verify they pass**
 

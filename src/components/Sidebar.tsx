@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Activity, BarChart3, Bitcoin, BookOpen, Briefcase, Code2, Copy, FlaskConical, Folder,
   Info, KeyRound, LayoutDashboard, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
@@ -10,6 +10,7 @@ import type { PageId } from '../App';
 import { useConfigQuery } from '../hooks/useConfig';
 import { useAccountQuery } from '../hooks/useAccountData';
 import { useBackendConnectionStatus } from '../hooks/useTrading';
+import { useSessionQuery } from '../hooks/useAccounts';
 
 const NAV: { id: PageId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,9 +41,9 @@ export function Sidebar({ page, setPage }: SidebarProps) {
   const { data: account } = useAccountQuery();
   const connected = useBackendConnectionStatus();
   const { data: config } = useConfigQuery();
-  const [acct, setAcct] = useState('Default');
+  const { data: session } = useSessionQuery();
+  const acct = session?.active ?? 'Default';
   const [showStats, setShowStats] = useState(false);
-  useEffect(() => { window.krypt.accounts.current().then(setAcct).catch(() => {}); }, []);
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-krypt-border bg-krypt-void/40">

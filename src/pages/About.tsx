@@ -1,4 +1,4 @@
-import { ExternalLink, FolderOpen, Gift, Globe, MessageCircle, RotateCcw } from 'lucide-react';
+import { ExternalLink, Gift, Globe, MessageCircle, RotateCcw } from 'lucide-react';
 import { Card, Page, Section } from '../components/common';
 import {
   POLYMARKET_REFERRAL_URL, KRYPT_DISCORD, KRYPT_HOME, KRYPT_TOOLS, KRYPT_TRADER_PAGE,
@@ -12,12 +12,7 @@ export function AboutPage() {
   const { data: config } = useConfigQuery();
   const resetOnboarding = useResetOnboardingMutation();
 
-  const open = (url: string) => () => void window.krypt.app.openExternal(url);
-
-  const showFolder = async (): Promise<void> => {
-    const p = await window.krypt.app.getUserDataPath();
-    await window.krypt.app.showItemInFolder(p);
-  };
+  const open = (url: string) => () => window.open(url, '_blank', 'noopener,noreferrer');
 
   return (
     <Page title="About" subtitle="Version, links, support, and credits.">
@@ -41,9 +36,6 @@ export function AboutPage() {
                 </button>
                 <button onClick={open(KRYPT_DISCORD)} className="krypt-btn-default">
                   <MessageCircle className="h-4 w-4" /> Discord <ExternalLink className="h-3 w-3" />
-                </button>
-                <button onClick={showFolder} className="krypt-btn-default">
-                  <FolderOpen className="h-4 w-4" /> Open data folder
                 </button>
                 <button
                   onClick={() => void resetOnboarding.mutateAsync()}

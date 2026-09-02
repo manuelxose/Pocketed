@@ -8,7 +8,7 @@ import { POLYMARKET_REFERRAL_URL, KRYPT_YOUTUBE_GUIDE } from '../utils/links';
 import { followYuhgo, X_PROFILE } from '../utils/share';
 
 export function GuidePage() {
-  const open = (url: string) => () => void window.krypt.app.openExternal(url);
+  const open = (url: string) => () => window.open(url, '_blank', 'noopener,noreferrer');
 
   return (
     <Page

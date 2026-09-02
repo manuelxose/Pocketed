@@ -1,29 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Minus, Square, Copy as Restore, X } from 'lucide-react';
 import { cls } from '../utils/format';
 import { useAuthStatusQuery, useBackendConnectionStatus } from '../hooks/useTrading';
 
 export function TitleBar() {
   const connected = useBackendConnectionStatus();
   const { data: authStatus } = useAuthStatusQuery();
-  const [maxed, setMaxed] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    void window.krypt.window.isMaximized().then((m) => {
-      if (mounted) setMaxed(m);
-    });
-    const off = window.krypt.window.onMaximizeChange((m) => setMaxed(m));
-    return () => {
-      mounted = false;
-      off();
-    };
-  }, []);
-
   const dot = connected ? 'bg-krypt-win' : 'bg-krypt-loss';
 
   return (
-    <div className="titlebar-drag relative z-30 flex h-9 select-none items-center justify-between border-b border-krypt-border bg-krypt-void/95 px-3 backdrop-blur">
+    <header className="relative z-30 flex h-9 select-none items-center border-b border-krypt-border bg-krypt-void/95 px-3 backdrop-blur">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="font-pixel text-[10px] uppercase tracking-[0.2em] text-white/90">
@@ -44,30 +28,6 @@ export function TitleBar() {
           )}
         </div>
       </div>
-
-      <div className="titlebar-no-drag flex items-center">
-        <button
-          onClick={() => window.krypt.window.minimize()}
-          aria-label="Minimize"
-          className="grid h-9 w-11 place-items-center text-krypt-muted hover:bg-white/5 hover:text-white"
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={() => window.krypt.window.maximize()}
-          aria-label={maxed ? 'Restore' : 'Maximize'}
-          className="grid h-9 w-11 place-items-center text-krypt-muted hover:bg-white/5 hover:text-white"
-        >
-          {maxed ? <Restore className="h-3 w-3" /> : <Square className="h-3 w-3" />}
-        </button>
-        <button
-          onClick={() => window.krypt.window.close()}
-          aria-label="Close"
-          className="grid h-9 w-11 place-items-center text-krypt-muted hover:bg-krypt-loss hover:text-white"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
+    </header>
   );
 }

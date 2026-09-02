@@ -1,82 +1,80 @@
-import { useEffect, useState } from 'react';
-import { Check, ExternalLink, FolderPlus, Users } from 'lucide-react';
-import type { AccountInfo } from '@shared/types';
+import { Check, Plus, Users } from 'lucide-react';
+import { Card, Page, Section } from '../components/common';
 import { useToast } from '../state/ToastProvider';
-import { Card, NameDialog, Page, Section } from '../components/common';
+import { useAddWalletMutation, useSessionQuery, useSwitchWalletMutation } from '../hooks/useAccounts';
 import { cls } from '../utils/format';
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
 
 export function AccountsPage() {
   const toast = useToast();
-  const [accounts, setAccounts] = useState<AccountInfo[]>([]);
-  const [current, setCurrent] = useState('Default');
-  const [createOpen, setCreateOpen] = useState(false);
+  const { data: session, isLoading } = useSessionQuery();
+  const addWallet = useAddWalletMutation();
+  const switchWallet = useSwitchWalletMutation();
 
-  const reload = async (): Promise<void> => {
+  const add = async () => {
     try {
-      const [list, cur] = await Promise.all([
-        window.krypt.accounts.list(),
-        window.krypt.accounts.current(),
-      ]);
-      setAccounts(list);
-      setCurrent(cur);
-    } catch {}
+      await addWallet.mutateAsync();
+      toast.success('Wallet added to this session.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not add wallet');
+    }
   };
 
-  useEffect(() => { void reload(); }, []);
-
-  const launch = async (name: string): Promise<void> => {
-    const r = await window.krypt.accounts.launch(name);
-    if (r.ok) toast.success(`Opening "${name}"…`);
-    else toast.error(r.message || 'Could not open account');
-  };
-
-  const create = async (name: string): Promise<void> => {
-    setCreateOpen(false);
-    const r = await window.krypt.accounts.create(name);
-    if (!r.ok || !r.name) { toast.error(r.message || 'Could not create account'); return; }
-    toast.success(`Created "${r.name}" — opening…`);
-    await reload();
-    await window.krypt.accounts.launch(r.name);
+  const select = async (address: string) => {
+    try {
+      await switchWallet.mutateAsync(address);
+      toast.success(`Switched to ${shortAddress(address)}.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not switch wallet');
+    }
   };
 
   return (
     <Page
       title="Accounts"
-      subtitle="Run multiple Polymarket accounts side by side. Each account is completely separate — its own wallet, balance, positions, and settings — and opens in its own window."
+      subtitle="Add wallets to this session and switch the wallet whose account data is active."
       actions={
-        <button onClick={() => setCreateOpen(true)} className="krypt-btn-primary">
-          <FolderPlus className="h-4 w-4" /> New account
+        <button onClick={() => void add()} disabled={addWallet.isPending} className="krypt-btn-primary">
+          <Plus className="h-4 w-4" /> {addWallet.isPending ? 'Connecting…' : 'Add wallet'}
         </button>
       }
     >
-      <Section title="Your accounts">
+      <Section title="Connected wallets">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {accounts.map((a) => {
-            const isCurrent = a.name === current;
+          {isLoading && <Card>Loading wallets…</Card>}
+          {session?.wallets.map((address) => {
+            const active = address === session.active;
             return (
-              <Card key={a.name}>
+              <Card key={address}>
                 <div className="flex items-start gap-3">
                   <div className={cls(
                     'grid h-10 w-10 shrink-0 place-items-center rounded-lg',
-                    isCurrent ? 'bg-krypt-glow text-white' : 'bg-krypt-surface2 text-krypt-muted',
+                    active ? 'bg-krypt-glow text-white' : 'bg-krypt-surface2 text-krypt-muted',
                   )}>
                     <Users className="h-4 w-4" />
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-white">{a.name}</div>
-                    <div className="text-xs text-krypt-muted">
-                      {a.isDefault ? 'Your original account' : 'Separate wallet & data'}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-mono text-sm font-medium text-white" title={address}>{address}</div>
+                    <div className="mt-1 text-xs text-krypt-muted">
+                      {active ? 'Active wallet' : 'Available in this session'}
                     </div>
                   </div>
                 </div>
                 <div className="mt-3">
-                  {isCurrent ? (
+                  {active ? (
                     <span className="krypt-pill border-krypt-purple/40 bg-krypt-purple/10 text-krypt-purple">
-                      <Check className="h-3 w-3" /> This window
+                      <Check className="h-3 w-3" /> Active
                     </span>
                   ) : (
-                    <button onClick={() => void launch(a.name)} className="krypt-btn-default text-xs">
-                      <ExternalLink className="h-3.5 w-3.5" /> Open
+                    <button
+                      onClick={() => void select(address)}
+                      disabled={switchWallet.isPending}
+                      className="krypt-btn-default text-xs"
+                    >
+                      Switch to wallet
                     </button>
                   )}
                 </div>
@@ -89,23 +87,12 @@ export function AccountsPage() {
       <Section title="How it works">
         <Card>
           <ul className="list-disc space-y-1.5 pl-5 text-xs text-krypt-muted">
-            <li>Each account has its own wallet key, balance, open positions, history, and settings — nothing is shared.</li>
-            <li>Opening an account launches it in a <span className="text-white">separate window</span>; both run at the same time. Opening one that&apos;s already open just brings it to the front.</li>
-            <li>The account you&apos;re currently in is shown at the top-left of the sidebar.</li>
-            <li>New accounts start fresh — connect that account&apos;s wallet on its Wallet page.</li>
+            <li>Each wallet has isolated server-side account data, positions, and configuration.</li>
+            <li>Adding a wallet asks it to sign in, then keeps it available in this browser session.</li>
+            <li>Switching wallets reloads the app&apos;s data for the selected address.</li>
           </ul>
         </Card>
       </Section>
-
-      <NameDialog
-        open={createOpen}
-        title="New account"
-        label="Creates a fresh, fully separate account profile (its own wallet & data). It opens in a new window where you connect that account's wallet."
-        placeholder="e.g. Main, Alt, Sports…"
-        confirmLabel="Create & open"
-        onSubmit={(name) => void create(name)}
-        onClose={() => setCreateOpen(false)}
-      />
     </Page>
   );
 }

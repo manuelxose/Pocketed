@@ -5,7 +5,7 @@ import { cls, fmtPct, fmtRelative, fmtUsd } from '../utils/format';
 import { WhyNotTrading } from '../components/WhyNotTrading';
 import type { PageId } from '../App';
 import { useConfigQuery } from '../hooks/useConfig';
-import { useCredentialsStatusQuery } from '../hooks/useCredentials';
+import { useCredentialsStatusAllQuery } from '../hooks/useCredentials';
 import {
   useAccountQuery, usePnlSeriesQuery, usePositionsQuery, useScannerStatsQuery, useSignalsQuery,
 } from '../hooks/useAccountData';
@@ -23,7 +23,7 @@ export function DashboardPage({ onNav }: DashboardProps) {
   const connected = useBackendConnectionStatus();
   const { data: authStatus } = useAuthStatusQuery();
   const { data: config } = useConfigQuery();
-  const { data: credentials } = useCredentialsStatusQuery();
+  const { data: credentialsStatusAll } = useCredentialsStatusAllQuery();
   const { data: series = [] } = usePnlSeriesQuery(168);
 
   const engineDown = !connected;
@@ -38,7 +38,7 @@ export function DashboardPage({ onNav }: DashboardProps) {
     .slice(0, 5);
 
   const issues: { label: string; tone: 'warn' | 'bad' | 'good'; cta?: { label: string; page: PageId } }[] = [];
-  const walletConnected = !!credentials?.hasWalletKey;
+  const walletConnected = !!credentialsStatusAll?.mainnet?.hasWalletKey;
   if (!walletConnected) {
     issues.push({
       label: 'No wallet connected — bot can only run in DRY-RUN mode',

@@ -4,28 +4,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { queryClient } from '../lib/queryClient';
 import { WsContextForTest, useFakeWsClient } from './testUtils';
 import {
-  useCredentialsStatusQuery, useCredentialsStatusAllQuery, useSaveCredentialsMutation,
+  useCredentialsStatusAllQuery, useSaveCredentialsMutation,
   useTestCredentialsMutation, useClearCredentialsMutation,
 } from './useCredentials';
 
 vi.mock('../state/WsProvider', () => ({ useWsClient: () => useFakeWsClient() }));
 
 beforeEach(() => queryClient.clear());
-
-describe('useCredentialsStatusQuery', () => {
-  it('calls credentialStatus over the WS client', async () => {
-    const request = vi.fn().mockResolvedValue({ mainnet: { hasWalletKey: true } });
-    const { result } = renderHook(() => useCredentialsStatusQuery(), {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>
-          <WsContextForTest request={request}>{children}</WsContextForTest>
-        </QueryClientProvider>
-      ),
-    });
-    await waitFor(() => expect(result.current.data).toEqual({ mainnet: { hasWalletKey: true } }));
-    expect(request).toHaveBeenCalledWith('credentialStatus', {});
-  });
-});
 
 describe('useCredentialsStatusAllQuery', () => {
   it('calls credentialStatus over the WS client', async () => {
@@ -39,6 +24,28 @@ describe('useCredentialsStatusAllQuery', () => {
     });
     await waitFor(() => expect(result.current.data).toEqual({ current: 'mainnet', mainnet: { hasWalletKey: false } }));
     expect(request).toHaveBeenCalledWith('credentialStatus', {});
+  });
+
+  it('returns the real wrapped shape so callers can read data.mainnet.hasWalletKey (regression: Dashboard used to read the wrong field)', async () => {
+    // The worker's credentialStatus RPC always returns the wrapped
+    // CredentialsStatusAll shape ({current, mainnet: {...}}), never a flat
+    // CredentialsState. Dashboard.tsx derives walletConnected from
+    // `credentialsStatusAll?.mainnet?.hasWalletKey` — assert that path
+    // resolves correctly from a realistic mock response.
+    const request = vi.fn().mockResolvedValue({
+      current: 'mainnet',
+      mainnet: { hasWalletKey: true, hasApiCreds: true, address: '0xabc' },
+    });
+    const { result } = renderHook(() => useCredentialsStatusAllQuery(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>
+          <WsContextForTest request={request}>{children}</WsContextForTest>
+        </QueryClientProvider>
+      ),
+    });
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    const walletConnected = !!result.current.data?.mainnet?.hasWalletKey;
+    expect(walletConnected).toBe(true);
   });
 });
 

@@ -1,14 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CredentialsInput, CredentialsState, CredentialsStatusAll } from '@shared/types';
+import type { CredentialsInput, CredentialsStatusAll } from '@shared/types';
 import { useWsClient } from '../state/WsProvider';
-
-export function useCredentialsStatusQuery() {
-  const client = useWsClient();
-  return useQuery({
-    queryKey: ['credentialsStatus'],
-    queryFn: () => client.request<CredentialsState>('credentialStatus', {}),
-  });
-}
 
 export function useCredentialsStatusAllQuery() {
   const client = useWsClient();

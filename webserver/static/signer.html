@@ -232,7 +232,7 @@
           method: "POST",
           credentials: "include",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ validUntil, dailyCapUsd }),
+          body: JSON.stringify({ validUntil, dailyUsdCap: dailyCapUsd }),
         });
         const initBody = await initResp.json();
         if (!initResp.ok) return sessionKeyLog("error: " + JSON.stringify(initBody));

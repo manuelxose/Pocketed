@@ -805,7 +805,7 @@ def _create_signed_order_via_session_key(
         session_key_record["privateKey"],
         kernel_address,
         session_key_record["policy"],
-        owner_address=get_address(),
+        owner_address=session_key_record["policy"].get("ownerAddress"),
         account_deployed=False,
     )
     return {

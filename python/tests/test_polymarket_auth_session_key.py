@@ -13,12 +13,14 @@ def test_create_signed_order_uses_session_key_when_active(tmp_path, monkeypatch)
     )
 
     kernel_address = "0x00000000000000000000000000000000000000Bb"
+    owner_address = "0x00000000000000000000000000000000000000Dd"
     address, priv_hex = session_key.generate_session_key()
     policy = {
         "allowedCaller": polymarket_auth.EXCHANGE_ADDRESS,
         "validUntil": int(time.time()) + 3600,
         "dailyUsdCap": 1000.0,
         "kernelAddress": kernel_address,
+        "ownerAddress": owner_address,
     }
     session_key.store_session_key(address, priv_hex, policy, "0xsig")
 
@@ -31,6 +33,14 @@ def test_create_signed_order_uses_session_key_when_active(tmp_path, monkeypatch)
     assert order["signer"].lower() == kernel_address.lower()
     assert order["signatureType"] == polymarket_auth.SIGNATURE_TYPE_POLY_1271
     assert order["signature"].startswith("0x")
+
+    # Prove owner_address was actually threaded from policy["ownerAddress"]
+    # (not, say, coincidentally reused from kernelAddress/funder): the
+    # ERC-6492 counterfactual-deploy wrapper embeds the owner address in its
+    # factory call data, which we can recompute independently.
+    _, expected_factory_data = session_key.build_kernel_factory_args(owner_address)
+    sig_bytes = bytes.fromhex(order["signature"][2:])
+    assert expected_factory_data in sig_bytes
 
 
 def test_create_signed_order_falls_back_to_desktop_flow_without_session_key(tmp_path, monkeypatch):

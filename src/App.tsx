@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
-import { AppStateProvider } from './state/AppStateProvider';
 import { ToastProvider } from './state/ToastProvider';
 import { OnboardingModal } from './pages/Onboarding';
 import { useOnboardingQuery } from './hooks/useOnboarding';
@@ -13,7 +12,6 @@ import { PositionsPage } from './pages/Positions';
 import { SignalsPage } from './pages/Signals';
 import { HistoryPage } from './pages/History';
 import { ProfilesPage } from './pages/Profiles';
-import { LogsPage } from './pages/Logs';
 import { ApiKeysPage } from './pages/ApiKeys';
 import { AboutPage } from './pages/About';
 import { GuidePage } from './pages/Guide';
@@ -27,16 +25,14 @@ import { ScriptsPage } from './pages/Scripts';
 
 export type PageId =
   | 'dashboard' | 'main' | 'positions' | 'signals' | 'history'
-  | 'profiles' | 'settings' | 'api' | 'logs' | 'guide' | 'about'
+  | 'profiles' | 'settings' | 'api' | 'guide' | 'about'
   | 'visualizer' | 'crypto15m' | 'copy' | 'accounts' | 'backtest'
   | 'terminal' | 'scripts';
 
 export default function App() {
   return (
     <ToastProvider>
-      <AppStateProvider>
-        <Shell />
-      </AppStateProvider>
+      <Shell />
     </ToastProvider>
   );
 }
@@ -74,7 +70,6 @@ function PageRouter({ page, setPage }: { page: PageId; setPage: (p: PageId) => v
     case 'profiles': return <ProfilesPage />;
     case 'settings': return <SettingsPage />;
     case 'api': return <ApiKeysPage />;
-    case 'logs': return <LogsPage />;
     case 'guide': return <GuidePage />;
     case 'about': return <AboutPage />;
     case 'visualizer': return <VisualizerPage />;

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Minus, Square, Copy as Restore, X } from 'lucide-react';
-import { useApp } from '../state/AppStateProvider';
 import { cls } from '../utils/format';
+import { useAuthStatusQuery, useBackendConnectionStatus } from '../hooks/useTrading';
 
 export function TitleBar() {
-  const { backend } = useApp();
+  const connected = useBackendConnectionStatus();
+  const { data: authStatus } = useAuthStatusQuery();
   const [maxed, setMaxed] = useState(false);
 
   useEffect(() => {
@@ -19,11 +20,7 @@ export function TitleBar() {
     };
   }, []);
 
-  const dot =
-    backend.status === 'running' ? 'bg-krypt-win' :
-    backend.status === 'starting' ? 'bg-krypt-warn' :
-    backend.status === 'crashed' || backend.status === 'restarting' ? 'bg-krypt-loss' :
-    'bg-krypt-dim';
+  const dot = connected ? 'bg-krypt-win' : 'bg-krypt-loss';
 
   return (
     <div className="titlebar-drag relative z-30 flex h-9 select-none items-center justify-between border-b border-krypt-border bg-krypt-void/95 px-3 backdrop-blur">
@@ -34,9 +31,9 @@ export function TitleBar() {
           </span>
         </div>
         <div className="hidden items-center gap-2 text-[11px] text-krypt-muted lg:flex">
-          <span className={cls('h-2 w-2 rounded-full', dot, backend.status === 'running' && 'shadow-[0_0_8px_currentColor]')} />
-          <span className="capitalize">{backend.status}</span>
-          {backend.authOk ? (
+          <span className={cls('h-2 w-2 rounded-full', dot, connected && 'shadow-[0_0_8px_currentColor]')} />
+          <span className="capitalize">{connected ? 'connected' : 'disconnected'}</span>
+          {authStatus?.authOk ? (
             <span className="krypt-pill border-krypt-win/40 bg-krypt-win/10 text-krypt-win">
               auth ok
             </span>

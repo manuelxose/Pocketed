@@ -4,10 +4,12 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { BotPosition, PnlPoint, SignalSource } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
+import type { BotPosition, SignalSource } from '@shared/types';
 import { Card, Page, ShareButton } from '../components/common';
 import { cls, fmtUsd } from '../utils/format';
+import {
+  useAccountQuery, usePnlSeriesQuery, usePositionsQuery, useScannerStatsQuery, useSignalsQuery,
+} from '../hooks/useAccountData';
 
 type OrbStage = 'scan' | 'orbit' | 'win-fly' | 'loss-fly' | 'eject';
 
@@ -36,7 +38,10 @@ const RESOLVE_FLY_MS = 2_500;
 const MAX_ORBS = 240;
 
 export function VisualizerPage() {
-  const { signals, positions, account, scannerStats } = useApp();
+  const { data: signals = [] } = useSignalsQuery({ limit: 300 });
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
+  const { data: account } = useAccountQuery();
+  const { data: scannerStats } = useScannerStatsQuery();
   const [running, setRunning] = useState(true);
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -58,19 +63,7 @@ export function VisualizerPage() {
     }
   }, [sessionRunId]);
 
-  const [series, setSeries] = useState<PnlPoint[]>([]);
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const s = await window.krypt.data.pnlSeries(24);
-        if (mounted) setSeries(s);
-      } catch {}
-    };
-    void load();
-    const i = window.setInterval(load, 30_000);
-    return () => { mounted = false; window.clearInterval(i); };
-  }, []);
+  const { data: series = [] } = usePnlSeriesQuery(24);
 
   const hourlyBars = useMemo(() => {
     const now = Date.now();

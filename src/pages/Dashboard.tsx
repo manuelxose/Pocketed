@@ -1,42 +1,32 @@
-import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { PnlPoint } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { Card, Empty, Page, ShareableStat, StatCard } from '../components/common';
 import { cls, fmtPct, fmtRelative, fmtUsd } from '../utils/format';
 import { WhyNotTrading } from '../components/WhyNotTrading';
 import type { PageId } from '../App';
 import { useConfigQuery } from '../hooks/useConfig';
 import { useCredentialsStatusQuery } from '../hooks/useCredentials';
+import {
+  useAccountQuery, usePnlSeriesQuery, usePositionsQuery, useScannerStatsQuery, useSignalsQuery,
+} from '../hooks/useAccountData';
+import { useAuthStatusQuery, useBackendConnectionStatus } from '../hooks/useTrading';
 
 interface DashboardProps {
   onNav: (p: PageId) => void;
 }
 
 export function DashboardPage({ onNav }: DashboardProps) {
-  const { account, scannerStats, signals, positions, backend } = useApp();
+  const { data: account } = useAccountQuery();
+  const { data: scannerStats } = useScannerStatsQuery();
+  const { data: signals = [] } = useSignalsQuery({ limit: 300 });
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
+  const connected = useBackendConnectionStatus();
+  const { data: authStatus } = useAuthStatusQuery();
   const { data: config } = useConfigQuery();
   const { data: credentials } = useCredentialsStatusQuery();
-  const [series, setSeries] = useState<PnlPoint[]>([]);
+  const { data: series = [] } = usePnlSeriesQuery(168);
 
-  const engineDown = backend.status === 'crashed' || backend.status === 'stopped';
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const s = await window.krypt.data.pnlSeries(168);
-        if (mounted) setSeries(s);
-      } catch {}
-    };
-    void load();
-    const i = window.setInterval(load, 30000);
-    return () => {
-      mounted = false;
-      window.clearInterval(i);
-    };
-  }, []);
+  const engineDown = !connected;
 
   const openPos = positions.filter(
     (p) => !p.resolved
@@ -55,7 +45,7 @@ export function DashboardPage({ onNav }: DashboardProps) {
       tone: 'bad',
       cta: { label: 'Connect Wallet', page: 'api' },
     });
-  } else if (!backend.authOk) {
+  } else if (authStatus?.authOk === false) {
     issues.push({
       label: 'Saved wallet could not connect to Polymarket',
       tone: 'bad',
@@ -69,12 +59,6 @@ export function DashboardPage({ onNav }: DashboardProps) {
     });
   }
 
-  if (!engineDown && backend.status !== 'running' && backend.status !== 'starting') {
-    issues.push({
-      label: `Backend is ${backend.status}${backend.lastError ? ` — ${backend.lastError}` : ''}`,
-      tone: 'bad',
-    });
-  }
   if (issues.length === 0) {
     issues.push({ label: 'Everything looks good. Bot is online and watching.', tone: 'good' });
   }
@@ -94,12 +78,11 @@ export function DashboardPage({ onNav }: DashboardProps) {
           <AlertTriangle className="h-6 w-6 shrink-0 text-krypt-loss" />
           <div className="flex-1">
             <div className="text-sm font-semibold text-krypt-loss">
-              Trading engine is {backend.status === 'stopped' ? 'stopped' : 'offline'}
+              Trading engine is offline
             </div>
             <div className="mt-0.5 text-xs text-krypt-muted">
               No trades, reconciliation, or balance updates are running while the
               engine is down.
-              {backend.lastError ? ` Last error: ${backend.lastError}` : ''}
             </div>
           </div>
         </div>

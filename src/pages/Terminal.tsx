@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useApp } from '../state/AppStateProvider';
 import type {
   Crypto15mSnapshot, Crypto15mStatus, Crypto15mAsset,
   BotPosition, PnlPoint,
 } from '@shared/types';
 import { useConfigQuery } from '../hooks/useConfig';
+import {
+  useAccountQuery, usePnlSeriesQuery, usePositionsQuery, useScannerStatsQuery, useSignalsQuery,
+} from '../hooks/useAccountData';
+import { useBackendConnectionStatus } from '../hooks/useTrading';
 
 let cachedSnap: Crypto15mSnapshot | null = null;
 let cachedStatus: Crypto15mStatus | null = null;
@@ -35,19 +38,25 @@ interface Orb {
 }
 
 export function TerminalPage() {
-  const { account, positions, signals, logs, scannerStats, backend } = useApp();
+  const { data: account } = useAccountQuery();
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
+  const { data: signals = [] } = useSignalsQuery({ limit: 300 });
+  const { data: scannerStats } = useScannerStatsQuery();
+  const connected = useBackendConnectionStatus();
   const { data: config } = useConfigQuery();
+  const { data: pnl = [] } = usePnlSeriesQuery(24);
   const [snap, setSnap] = useState<Crypto15mSnapshot | null>(cachedSnap);
   const [status, setStatus] = useState<Crypto15mStatus | null>(cachedStatus);
-  const [pnl, setPnl] = useState<PnlPoint[]>(cachedPnl);
   const ivLabel = intervalLabel(config?.crypto15mInterval);
   const [chartInfo, setChartInfo] = useState<{ sym: string; nowStr: string; active: boolean }>(
     { sym: histAsset ?? '—', nowStr: '0.50', active: histMode === 'model' });
 
+  useEffect(() => { cachedPnl = pnl; }, [pnl]);
+
   useEffect(() => {
     let alive = true;
 
-    let snapBusy = false, pnlBusy = false;
+    let snapBusy = false;
     async function loadSnap() {
       const api = window.krypt?.crypto15m;
       if (!api || snapBusy) return;
@@ -58,18 +67,9 @@ export function TerminalPage() {
         cachedSnap = s; cachedStatus = st; setSnap(s); setStatus(st);
       } catch {} finally { snapBusy = false; }
     }
-    async function loadPnl() {
-      if (pnlBusy) return;
-      pnlBusy = true;
-      try {
-        const p = await window.krypt?.data?.pnlSeries?.(24);
-        if (alive && p) { cachedPnl = p; setPnl(p); }
-      } catch {} finally { pnlBusy = false; }
-    }
-    void loadSnap(); void loadPnl();
+    void loadSnap();
     const t1 = window.setInterval(loadSnap, 2500);
-    const t2 = window.setInterval(loadPnl, 30000);
-    return () => { alive = false; clearInterval(t1); clearInterval(t2); };
+    return () => { alive = false; clearInterval(t1); };
   }, []);
 
   const assets: Crypto15mAsset[] = snap?.assets ?? [];
@@ -151,7 +151,7 @@ export function TerminalPage() {
     return rows.slice(0, 7);
   }, [status, positions, ivLabel]);
 
-  const isLive = backend.status === 'running';
+  const isLive = connected;
 
   const fieldRef = useRef<HTMLCanvasElement>(null);
   const orbsRef = useRef<Orb[]>([]);
@@ -372,9 +372,6 @@ export function TerminalPage() {
     return () => { stopped = true; clearTimeout(raf); };
   }, []);
 
-  const logColor: Record<string, string> = {
-    whale: '#fbbf24', momentum: '#7dd3fc', trader: '#a9c7ff', backend: '#38bdf8', discord: '#c4b5fd', main: '#8098c4',
-  };
   const uptime = (() => {
     const t = account?.sessionStartedAt ? now - new Date(account.sessionStartedAt).getTime() : 0;
     const s = Math.max(0, (t / 1000) | 0); return `${two((s / 3600) | 0)}:${two(((s / 60) % 60) | 0)}:${two(s % 60)}`;
@@ -531,21 +528,6 @@ export function TerminalPage() {
                 })}
               </tbody>
             </table>
-          </div>
-          <div className="kt-panel kt-term">
-            <div className="kt-lbl"><b>◈</b> TRADE LOG — LIVE STREAM <span className="tag">logs:append</span></div>
-            <div className="kt-log">
-              {logs.slice(-22).map((l, i) => (
-                <div className="ln" key={l.ts + i}>
-                  <span className="t">{new Date(l.ts).toLocaleTimeString('en-GB')}</span>{' '}
-                  <span style={{ color: l.level === 'ERROR' || l.level === 'CRITICAL' ? 'var(--loss)' : l.level === 'WARN' ? 'var(--warn)' : logColor[l.source] || 'var(--mut)' }}>
-                    [{l.source}]
-                  </span>{' '}
-                  <span style={{ color: l.level === 'ERROR' || l.level === 'CRITICAL' ? 'var(--loss)' : 'var(--mut)' }}>{l.msg}</span>
-                </div>
-              ))}
-              {logs.length === 0 && <div className="ln" style={{ color: 'var(--dim)' }}>awaiting backend log stream…</div>}
-            </div>
           </div>
           <div className="kt-panel">
             <div className="kt-lbl"><b>◈</b> DECISION TRACE <span className="tag">signal → gate → exec</span></div>

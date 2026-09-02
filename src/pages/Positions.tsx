@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Ban, RefreshCw } from 'lucide-react';
 import type { BotPosition } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Empty, Page } from '../components/common';
 import { TickerLink } from '../components/PolymarketTicker';
 import { cls, fmtCents, fmtRelative, fmtUsd } from '../utils/format';
 import { useCancelAllOpenMutation, useRunOnceMutation } from '../hooks/useTrading';
+import { usePositionsQuery } from '../hooks/useAccountData';
 
 const STATUS_COLORS: Record<string, string> = {
   submitted: 'bg-krypt-warn/15 text-krypt-warn border-krypt-warn/30',
@@ -22,7 +22,7 @@ const STATUS_COLORS: Record<string, string> = {
 type Tab = 'open' | 'pending' | 'won' | 'lost' | 'errors' | 'all';
 
 export function PositionsPage() {
-  const { positions, refresh } = useApp();
+  const { data: positions = [], refetch: refetchPositions } = usePositionsQuery({ limit: 500 });
   const toast = useToast();
   const cancelAllOpen = useCancelAllOpenMutation();
   const runOnce = useRunOnceMutation();
@@ -80,7 +80,7 @@ export function PositionsPage() {
     setBusy('sync');
     try {
       const r = await runOnce.mutateAsync('syncPositions');
-      await refresh.positions();
+      await refetchPositions();
       toast.success(r.summary || 'Positions synced');
     } catch (e: any) {
       toast.error(e?.message || 'Sync failed');

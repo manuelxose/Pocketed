@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
   Activity, BarChart3, Bitcoin, BookOpen, Briefcase, Code2, Copy, FlaskConical, Folder,
-  Info, LayoutDashboard, ListChecks, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
+  Info, LayoutDashboard, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
 } from 'lucide-react';
-import { useApp } from '../state/AppStateProvider';
 import { cls, fmtUsd } from '../utils/format';
 import { KryptSprite } from './KryptSprite';
 import { FlexStatsCard } from './FlexStatsCard';
 import type { PageId } from '../App';
 import { useConfigQuery } from '../hooks/useConfig';
+import { useAccountQuery } from '../hooks/useAccountData';
+import { useBackendConnectionStatus } from '../hooks/useTrading';
 
 const NAV: { id: PageId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,7 +26,6 @@ const NAV: { id: PageId; label: string; icon: React.ComponentType<{ className?: 
   { id: 'accounts', label: 'Accounts', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'api', label: 'Wallet', icon: Wallet },
-  { id: 'logs', label: 'Logs', icon: ListChecks },
   { id: 'guide', label: 'Guide', icon: BookOpen },
   { id: 'about', label: 'About', icon: Info },
 ];
@@ -36,7 +36,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ page, setPage }: SidebarProps) {
-  const { account, backend } = useApp();
+  const { data: account } = useAccountQuery();
+  const connected = useBackendConnectionStatus();
   const { data: config } = useConfigQuery();
   const [acct, setAcct] = useState('Default');
   const [showStats, setShowStats] = useState(false);
@@ -131,7 +132,7 @@ export function Sidebar({ page, setPage }: SidebarProps) {
             <span>{config?.enableTrading ? 'LIVE' : 'PAUSED'}</span>
             <span className={cls(
               'h-1.5 w-1.5 rounded-full',
-              backend.status === 'running' ? 'bg-krypt-win' : 'bg-krypt-warn',
+              connected ? 'bg-krypt-win' : 'bg-krypt-warn',
             )} />
           </div>
         </div>

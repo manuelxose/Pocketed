@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, FolderPlus, Plus, Trash2, Wallet, X } from 'lucide-react';
 import type { CopyStatus, TraderConfig } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, NameDialog, NumberInput, Page, Section, Switch } from '../components/common';
 import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
+import { usePositionsQuery } from '../hooks/useAccountData';
 
 const POLL_MS = 8000;
 
@@ -15,7 +15,7 @@ let cachedStatus: CopyStatus | null = null;
 const isAddr = (s: string): boolean => /^0x[0-9a-fA-F]{40}$/.test(s.trim());
 
 export function CopyTradingPage() {
-  const { positions } = useApp();
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
   const saveProfileMutation = useSaveProfileMutation();

@@ -1,22 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useQueryClient } from '@tanstack/react-query';
 import { History as HistoryIcon, Play, Receipt, Square, Timer, Trash2, Trophy } from 'lucide-react';
 import type { BotRun, Crypto15mPosition } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, Empty, Page, ShareableStat, StatCard } from '../components/common';
 import { TickerLink } from '../components/PolymarketTicker';
 import { cls, fmtPct, fmtUsd, fmtDateTime } from '../utils/format';
 import { useConfigQuery } from '../hooks/useConfig';
+import { useAccountQuery, useBotRunsQuery, usePositionsQuery } from '../hooks/useAccountData';
 
 type HistoryTab = 'runs' | 'trades' | 'crypto15m';
 
 export function HistoryPage() {
-  const { positions, account } = useApp();
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
+  const { data: account } = useAccountQuery();
   const { data: config } = useConfigQuery();
+  const { data: botRuns } = useBotRunsQuery(config?.network ?? null, 100);
+  const runs = botRuns?.runs ?? [];
   const toast = useToast();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<HistoryTab>('runs');
-  const [runs, setRuns] = useState<BotRun[]>([]);
   const [c15Rows, setC15Rows] = useState<Crypto15mPosition[]>([]);
   const [clearing, setClearing] = useState(false);
 
@@ -26,19 +30,6 @@ export function HistoryPage() {
       .then((r) => setC15Rows(r?.rows ?? []))
       .catch(() => setC15Rows([]));
   }, [tab]);
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const r = await window.krypt.data.botRuns(config?.network ?? null, 100);
-        if (mounted) setRuns(r.runs);
-      } catch {}
-    };
-    void load();
-    const i = window.setInterval(load, 15000);
-    return () => { mounted = false; window.clearInterval(i); };
-  }, [config?.network]);
 
   const clearHistory = async (): Promise<void> => {
     if (!window.confirm(
@@ -55,7 +46,8 @@ export function HistoryPage() {
         toast.error(r.message || 'Failed to clear history');
         return;
       }
-      setRuns([]);
+      void qc.invalidateQueries({ queryKey: ['botRuns'] });
+      void qc.invalidateQueries({ queryKey: ['positions'] });
       toast.success(r.message || 'History cleared');
     } catch (e: any) {
       toast.error(`${e?.message || e}`);

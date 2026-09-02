@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { SignalRow } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { Empty, Page } from '../components/common';
 import { cls, fmtRelative, fmtUsd } from '../utils/format';
+import { usePositionsQuery, useSignalsQuery } from '../hooks/useAccountData';
 
 export function SignalsPage() {
-  const { signals, positions } = useApp();
+  const { data: signals = [] } = useSignalsQuery({ limit: 300 });
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
   const [src, setSrc] = useState<'all' | 'whale' | 'momentum'>('all');
   const [minConf, setMinConf] = useState(0);
 

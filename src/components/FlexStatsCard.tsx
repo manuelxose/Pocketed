@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Download, Copy } from 'lucide-react';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
+import { useAccountQuery, usePositionsQuery } from '../hooks/useAccountData';
 import spriteUrl from '../assets/spritebluey.png';
 
 const W = 1080;
@@ -97,7 +97,8 @@ function drawCard(ctx: CanvasRenderingContext2D, sprite: HTMLImageElement, frame
 }
 
 export function FlexStatsCard({ onClose }: { onClose: () => void }) {
-  const { account, positions } = useApp();
+  const { data: account } = useAccountQuery();
+  const { data: positions = [] } = usePositionsQuery({ limit: 500 });
   const toast = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [sprite, setSprite] = useState<HTMLImageElement | null>(null);

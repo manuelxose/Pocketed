@@ -3,8 +3,8 @@ import {
   ExternalLink, Eye, EyeOff, Gift, KeyRound, RefreshCcw,
   Save, ShieldAlert, ShieldCheck, Trash2, Wallet, Wifi, WifiOff,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { CredentialsState } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, Page, Section } from '../components/common';
 import { cls } from '../utils/format';
@@ -13,6 +13,7 @@ import {
   useCredentialsStatusAllQuery, useSaveCredentialsMutation, useTestCredentialsMutation,
   useClearCredentialsMutation,
 } from '../hooks/useCredentials';
+import { useAuthStatusQuery } from '../hooks/useTrading';
 
 const SIGNATURE_TYPE_LABELS: Record<number, string> = {
   0: 'EOA',
@@ -22,7 +23,8 @@ const SIGNATURE_TYPE_LABELS: Record<number, string> = {
 };
 
 export function ApiKeysPage() {
-  const { backend, refresh } = useApp();
+  const { data: authStatus } = useAuthStatusQuery();
+  const qc = useQueryClient();
   const { data: statusAll, refetch } = useCredentialsStatusAllQuery();
 
   const cred: CredentialsState | undefined = statusAll?.mainnet;
@@ -44,13 +46,13 @@ export function ApiKeysPage() {
           <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
             <div className={cls(
               'grid h-10 w-10 shrink-0 place-items-center rounded-lg',
-              backend.authOk ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
+              authStatus?.authOk ? 'bg-krypt-win/10 text-krypt-win' : 'bg-krypt-loss/10 text-krypt-loss',
             )}>
-              {backend.authOk ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
+              {authStatus?.authOk ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
             </div>
             <div className="flex-1">
               <div className="text-sm text-white">
-                {backend.authOk ? 'Connected · Polygon mainnet' : 'Not connected'}
+                {authStatus?.authOk ? 'Connected · Polygon mainnet' : 'Not connected'}
               </div>
               <div className="mt-0.5 text-xs text-krypt-muted">
                 {cred?.address
@@ -64,7 +66,7 @@ export function ApiKeysPage() {
 
       <WalletSlot
         status={cred}
-        onSaved={async () => { await refetch(); await refresh.account(); await refresh.backend(); }}
+        onSaved={async () => { await refetch(); await qc.invalidateQueries({ queryKey: ['account'] }); }}
       />
 
       <Section title="Security notes">

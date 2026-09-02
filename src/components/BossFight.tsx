@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Swords } from 'lucide-react';
-import { useApp } from '../state/AppStateProvider';
+import { useAccountQuery } from '../hooks/useAccountData';
 import spriteUrl from '../assets/spritebluey.png';
 
 const MIL = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
@@ -137,7 +137,7 @@ function drawScene(ctx: CanvasRenderingContext2D, w: number, h: number, sprite: 
 const WW = 420, WH = 92;
 
 export function BossWidget() {
-  const { account } = useApp();
+  const { data: account } = useAccountQuery();
   const pnl = account?.alltimePnlUsd ?? account?.realizedPnlUsd ?? 0;
   const g = gameState(pnl);
   const gRef = useRef(g); gRef.current = g;
@@ -180,7 +180,7 @@ export function BossWidget() {
 const AW = 880, AH = 380;
 
 function BossArena({ onClose, sprite }: { onClose: () => void; sprite: HTMLImageElement | null }) {
-  const { account } = useApp();
+  const { data: account } = useAccountQuery();
   const pnl = account?.alltimePnlUsd ?? account?.realizedPnlUsd ?? 0;
   const g = gameState(pnl);
   const gRef = useRef(g); gRef.current = g;

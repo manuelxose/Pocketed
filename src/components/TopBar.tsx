@@ -1,8 +1,9 @@
-import { useApp } from '../state/AppStateProvider';
 import { ShareButton } from './common';
 import { BossWidget } from './BossFight';
 import { cls, fmtPct, fmtUsd } from '../utils/format';
 import { useConfigQuery } from '../hooks/useConfig';
+import { useAccountQuery } from '../hooks/useAccountData';
+import { useBackendConnectionStatus } from '../hooks/useTrading';
 
 const ENGINES: { key: 'main' | 'crypto' | 'copy' | 'scripts'; label: string }[] = [
   { key: 'main', label: 'Main' },
@@ -12,7 +13,8 @@ const ENGINES: { key: 'main' | 'crypto' | 'copy' | 'scripts'; label: string }[] 
 ];
 
 export function TopBar() {
-  const { account, backend } = useApp();
+  const { data: account } = useAccountQuery();
+  const connected = useBackendConnectionStatus();
   const { data: config } = useConfigQuery();
 
   const live: Record<string, boolean> = {
@@ -35,10 +37,10 @@ export function TopBar() {
           <span
             className={cls(
               'text-xs',
-              backend.status === 'running' ? 'text-krypt-muted' : 'text-krypt-warn',
+              connected ? 'text-krypt-muted' : 'text-krypt-warn',
             )}
           >
-            · {backend.status === 'running' ? 'Backend online' : `Backend ${backend.status}`}
+            · {connected ? 'Backend online' : 'Backend offline'}
           </span>
         </div>
 

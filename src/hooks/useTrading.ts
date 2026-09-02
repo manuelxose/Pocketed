@@ -52,7 +52,7 @@ export function useBackendConnectionStatus(): boolean {
 export function useAuthStatusQuery() {
   return useQuery({
     queryKey: ['authStatus'],
-    queryFn: () => Promise.resolve(undefined),
+    queryFn: (): Promise<{ authOk: boolean } | undefined> => Promise.resolve(undefined),
     enabled: false,
   });
 }

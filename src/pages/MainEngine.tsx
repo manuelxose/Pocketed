@@ -4,14 +4,13 @@ import {
   Pause, Play, Power, RotateCcw, Save, Sparkles, Trophy, Vote,
 } from 'lucide-react';
 import type { StrategyPreset, TraderConfig } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, NameDialog, NumberInput, Page, RuleBuilder, Section, Switch } from '../components/common';
 import { cls, fmtPct, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation, useResetConfigMutation } from '../hooks/useConfig';
 import { useStrategiesQuery, useApplyStrategyMutation } from '../hooks/useStrategies';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
-import { useSetTradingEnabledMutation } from '../hooks/useTrading';
+import { useAuthStatusQuery, useSetTradingEnabledMutation } from '../hooks/useTrading';
 
 const KRYPT_CATEGORIES: { id: string; label: string; Icon: typeof Trophy }[] = [
   { id: 'sports', label: 'Sports', Icon: Trophy },
@@ -43,7 +42,7 @@ function matchesPreset(cfg: TraderConfig, preset: TraderConfig): boolean {
 }
 
 export function MainEnginePage() {
-  const { backend } = useApp();
+  const { data: authStatus } = useAuthStatusQuery();
   const { data: config } = useConfigQuery();
   const { data: strategies = [] } = useStrategiesQuery();
   const patchConfig = usePatchConfigMutation();
@@ -144,7 +143,7 @@ export function MainEnginePage() {
           >
             {tradingOn ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             {tradingOn ? 'Pause this engine' : 'Start this engine'}
-            {!backend.authOk && <Power className="ml-1 h-3 w-3 opacity-60" />}
+            {!authStatus?.authOk && <Power className="ml-1 h-3 w-3 opacity-60" />}
           </button>
           <div className="min-w-0">
             <div className={cls('text-sm font-semibold',
@@ -152,7 +151,7 @@ export function MainEnginePage() {
               {tradingOn ? 'LIVE — placing real orders' : 'Paused'}
             </div>
             <div className="text-[11px] text-krypt-dim">
-              {!backend.authOk
+              {!authStatus?.authOk
                 ? 'No wallet connected — connect one on the Dashboard before starting.'
                 : tradingOn
                   ? 'Follows whale + momentum signals under the gates below. Affects this engine only.'

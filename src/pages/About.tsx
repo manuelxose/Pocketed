@@ -1,14 +1,14 @@
 import { ExternalLink, FolderOpen, Gift, Globe, MessageCircle, RotateCcw } from 'lucide-react';
-import { useApp } from '../state/AppStateProvider';
 import { Card, Page, Section } from '../components/common';
 import {
   POLYMARKET_REFERRAL_URL, KRYPT_DISCORD, KRYPT_HOME, KRYPT_TOOLS, KRYPT_TRADER_PAGE,
 } from '../utils/links';
 import { useResetOnboardingMutation } from '../hooks/useOnboarding';
 import { useConfigQuery } from '../hooks/useConfig';
+import { useBackendConnectionStatus } from '../hooks/useTrading';
 
 export function AboutPage() {
-  const { appVersion, backend } = useApp();
+  const connected = useBackendConnectionStatus();
   const { data: config } = useConfigQuery();
   const resetOnboarding = useResetOnboardingMutation();
 
@@ -30,10 +30,10 @@ export function AboutPage() {
             <div>
               <div className="font-pixel text-sm">KRYPT POLYBOT</div>
               <div className="mt-1 text-sm text-krypt-muted">
-                Free Polymarket auto-trading bot · v{appVersion}
+                Free Polymarket auto-trading bot
               </div>
               <div className="mt-1 text-xs text-krypt-dim">
-                Backend: {backend.status} · {config?.network?.toUpperCase()} · pid {backend.pid ?? '—'}
+                Backend: {connected ? 'connected' : 'disconnected'} · {config?.network?.toUpperCase()}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button onClick={open(KRYPT_TRADER_PAGE)} className="krypt-btn-default">

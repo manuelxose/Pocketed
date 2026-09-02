@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Bitcoin, FolderPlus, RefreshCw, RotateCcw, SlidersHorizontal, Wallet, Zap } from 'lucide-react';
 import { C15_PRESET_CORE } from '@shared/c15Presets';
 import type {
@@ -42,8 +41,6 @@ function pct(v: number | null | undefined): string {
 export function Crypto15mPage() {
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
-  const queryClient = useQueryClient();
-  const toastRef = useToast();
   const snapshotQuery = useCrypto15mSnapshotQuery();
   const statusQuery = useCrypto15mStatusQuery();
   const snap = snapshotQuery.data ?? null;
@@ -69,21 +66,9 @@ export function Crypto15mPage() {
     };
   }, []);
 
-  // One-shot toast when the worker auto-disables the executor (hit its
-  // daily/lifetime target). Populated purely by the `crypto15m:autoOff`
-  // push event routed into ['crypto15mAutoOff'] by WsProvider (Task 5) —
-  // never fetched, so we subscribe to the cache directly instead of using
-  // a query.
-  useEffect(() => {
-    const unsub = queryClient.getQueryCache().subscribe((event) => {
-      if (event.type !== 'updated') return;
-      if (event.query.queryKey.length !== 1 || event.query.queryKey[0] !== 'crypto15mAutoOff') return;
-      const d = event.query.state.data as { reason: string; gained: number; target: number } | undefined;
-      if (!d) return;
-      toastRef.warn(`Crypto executor auto-disabled: ${d.reason} (+$${d.gained.toFixed(2)} of $${d.target.toFixed(2)} target)`);
-    });
-    return unsub;
-  }, [queryClient, toastRef]);
+  // Toast for the executor auto-disable event now fires globally from
+  // WsProvider (mounted app-wide) so it isn't dropped when the user is on
+  // a different page — see src/state/WsProvider.tsx.
 
   async function patchAndReload(patch: Partial<TraderConfig>) {
     setBusy(true);

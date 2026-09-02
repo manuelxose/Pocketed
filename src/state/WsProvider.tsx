@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { WsClient } from '../lib/ws-client';
+import { useToast } from './ToastProvider';
 
 const WsContext = createContext<WsClient | null>(null);
 
@@ -30,6 +31,7 @@ const EVENT_INVALIDATE_KEYS: Record<string, unknown[][]> = {
 
 export function WsProvider({ url, children }: { url: string; children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const clientRef = useRef<WsClient | null>(null);
   if (!clientRef.current) clientRef.current = new WsClient(url);
   const client = clientRef.current;
@@ -57,6 +59,16 @@ export function WsProvider({ url, children }: { url: string; children: React.Rea
     const unsubSignal = client.on('signal:new', (data) => {
       queryClient.setQueryData(['signals'], (old: unknown[] = []) => [data, ...old]);
     });
+    // Always-mounted toast for the executor auto-disable event — WsProvider
+    // wraps the whole app (regardless of which page is mounted), unlike the
+    // old AppStateProvider-rooted subscription this replaces.
+    const unsubAutoOff = client.on('crypto15m:autoOff', (data: any) => {
+      const gained = typeof data?.gained === 'number' ? data.gained : 0;
+      const target = typeof data?.target === 'number' ? data.target : 0;
+      toast.warn(
+        `Crypto take-profit hit (+$${gained.toFixed(2)} ≥ $${target.toFixed(2)}) — crypto engine turned off.`,
+      );
+    });
 
     return () => {
       unsubs.forEach((u) => u());
@@ -64,9 +76,10 @@ export function WsProvider({ url, children }: { url: string; children: React.Rea
       unsubPosition();
       unsubPositionUpdate();
       unsubSignal();
+      unsubAutoOff();
       client.close();
     };
-  }, [client, queryClient]);
+  }, [client, queryClient, toast]);
 
   const value = useMemo(() => client, [client]);
   return <WsContext.Provider value={value}>{children}</WsContext.Provider>;

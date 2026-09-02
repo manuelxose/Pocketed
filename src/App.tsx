@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
-import { ToastProvider } from './state/ToastProvider';
 import { OnboardingModal } from './pages/Onboarding';
 import { useOnboardingQuery } from './hooks/useOnboarding';
 import { DashboardPage } from './pages/Dashboard';
@@ -30,11 +29,7 @@ export type PageId =
   | 'terminal' | 'scripts';
 
 export default function App() {
-  return (
-    <ToastProvider>
-      <Shell />
-    </ToastProvider>
-  );
+  return <Shell />;
 }
 
 function Shell() {

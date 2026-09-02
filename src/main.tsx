@@ -7,14 +7,17 @@ import { queryClient } from './lib/queryClient';
 import { wsUrl } from './lib/ws-client';
 import { AuthGate } from './state/AuthGate';
 import { WsProvider } from './state/WsProvider';
+import { ToastProvider } from './state/ToastProvider';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthGate>
-        <WsProvider url={wsUrl()}>
-          <App />
-        </WsProvider>
+        <ToastProvider>
+          <WsProvider url={wsUrl()}>
+            <App />
+          </WsProvider>
+        </ToastProvider>
       </AuthGate>
     </QueryClientProvider>
   </React.StrictMode>,

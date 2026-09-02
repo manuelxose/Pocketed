@@ -134,6 +134,26 @@ cd webserver && KRYPT_POLYBOT_SESSION_SECRET=dev-secret \
 
 Open `http://127.0.0.1:8000/static/signer.html` for the smoke-test harness.
 
+## Webapp Fase 2b (in progress) — session keys, unattended trading
+
+Closes the gap Fase 2a left open: the scanner/whale-tracker/15-min-crypto
+auto-trader can now place and cancel real Polymarket orders without the
+user's browser open. The user authorizes a Kernel permission-validator
+session key once (a single `eth_signTypedData_v4` signature, restricted
+on-chain to the Polymarket CTF Exchange as caller and to a fixed
+expiration); `python/service.py` then signs orders with that session key
+locally — no dependency on `aa-service`/the bundler being up to trade.
+See
+[docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md](docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md).
+
+The daily USD spend cap is software-enforced (not contract-enforced —
+see the spec's spike findings); expiration and the allowed-caller
+restriction are contract-enforced by the Kernel permission-validator.
+
+Open `http://127.0.0.1:8000/static/signer.html`, click "Activate
+auto-trading" after depositing USDC (Fase 2a), and the existing
+scanner/whale-tracker will start placing real orders on your behalf.
+
 ## Custom strategy scripts
 
 The **Scripts** tab lets you write a strategy in plain Python, backtest it on the ticks the app has

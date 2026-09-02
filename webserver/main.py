@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import Cookie, Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from webserver import aa, auth, config_store
@@ -555,3 +556,72 @@ async def ws_endpoint(
     finally:
         outbound_task.cancel()
         worker.unsubscribe(outbound)
+
+
+# --- Frontend static serving -------------------------------------------
+#
+# The built React app (produced by `npm run build`) lands in the repo
+# root's `dist/`, not `webserver/static/` (removed in Task 15 along with
+# the retired signer.html). In production this same FastAPI process is
+# meant to serve that `dist/` as static files so the app is same-origin
+# with the API/WS routes (see vite.config.ts's dev-proxy comment) — until
+# now nothing here actually did that, so a deployed backend had no way to
+# serve the app at all.
+#
+# `DIST_DIR` is read from an env var (mirroring the `DATA_ROOT`/
+# `AA_SERVICE_URL` pattern above) so tests can point it at a temp
+# directory via monkeypatch without touching the real build output.
+DIST_DIR = Path(
+    os.environ.get(
+        "KRYPT_POLYBOT_WEBAPP_DIST",
+        str(Path(__file__).resolve().parent.parent / "dist"),
+    )
+)
+
+if DIST_DIR.is_dir():
+    _assets_dir = DIST_DIR / "assets"
+    if _assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="frontend-assets")
+else:
+    # Don't crash `import webserver.main` (the test suite imports this
+    # module directly) just because the frontend hasn't been built yet —
+    # log and skip mounting instead.
+    logger.warning(
+        "frontend dist/ not found at %s — static file serving is disabled "
+        "(run `npm run build` to produce it)", DIST_DIR,
+    )
+
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str) -> FileResponse:
+    """Catch-all SPA fallback.
+
+    Registered LAST (after every API/WS route above), so FastAPI/Starlette
+    tries all the specific routes first and this only ever fires for a path
+    none of them matched — it can never shadow `/auth/*`, `/config`,
+    `/strategies`, `/profiles`, `/onboarding`, `/session-key/*`, `/aa/*`,
+    or `/ws`.
+
+    `src/App.tsx` navigates via in-memory `PageId` state rather than a URL
+    router, so there is no per-route matching to do here: any unmatched GET
+    path just gets `dist/index.html` and the client takes it from there.
+    Reads the module-level `DIST_DIR` at call time (not a value captured at
+    import/mount time) so it honors a test's monkeypatch of `DIST_DIR`.
+    """
+    dist_dir = DIST_DIR
+    if full_path:
+        candidate = (dist_dir / full_path).resolve()
+        try:
+            candidate.relative_to(dist_dir.resolve())
+        except (ValueError, OSError):
+            candidate = None
+        if candidate is not None and candidate.is_file():
+            return FileResponse(candidate)
+
+    index_file = dist_dir / "index.html"
+    if not index_file.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="frontend not built — run `npm run build` to produce dist/",
+        )
+    return FileResponse(index_file)

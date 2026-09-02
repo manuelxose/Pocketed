@@ -77,15 +77,50 @@ _OTHER_SECRET = "other-secret-at-least-32-bytes-long-too"
 
 
 def test_session_token_round_trip():
-    token = auth.create_session_token("0xABC", secret=_TEST_SECRET)
+    token = auth.create_session_token(["0xABC"], active="0xABC", secret=_TEST_SECRET)
 
-    address = auth.decode_session_token(token, secret=_TEST_SECRET)
+    payload = auth.decode_session_token(token, secret=_TEST_SECRET)
 
-    assert address == "0xABC"
+    assert payload == {"wallets": ["0xABC"], "active": "0xABC"}
 
 
 def test_session_token_rejects_wrong_secret():
-    token = auth.create_session_token("0xABC", secret=_TEST_SECRET)
+    token = auth.create_session_token(["0xABC"], active="0xABC", secret=_TEST_SECRET)
 
     with pytest.raises(auth.AuthError):
         auth.decode_session_token(token, secret=_OTHER_SECRET)
+
+
+def test_create_session_token_carries_wallets_and_active():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    payload = auth.decode_session_token(token, secret="s")
+    assert payload == {"wallets": ["0xAAA"], "active": "0xAAA"}
+
+
+def test_add_wallet_to_session_appends_and_activates():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    token2 = auth.add_wallet_to_session(token, "0xBBB", secret="s")
+    payload = auth.decode_session_token(token2, secret="s")
+    assert payload["wallets"] == ["0xAAA", "0xBBB"]
+    assert payload["active"] == "0xBBB"
+
+
+def test_add_wallet_to_session_dedupes():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    token2 = auth.add_wallet_to_session(token, "0xAAA", secret="s")
+    payload = auth.decode_session_token(token2, secret="s")
+    assert payload["wallets"] == ["0xAAA"]
+    assert payload["active"] == "0xAAA"
+
+
+def test_switch_active_wallet_requires_membership():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    with pytest.raises(auth.AuthError):
+        auth.switch_active_wallet(token, "0xCCC", secret="s")
+
+
+def test_switch_active_wallet_ok():
+    token = auth.create_session_token(["0xAAA", "0xBBB"], active="0xAAA", secret="s")
+    token2 = auth.switch_active_wallet(token, "0xBBB", secret="s")
+    payload = auth.decode_session_token(token2, secret="s")
+    assert payload["active"] == "0xBBB"

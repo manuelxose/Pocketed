@@ -64,22 +64,39 @@ def verify_siwe(message: str, signature: str) -> str:
     return siwe_message.address
 
 
-def create_session_token(wallet_address: str, *, secret: str) -> str:
+def create_session_token(wallets: list[str], *, active: str, secret: str) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": wallet_address,
+        "wallets": wallets,
+        "active": active,
         "iat": now,
         "exp": now + timedelta(seconds=SESSION_TTL_SECONDS),
     }
     return jwt.encode(payload, secret, algorithm="HS256")
 
 
-def decode_session_token(token: str, *, secret: str) -> str:
+def decode_session_token(token: str, *, secret: str) -> dict:
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])
     except jwt.PyJWTError as e:
         raise AuthError(f"invalid session token: {e}") from e
-    sub = payload.get("sub")
-    if not sub:
-        raise AuthError("session token missing subject")
-    return sub
+    wallets = payload.get("wallets")
+    active = payload.get("active")
+    if not wallets or not active:
+        raise AuthError("session token missing wallets/active")
+    return {"wallets": wallets, "active": active}
+
+
+def add_wallet_to_session(token: str, new_wallet: str, *, secret: str) -> str:
+    payload = decode_session_token(token, secret=secret)
+    wallets = payload["wallets"]
+    if new_wallet not in wallets:
+        wallets = [*wallets, new_wallet]
+    return create_session_token(wallets, active=new_wallet, secret=secret)
+
+
+def switch_active_wallet(token: str, wallet: str, *, secret: str) -> str:
+    payload = decode_session_token(token, secret=secret)
+    if wallet not in payload["wallets"]:
+        raise AuthError(f"wallet {wallet} is not linked to this session")
+    return create_session_token(payload["wallets"], active=wallet, secret=secret)

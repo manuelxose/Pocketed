@@ -76,27 +76,71 @@ class VerifyRequest(BaseModel):
 
 
 @app.post("/auth/verify")
-async def verify(body: VerifyRequest) -> JSONResponse:
+async def verify(body: VerifyRequest, kpb_session: str | None = Cookie(default=None)) -> JSONResponse:
     try:
-        wallet_address = auth.verify_siwe(body.message, body.signature)
+        address = auth.verify_siwe(body.message, body.signature)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
 
-    token = auth.create_session_token(wallet_address, secret=SESSION_SECRET)
-    response = JSONResponse({"walletAddress": wallet_address})
-    response.set_cookie(
+    if kpb_session:
+        try:
+            token = auth.add_wallet_to_session(kpb_session, address, secret=SESSION_SECRET)
+        except auth.AuthError:
+            token = auth.create_session_token([address], active=address, secret=SESSION_SECRET)
+    else:
+        token = auth.create_session_token([address], active=address, secret=SESSION_SECRET)
+
+    resp = JSONResponse({"walletAddress": address})
+    resp.set_cookie(
         SESSION_COOKIE_NAME, token,
         httponly=True, secure=True, samesite="lax",
         max_age=auth.SESSION_TTL_SECONDS,
     )
-    return response
+    return resp
+
+
+class SwitchWalletRequest(BaseModel):
+    address: str
+
+
+@app.post("/auth/switch")
+async def switch_wallet(
+    body: SwitchWalletRequest, kpb_session: str | None = Cookie(default=None)
+) -> JSONResponse:
+    if not kpb_session:
+        raise HTTPException(status_code=401, detail="no active session")
+    try:
+        token = auth.switch_active_wallet(kpb_session, body.address, secret=SESSION_SECRET)
+    except auth.AuthError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
+    resp = JSONResponse({"walletAddress": body.address})
+    resp.set_cookie(
+        SESSION_COOKIE_NAME, token,
+        httponly=True, secure=True, samesite="lax",
+        max_age=auth.SESSION_TTL_SECONDS,
+    )
+    return resp
 
 
 async def require_wallet_address(kpb_session: str | None = Cookie(default=None)) -> str:
+    if not kpb_session:
+        raise HTTPException(status_code=401, detail="not authenticated")
     try:
-        return auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
+        payload = auth.decode_session_token(kpb_session, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
+    return payload["active"]
+
+
+@app.get("/auth/session")
+async def get_session(kpb_session: str | None = Cookie(default=None)) -> JSONResponse:
+    if not kpb_session:
+        raise HTTPException(status_code=401, detail="not authenticated")
+    try:
+        payload = auth.decode_session_token(kpb_session, secret=SESSION_SECRET)
+    except auth.AuthError as e:
+        raise HTTPException(status_code=401, detail=str(e)) from e
+    return JSONResponse(payload)
 
 
 def _gateway_status_for_aa_error(e: aa.AAServiceError) -> int:
@@ -272,7 +316,7 @@ async def ws_endpoint(
     await websocket.accept()
 
     try:
-        wallet_address = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
+        wallet_address = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)["active"]
     except auth.AuthError:
         await websocket.close(code=4401)
         return

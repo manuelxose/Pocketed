@@ -57,6 +57,24 @@ def test_import_malformed_json_returns_400(authed_client):
     assert resp.status_code == 400
 
 
+def test_get_active_profiles_requires_auth(client):
+    resp = client.get("/profiles/active")
+    assert resp.status_code == 401
+
+
+def test_get_active_profiles_defaults_to_none(authed_client):
+    resp = authed_client.get("/profiles/active")
+    assert resp.status_code == 200
+    assert resp.json() == {"main": None, "crypto": None, "copy": None}
+
+
+def test_get_active_profiles_reflects_applied_strategy(authed_client):
+    resp = authed_client.post("/strategies/krypt-edge/apply")
+    assert resp.status_code == 200
+    resp2 = authed_client.get("/profiles/active")
+    assert resp2.json()["main"] == "krypt-edge"
+
+
 def test_get_onboarding_requires_auth(client):
     resp = client.get("/onboarding")
     assert resp.status_code == 401

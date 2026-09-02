@@ -11,6 +11,7 @@ import {
   useDuplicateProfileMutation,
   useExportProfileMutation,
   useImportProfileMutation,
+  useActiveProfilesQuery,
 } from './useProfiles';
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -48,6 +49,27 @@ describe('useApplyProfileMutation', () => {
     const { result } = renderHook(() => useApplyProfileMutation(), { wrapper });
     await result.current.mutateAsync('p1');
     expect(fetchMock).toHaveBeenCalledWith('/profiles/p1/apply', expect.objectContaining({ method: 'POST' }));
+  });
+});
+
+describe('useActiveProfilesQuery', () => {
+  it('fetches /profiles/active', async () => {
+    const active = { main: 'p1', crypto: null, copy: null };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => active }));
+    const { result } = renderHook(() => useActiveProfilesQuery(), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual(active));
+  });
+});
+
+describe('useApplyProfileMutation invalidation', () => {
+  it('invalidates config and activeProfiles on success', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ enableTrading: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const { result } = renderHook(() => useApplyProfileMutation(), { wrapper });
+    await result.current.mutateAsync('p1');
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['activeProfiles'] });
+    invalidateSpy.mockRestore();
   });
 });
 

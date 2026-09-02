@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import {
   Check, Copy, Download, FolderOpen, FolderPlus, Pencil, Trash2, Upload,
 } from 'lucide-react';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Empty, NameDialog, Page } from '../components/common';
 import { cls, fmtDateTime } from '../utils/format';
@@ -16,6 +15,7 @@ import {
   useApplyProfileMutation,
   useExportProfileMutation,
   useImportProfileMutation,
+  useActiveProfilesQuery,
 } from '../hooks/useProfiles';
 
 const SCOPES: { scope: ProfileScope; title: string; subtitle: string }[] = [
@@ -27,13 +27,13 @@ const SCOPES: { scope: ProfileScope; title: string; subtitle: string }[] = [
 const scopeOf = (p: Profile): ProfileScope => p.scope ?? 'main';
 
 export function ProfilesPage() {
-  const { state } = useApp();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [createScope, setCreateScope] = useState<ProfileScope | null>(null);
   const [renameTarget, setRenameTarget] = useState<Profile | null>(null);
 
   const { data: profiles = [] } = useProfilesQuery();
+  const { data: activeProfiles } = useActiveProfilesQuery();
   const saveProfile = useSaveProfileMutation();
   const renameProfile = useRenameProfileMutation();
   const deleteProfile = useDeleteProfileMutation();
@@ -44,10 +44,10 @@ export function ProfilesPage() {
 
   const activeFor = (scope: ProfileScope): string | null =>
     scope === 'crypto'
-      ? state?.activeCryptoProfileId ?? null
+      ? activeProfiles?.crypto ?? null
       : scope === 'copy'
-        ? state?.activeCopyProfileId ?? null
-        : state?.activeProfileId ?? null;
+        ? activeProfiles?.copy ?? null
+        : activeProfiles?.main ?? null;
 
   const create = async (name: string): Promise<void> => {
     const scope = createScope ?? 'main';

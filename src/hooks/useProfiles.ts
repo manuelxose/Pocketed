@@ -28,7 +28,17 @@ export function useApplyProfileMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => fetchJson<TraderConfig>(`/profiles/${id}/apply`, { method: 'POST' }),
-    onSuccess: (data) => qc.setQueryData(['config'], data),
+    onSuccess: (data) => {
+      qc.setQueryData(['config'], data);
+      qc.invalidateQueries({ queryKey: ['activeProfiles'] });
+    },
+  });
+}
+
+export function useActiveProfilesQuery() {
+  return useQuery({
+    queryKey: ['activeProfiles'],
+    queryFn: () => fetchJson<{ main: string | null; crypto: string | null; copy: string | null }>('/profiles/active'),
   });
 }
 

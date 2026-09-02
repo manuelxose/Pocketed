@@ -37,6 +37,17 @@ def test_list_strategies_nonempty():
     assert len(config_store.list_strategies()) > 0
 
 
+def test_active_profile_ids_defaults_to_none(user_dir):
+    ids = config_store.active_profile_ids(str(user_dir))
+    assert ids == {"main": None, "crypto": None, "copy": None}
+
+
+def test_active_profile_ids_reflects_apply_strategy(user_dir):
+    config_store.apply_strategy(str(user_dir), "krypt-edge")
+    ids = config_store.active_profile_ids(str(user_dir))
+    assert ids["main"] == "krypt-edge"
+
+
 def test_profile_crud_roundtrip(user_dir):
     p = config_store.save_profile(str(user_dir), "My Profile", "desc", "main")
     assert p["name"] == "My Profile"

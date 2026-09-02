@@ -305,6 +305,15 @@ def get_config(user_id: str) -> dict[str, Any]:
     return _load_state(user_id)["config"]
 
 
+def active_profile_ids(user_id: str) -> dict[str, Any]:
+    state = _load_state(user_id)
+    return {
+        "main": state.get("activeProfileId") or None,
+        "crypto": state.get("activeCryptoProfileId") or None,
+        "copy": state.get("activeCopyProfileId") or None,
+    }
+
+
 def patch_config(user_id: str, patch: dict[str, Any]) -> dict[str, Any]:
     state = _load_state(user_id)
     state["config"] = {**state["config"], **patch}

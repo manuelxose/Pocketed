@@ -46,3 +46,13 @@ export function useBackendConnectionStatus(): boolean {
   const client = useWsClient();
   return client.connected;
 }
+
+// Read-only cache subscription: populated purely by the `backend:authChanged`
+// push event routed into ['authStatus'] by WsProvider (Task 5). Never fetched.
+export function useAuthStatusQuery() {
+  return useQuery({
+    queryKey: ['authStatus'],
+    queryFn: () => Promise.resolve(undefined),
+    enabled: false,
+  });
+}

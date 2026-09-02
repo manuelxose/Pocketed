@@ -3,7 +3,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { queryClient } from '../lib/queryClient';
 import { WsContextForTest } from './testUtils';
-import { useTradingStatusQuery, useCancelAllOpenMutation, useFlattenMutation, useRunOnceMutation } from './useTrading';
+import {
+  useTradingStatusQuery, useCancelAllOpenMutation, useFlattenMutation, useRunOnceMutation, useAuthStatusQuery,
+} from './useTrading';
 
 vi.mock('../state/WsProvider', async () => {
   const { useFakeWsClient } = await import('./testUtils');
@@ -44,6 +46,16 @@ describe('useFlattenMutation', () => {
     const { result } = renderHook(() => useFlattenMutation(), { wrapper: wrap(request) });
     await result.current.mutateAsync();
     expect(request).toHaveBeenCalledWith('flatten', {});
+  });
+});
+
+describe('useAuthStatusQuery', () => {
+  it('reads authStatus from the cache without fetching', async () => {
+    queryClient.setQueryData(['authStatus'], { authOk: true });
+    const request = vi.fn();
+    const { result } = renderHook(() => useAuthStatusQuery(), { wrapper: wrap(request) });
+    await waitFor(() => expect(result.current.data).toEqual({ authOk: true }));
+    expect(request).not.toHaveBeenCalled();
   });
 });
 

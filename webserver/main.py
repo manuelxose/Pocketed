@@ -369,6 +369,11 @@ async def list_profiles_route(wallet_address: str = Depends(require_wallet_addre
     return JSONResponse(config_store.list_profiles(_user_data_dir(wallet_address)))
 
 
+@app.get("/profiles/active")
+async def get_active_profiles_route(wallet_address: str = Depends(require_wallet_address)) -> JSONResponse:
+    return JSONResponse(config_store.active_profile_ids(_user_data_dir(wallet_address)))
+
+
 class SaveProfileRequest(BaseModel):
     name: str
     description: str | None = None

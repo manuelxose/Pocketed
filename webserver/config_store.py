@@ -437,7 +437,9 @@ _PRESERVE_KEYS = {
 
 def apply_strategy(user_id: str, strategy_id: str) -> dict[str, Any]:
     strategy = find_strategy(strategy_id)
-    if strategy is None or strategy.get("comingSoon"):
+    if strategy is None:
+        raise KeyError("Strategy not found")
+    if strategy.get("comingSoon"):
         return get_config(user_id)
 
     state = _load_state(user_id)

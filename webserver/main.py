@@ -356,7 +356,10 @@ async def get_strategies() -> JSONResponse:
 async def apply_strategy_route(
     strategy_id: str, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    cfg = config_store.apply_strategy(_user_data_dir(wallet_address), strategy_id)
+    try:
+        cfg = config_store.apply_strategy(_user_data_dir(wallet_address), strategy_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     await _push_config_to_worker(wallet_address, cfg)
     return JSONResponse(cfg)
 
@@ -384,7 +387,10 @@ async def save_profile_route(
 async def apply_profile_route(
     profile_id: str, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    cfg = config_store.apply_profile(_user_data_dir(wallet_address), profile_id)
+    try:
+        cfg = config_store.apply_profile(_user_data_dir(wallet_address), profile_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     await _push_config_to_worker(wallet_address, cfg)
     return JSONResponse(cfg)
 
@@ -397,7 +403,11 @@ class RenameProfileRequest(BaseModel):
 async def rename_profile_route(
     profile_id: str, body: RenameProfileRequest, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    return JSONResponse(config_store.rename_profile(_user_data_dir(wallet_address), profile_id, body.name))
+    try:
+        profile = config_store.rename_profile(_user_data_dir(wallet_address), profile_id, body.name)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return JSONResponse(profile)
 
 
 @app.delete("/profiles/{profile_id}")
@@ -412,14 +422,22 @@ async def delete_profile_route(
 async def duplicate_profile_route(
     profile_id: str, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    return JSONResponse(config_store.duplicate_profile(_user_data_dir(wallet_address), profile_id))
+    try:
+        dup = config_store.duplicate_profile(_user_data_dir(wallet_address), profile_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return JSONResponse(dup)
 
 
 @app.get("/profiles/{profile_id}/export")
 async def export_profile_route(
     profile_id: str, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    return JSONResponse({"json": config_store.export_profile(_user_data_dir(wallet_address), profile_id)})
+    try:
+        exported = config_store.export_profile(_user_data_dir(wallet_address), profile_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return JSONResponse({"json": exported})
 
 
 class ImportProfileRequest(BaseModel):
@@ -434,7 +452,14 @@ class ImportProfileRequest(BaseModel):
 async def import_profile_route(
     body: ImportProfileRequest, wallet_address: str = Depends(require_wallet_address)
 ) -> JSONResponse:
-    return JSONResponse(config_store.import_profile(_user_data_dir(wallet_address), body.json_))
+    # json.JSONDecodeError (malformed json_str) is itself a ValueError subclass,
+    # so this one except also covers it in addition to config_store's own
+    # "Not a valid Krypt PolyBot profile" ValueError.
+    try:
+        profile = config_store.import_profile(_user_data_dir(wallet_address), body.json_)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    return JSONResponse(profile)
 
 
 async def _push_config_to_worker(wallet_address: str, cfg: dict) -> None:

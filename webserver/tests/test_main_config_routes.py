@@ -25,3 +25,33 @@ def test_profiles_crud(authed_client):
     assert any(p["id"] == pid for p in resp2.json())
     resp3 = authed_client.delete(f"/profiles/{pid}")
     assert resp3.status_code == 200
+
+
+def test_apply_nonexistent_strategy_returns_404(authed_client):
+    resp = authed_client.post("/strategies/does-not-exist/apply")
+    assert resp.status_code == 404
+
+
+def test_apply_nonexistent_profile_returns_404(authed_client):
+    resp = authed_client.post("/profiles/does-not-exist/apply")
+    assert resp.status_code == 404
+
+
+def test_rename_nonexistent_profile_returns_404(authed_client):
+    resp = authed_client.patch("/profiles/does-not-exist", json={"name": "X"})
+    assert resp.status_code == 404
+
+
+def test_duplicate_nonexistent_profile_returns_404(authed_client):
+    resp = authed_client.post("/profiles/does-not-exist/duplicate")
+    assert resp.status_code == 404
+
+
+def test_export_nonexistent_profile_returns_404(authed_client):
+    resp = authed_client.get("/profiles/does-not-exist/export")
+    assert resp.status_code == 404
+
+
+def test_import_malformed_json_returns_400(authed_client):
+    resp = authed_client.post("/profiles/import", json={"json": "{not valid json"})
+    assert resp.status_code == 400

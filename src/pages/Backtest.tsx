@@ -6,8 +6,9 @@ import {
 import { C15_PRESET_CORE } from '@shared/c15Presets';
 import type { CollectionStats, Crypto15mBacktest, TraderConfig } from '@shared/types';
 import { Card, Page, Switch } from '../components/common';
-import { useApp } from '../state/AppStateProvider';
 import { cls, fmtUsd } from '../utils/format';
+import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
+import { useProfilesQuery } from '../hooks/useProfiles';
 
 type Engine = 'crypto15m' | 'main';
 
@@ -51,8 +52,9 @@ export function BacktestPage() {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<Crypto15mBacktest | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const { config, state } = useApp();
-  const profiles = state?.customProfiles ?? [];
+  const { data: config } = useConfigQuery();
+  const patchConfig = usePatchConfigMutation();
+  const { data: profiles = [] } = useProfilesQuery();
   const [coll, setColl] = useState<CollectionStats | null>(null);
   const [showData, setShowData] = useState(false);
 
@@ -64,12 +66,12 @@ export function BacktestPage() {
   useEffect(() => { void loadCollection(); }, []);
 
   const toggleC15Collection = async (on: boolean) => {
-    await window.krypt.config.update({ crypto15mRecordSignals: on });
+    await patchConfig.mutateAsync({ crypto15mRecordSignals: on });
     void loadCollection();
   };
 
   const toggleMainCollection = async (on: boolean) => {
-    await window.krypt.config.update({ mainRecordSignals: on });
+    await patchConfig.mutateAsync({ mainRecordSignals: on });
     void loadCollection();
   };
 

@@ -8,6 +8,9 @@ import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, NameDialog, NumberInput, Page, RuleBuilder, Section, Switch } from '../components/common';
 import { cls, fmtPct, fmtUsd } from '../utils/format';
+import { useConfigQuery, usePatchConfigMutation, useResetConfigMutation } from '../hooks/useConfig';
+import { useStrategiesQuery, useApplyStrategyMutation } from '../hooks/useStrategies';
+import { useSaveProfileMutation } from '../hooks/useProfiles';
 
 const KRYPT_CATEGORIES: { id: string; label: string; Icon: typeof Trophy }[] = [
   { id: 'sports', label: 'Sports', Icon: Trophy },
@@ -39,7 +42,13 @@ function matchesPreset(cfg: TraderConfig, preset: TraderConfig): boolean {
 }
 
 export function MainEnginePage() {
-  const { config, refresh, strategies, backend } = useApp();
+  const { backend } = useApp();
+  const { data: config } = useConfigQuery();
+  const { data: strategies = [] } = useStrategiesQuery();
+  const patchConfig = usePatchConfigMutation();
+  const applyStrategy = useApplyStrategyMutation();
+  const resetConfig = useResetConfigMutation();
+  const saveProfile = useSaveProfileMutation();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -67,8 +76,7 @@ export function MainEnginePage() {
 
   const update = async <K extends keyof TraderConfig>(key: K, value: TraderConfig[K]): Promise<void> => {
     try {
-      await window.krypt.config.update({ [key]: value } as Partial<TraderConfig>);
-      await refresh.state();
+      await patchConfig.mutateAsync({ [key]: value } as Partial<TraderConfig>);
     } catch (e: any) {
       toast.error(`${e?.message || e}`);
     }
@@ -78,8 +86,7 @@ export function MainEnginePage() {
     if (s.comingSoon) return;
     setBusyId(s.id);
     try {
-      await window.krypt.config.applyStrategy(s.id);
-      await refresh.state();
+      await applyStrategy.mutateAsync(s.id);
       toast.success(`Applied "${s.name}"`);
     } catch (e: any) {
       toast.error(`Could not apply: ${e?.message || e}`);
@@ -92,8 +99,7 @@ export function MainEnginePage() {
     if (!window.confirm('Reset all trading settings to defaults?')) return;
     setBusy(true);
     try {
-      await window.krypt.config.reset();
-      await refresh.state();
+      await resetConfig.mutateAsync();
       toast.success('Reset to defaults');
     } finally {
       setBusy(false);
@@ -102,9 +108,12 @@ export function MainEnginePage() {
 
   const saveAsProfile = async (name: string): Promise<void> => {
     setSaveProfileOpen(false);
-    const r = await window.krypt.profiles.save(name);
-    if (r.ok) toast.success(r.message || `Saved "${name}"`);
-    else toast.error(r.message || 'Could not save profile');
+    try {
+      await saveProfile.mutateAsync({ name, scope: 'main' });
+      toast.success(`Saved "${name}"`);
+    } catch (e: any) {
+      toast.error(`${e?.message || e}` || 'Could not save profile');
+    }
   };
 
   return (

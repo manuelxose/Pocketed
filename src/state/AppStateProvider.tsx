@@ -4,13 +4,12 @@ import {
 import type {
   AccountSnapshot, AppState, BackendInfo, BotPosition, CredentialsState,
   CredentialsStatusAll,
-  LogEntry, ScannerStats, SignalRow, StrategyPreset, TraderConfig,
+  LogEntry, ScannerStats, SignalRow,
 } from '@shared/types';
 import { useToast } from './ToastProvider';
 
 interface AppStateApi {
   state: AppState | null;
-  config: TraderConfig | null;
   backend: BackendInfo;
   account: AccountSnapshot | null;
   scannerStats: ScannerStats | null;
@@ -19,7 +18,6 @@ interface AppStateApi {
   logs: LogEntry[];
   credentials: CredentialsState | null;
   credentialsAll: CredentialsStatusAll | null;
-  strategies: StrategyPreset[];
   appVersion: string;
   refresh: {
     state: () => Promise<void>;
@@ -67,7 +65,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [credentials, setCredentials] = useState<CredentialsState | null>(null);
   const [credentialsAll, setCredentialsAll] = useState<CredentialsStatusAll | null>(null);
-  const [strategies, setStrategies] = useState<StrategyPreset[]>([]);
   const [appVersion, setAppVersion] = useState('1.0.0');
 
   const positionsByIdRef = useRef<Map<number, BotPosition>>(new Map());
@@ -194,7 +191,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
     const init = async () => {
-      const [s, b, a, c, ss, pos, sig, ls, ver, strat] = await Promise.all([
+      const [s, b, a, c, ss, pos, sig, ls, ver] = await Promise.all([
         window.krypt.state.get(),
         window.krypt.backend.info(),
         window.krypt.data.account(),
@@ -204,7 +201,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         window.krypt.data.signals({ limit: 300 }),
         window.krypt.logs.tail(500),
         window.krypt.app.version(),
-        window.krypt.config.listStrategies(),
       ]);
       if (!mounted) return;
       setState(s);
@@ -224,7 +220,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       flushSignals();
       setLogs(ls);
       setAppVersion(ver);
-      setStrategies(strat);
     };
     void init();
 
@@ -310,12 +305,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const config = state?.config ?? null;
-
   const api = useMemo<AppStateApi>(
     () => ({
       state,
-      config,
       backend,
       account,
       scannerStats,
@@ -324,7 +316,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       logs,
       credentials,
       credentialsAll,
-      strategies,
       appVersion,
       refresh: {
         state: refreshState,
@@ -337,8 +328,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       },
     }),
     [
-      state, config, backend, account, scannerStats, positions, signals,
-      logs, credentials, strategies, appVersion,
+      state, backend, account, scannerStats, positions, signals,
+      logs, credentials, appVersion,
     ],
   );
 

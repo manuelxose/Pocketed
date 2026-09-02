@@ -7,6 +7,16 @@ import { useToast } from '../state/ToastProvider';
 import { Empty, NameDialog, Page } from '../components/common';
 import { cls, fmtDateTime } from '../utils/format';
 import type { Profile, ProfileScope } from '@shared/types';
+import {
+  useProfilesQuery,
+  useSaveProfileMutation,
+  useRenameProfileMutation,
+  useDeleteProfileMutation,
+  useDuplicateProfileMutation,
+  useApplyProfileMutation,
+  useExportProfileMutation,
+  useImportProfileMutation,
+} from '../hooks/useProfiles';
 
 const SCOPES: { scope: ProfileScope; title: string; subtitle: string }[] = [
   { scope: 'main', title: 'Main engine', subtitle: 'Whale / momentum / convergence scanner' },
@@ -17,13 +27,21 @@ const SCOPES: { scope: ProfileScope; title: string; subtitle: string }[] = [
 const scopeOf = (p: Profile): ProfileScope => p.scope ?? 'main';
 
 export function ProfilesPage() {
-  const { state, refresh } = useApp();
+  const { state } = useApp();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [createScope, setCreateScope] = useState<ProfileScope | null>(null);
   const [renameTarget, setRenameTarget] = useState<Profile | null>(null);
 
-  const profiles = state?.customProfiles ?? [];
+  const { data: profiles = [] } = useProfilesQuery();
+  const saveProfile = useSaveProfileMutation();
+  const renameProfile = useRenameProfileMutation();
+  const deleteProfile = useDeleteProfileMutation();
+  const duplicateProfile = useDuplicateProfileMutation();
+  const applyProfile = useApplyProfileMutation();
+  const exportProfileMutation = useExportProfileMutation();
+  const importProfile = useImportProfileMutation();
+
   const activeFor = (scope: ProfileScope): string | null =>
     scope === 'crypto'
       ? state?.activeCryptoProfileId ?? null
@@ -34,64 +52,69 @@ export function ProfilesPage() {
   const create = async (name: string): Promise<void> => {
     const scope = createScope ?? 'main';
     setCreateScope(null);
-    const r = await window.krypt.profiles.save(name, undefined, scope);
-    if (r.ok) {
-      toast.success(r.message || 'Saved');
-      await refresh.state();
-    } else toast.error(r.message || 'Failed to save');
+    try {
+      await saveProfile.mutateAsync({ name, scope });
+      toast.success('Saved');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save');
+    }
   };
 
   const rename = async (name: string): Promise<void> => {
     const target = renameTarget;
     setRenameTarget(null);
     if (!target || name === target.name) return;
-    const r = await window.krypt.profiles.rename(target.id, name);
-    if (r.ok) {
+    try {
+      await renameProfile.mutateAsync({ id: target.id, name });
       toast.success('Renamed');
-      await refresh.state();
-    } else toast.error(r.message || 'Failed');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed');
+    }
   };
 
   const remove = async (id: string, name: string): Promise<void> => {
     if (!window.confirm(`Delete profile "${name}"?`)) return;
-    const r = await window.krypt.profiles.delete(id);
-    if (r.ok) {
+    try {
+      await deleteProfile.mutateAsync(id);
       toast.success('Deleted');
-      await refresh.state();
-    } else toast.error(r.message || 'Failed');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed');
+    }
   };
 
   const duplicate = async (id: string): Promise<void> => {
-    const r = await window.krypt.profiles.duplicate(id);
-    if (r.ok) {
-      toast.success(`Duplicated`);
-      await refresh.state();
-    } else toast.error(r.message || 'Failed');
+    try {
+      await duplicateProfile.mutateAsync(id);
+      toast.success('Duplicated');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed');
+    }
   };
 
   const apply = async (id: string): Promise<void> => {
-    const r = await window.krypt.profiles.apply(id);
-    if (r.ok) {
-      toast.success(r.message || 'Applied');
-      await refresh.state();
-    } else toast.error(r.message || 'Failed');
+    try {
+      await applyProfile.mutateAsync(id);
+      toast.success('Applied');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed');
+    }
   };
 
   const exportProfile = async (id: string, name: string): Promise<void> => {
-    const r = await window.krypt.profiles.export(id);
-    if (!r.ok || !r.data) {
-      toast.error(r.message || 'Export failed');
-      return;
+    try {
+      const r = await exportProfileMutation.mutateAsync(id);
+      const blob = new Blob([r.json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name.replace(/[^a-z0-9-_]+/gi, '_')}.kryptprofile.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast.error(e?.message || 'Export failed');
     }
-    const blob = new Blob([r.data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name.replace(/[^a-z0-9-_]+/gi, '_')}.kryptprofile.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   };
 
   const importClick = (): void => fileInputRef.current?.click();
@@ -101,13 +124,10 @@ export function ProfilesPage() {
     if (!file) return;
     try {
       const text = await file.text();
-      const r = await window.krypt.profiles.import(text);
-      if (r.ok) {
-        toast.success(r.message || 'Imported');
-        await refresh.state();
-      } else toast.error(r.message || 'Import failed');
+      await importProfile.mutateAsync(text);
+      toast.success('Imported');
     } catch (err: any) {
-      toast.error(err?.message || 'Read failed');
+      toast.error(err?.message || 'Import failed');
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }

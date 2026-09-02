@@ -2,6 +2,7 @@ import { useApp } from '../state/AppStateProvider';
 import { ShareButton } from './common';
 import { BossWidget } from './BossFight';
 import { cls, fmtPct, fmtUsd } from '../utils/format';
+import { useConfigQuery } from '../hooks/useConfig';
 
 const ENGINES: { key: 'main' | 'crypto' | 'copy' | 'scripts'; label: string }[] = [
   { key: 'main', label: 'Main' },
@@ -11,7 +12,8 @@ const ENGINES: { key: 'main' | 'crypto' | 'copy' | 'scripts'; label: string }[] 
 ];
 
 export function TopBar() {
-  const { config, account, backend } = useApp();
+  const { account, backend } = useApp();
+  const { data: config } = useConfigQuery();
 
   const live: Record<string, boolean> = {
     main: !!config?.enableTrading,

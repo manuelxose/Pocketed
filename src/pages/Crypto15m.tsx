@@ -5,12 +5,13 @@ import type {
   Crypto15mAsset, Crypto15mPosition,
   Crypto15mSizing, Crypto15mSnapshot, Crypto15mStatus, RuleCondition, TraderConfig,
 } from '@shared/types';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Empty, NameDialog, Page, RuleBuilder, Switch } from '../components/common';
 import { TickerLink } from '../components/PolymarketTicker';
 import { BacktestPanel } from '../components/BacktestPanel';
 import { cls, fmtUsd } from '../utils/format';
+import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
+import { useSaveProfileMutation } from '../hooks/useProfiles';
 
 const POLL_MS = 2500;
 
@@ -40,7 +41,8 @@ function pct(v: number | null | undefined): string {
 }
 
 export function Crypto15mPage() {
-  const { config } = useApp();
+  const { data: config } = useConfigQuery();
+  const patchConfig = usePatchConfigMutation();
   const [snap, setSnap] = useState<Crypto15mSnapshot | null>(cachedSnap);
   const [status, setStatus] = useState<Crypto15mStatus | null>(cachedStatus);
   const [loading, setLoading] = useState(cachedSnap === null);
@@ -85,7 +87,7 @@ export function Crypto15mPage() {
   async function patchAndReload(patch: Partial<TraderConfig>) {
     setBusy(true);
     try {
-      await window.krypt.config.update(patch);
+      await patchConfig.mutateAsync(patch);
       await load();
     } catch (e: any) {
       setErr(e?.message || String(e));
@@ -217,7 +219,7 @@ export function Crypto15mPage() {
       )}
 
       <StrategySettings
-        config={config}
+        config={config ?? null}
         liveSignals={live}
         spotSource={snap?.spotSource ?? 'cryptocompare'}
         spotOk={snap?.spotOk ?? true}
@@ -386,10 +388,11 @@ const C15_EXAMPLE_STRATEGIES: {
 
 function Crypto15mRules({ config }: { config?: TraderConfig | null }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const patchConfig = usePatchConfigMutation();
   const loadExample = async (ex: typeof C15_EXAMPLE_STRATEGIES[number]) => {
     setLoading(ex.id);
     try {
-      await window.krypt.config.update({ crypto15mUseRules: true, crypto15mRules: ex.rules });
+      await patchConfig.mutateAsync({ crypto15mUseRules: true, crypto15mRules: ex.rules });
     } finally {
       setLoading(null);
     }
@@ -557,14 +560,19 @@ function StrategySettings({
   const [savingPreset, setSavingPreset] = useState<string | null>(null);
   const [saveProfileOpen, setSaveProfileOpen] = useState(false);
   const toast = useToast();
+  const patchConfig = usePatchConfigMutation();
+  const saveProfileMutation = useSaveProfileMutation();
   const update = async (patch: Partial<TraderConfig>) => {
-    try { await window.krypt.config.update(patch); } catch {}
+    try { await patchConfig.mutateAsync(patch); } catch {}
   };
   const saveProfile = async (name: string): Promise<void> => {
     setSaveProfileOpen(false);
-    const r = await window.krypt.profiles.save(name, undefined, 'crypto');
-    if (r.ok) toast.success(r.message || 'Saved crypto profile');
-    else toast.error(r.message || 'Failed to save profile');
+    try {
+      await saveProfileMutation.mutateAsync({ name, scope: 'crypto' });
+      toast.success('Saved crypto profile');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save profile');
+    }
   };
   const num = (k: keyof TraderConfig, d: number) => {
     const v = config?.[k] as number | undefined;
@@ -575,7 +583,7 @@ function StrategySettings({
 
   const applyPreset = async (p: typeof C15_PRESETS[number]) => {
     setSavingPreset(p.id);
-    try { await window.krypt.config.update(p.patch); } finally { setSavingPreset(null); }
+    try { await patchConfig.mutateAsync(p.patch); } finally { setSavingPreset(null); }
   };
 
   const resetDefaults = () => void update({

@@ -8,6 +8,7 @@ import { cls, fmtUsd } from '../utils/format';
 import { KryptSprite } from './KryptSprite';
 import { FlexStatsCard } from './FlexStatsCard';
 import type { PageId } from '../App';
+import { useConfigQuery } from '../hooks/useConfig';
 
 const NAV: { id: PageId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,7 +36,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ page, setPage }: SidebarProps) {
-  const { config, account, backend } = useApp();
+  const { account, backend } = useApp();
+  const { data: config } = useConfigQuery();
   const [acct, setAcct] = useState('Default');
   const [showStats, setShowStats] = useState(false);
   useEffect(() => { window.krypt.accounts.current().then(setAcct).catch(() => {}); }, []);

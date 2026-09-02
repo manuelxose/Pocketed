@@ -8,9 +8,9 @@ import type {
   ScriptApiDocs, ScriptAudit, ScriptBacktest, ScriptShadowOrder, UserScript,
 } from '@shared/types';
 import { Page, Card } from '../components/common';
-import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { cls, fmtUsd } from '../utils/format';
+import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 
 const ScriptEditor = lazy(() =>
   import('../components/ScriptEditor').then((m) => ({ default: m.ScriptEditor })));
@@ -62,7 +62,8 @@ const SEVERITY_TONE: Record<string, string> = {
 };
 
 export function ScriptsPage() {
-  const { config } = useApp();
+  const { data: config } = useConfigQuery();
+  const patchConfig = usePatchConfigMutation();
   const toast = useToast();
   const [scripts, setScripts] = useState<UserScript[]>([]);
   const [selId, setSelId] = useState<string | null>(null);
@@ -385,7 +386,7 @@ export function ScriptsPage() {
           <div className="flex items-center gap-3">
             <Toggle
               checked={!!config?.scriptsLiveEnabled}
-              onChange={(v) => void window.krypt.config.update({ scriptsLiveEnabled: v })}
+              onChange={(v) => void patchConfig.mutateAsync({ scriptsLiveEnabled: v })}
             />
             <div>
               <div className="text-sm font-semibold text-white">Scripts live</div>
@@ -395,16 +396,16 @@ export function ScriptsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-[11px] text-krypt-muted">
-            <Rail label="Max entry" suffix="¢" value={config?.scriptMaxEntryCents ?? 97} onCommit={(v) => void window.krypt.config.update({ scriptMaxEntryCents: v })} />
-            <Rail label="Max size" suffix=" lots" value={config?.scriptMaxContracts ?? 20} onCommit={(v) => void window.krypt.config.update({ scriptMaxContracts: v })} />
-            <Rail label="Max open/script" value={config?.scriptMaxOpen ?? 2} onCommit={(v) => void window.krypt.config.update({ scriptMaxOpen: v })} />
-            <Rail label="Daily loss stop $" value={config?.scriptDailyLossUsd ?? 25} onCommit={(v) => void window.krypt.config.update({ scriptDailyLossUsd: v })} />
-            <Rail label="Markets/tick" value={config?.scriptMarketLimit ?? 150} title="How many general markets decide_market() is offered each tick, highest 24h volume first. 0 turns the hook off." onCommit={(v) => void window.krypt.config.update({ scriptMarketLimit: v })} />
+            <Rail label="Max entry" suffix="¢" value={config?.scriptMaxEntryCents ?? 97} onCommit={(v) => void patchConfig.mutateAsync({ scriptMaxEntryCents: v })} />
+            <Rail label="Max size" suffix=" lots" value={config?.scriptMaxContracts ?? 20} onCommit={(v) => void patchConfig.mutateAsync({ scriptMaxContracts: v })} />
+            <Rail label="Max open/script" value={config?.scriptMaxOpen ?? 2} onCommit={(v) => void patchConfig.mutateAsync({ scriptMaxOpen: v })} />
+            <Rail label="Daily loss stop $" value={config?.scriptDailyLossUsd ?? 25} onCommit={(v) => void patchConfig.mutateAsync({ scriptDailyLossUsd: v })} />
+            <Rail label="Markets/tick" value={config?.scriptMarketLimit ?? 150} title="How many general markets decide_market() is offered each tick, highest 24h volume first. 0 turns the hook off." onCommit={(v) => void patchConfig.mutateAsync({ scriptMarketLimit: v })} />
             <Rail
               label="Max spread" suffix="¢"
               value={config?.scriptMarketMaxSpreadCents ?? 2}
               title="Widest real bid/ask a decide_market() entry may cross, checked against the live book at submit. A wide book can eat a thin-margin strategy's whole edge before it starts. 0 = off."
-              onCommit={(v) => void window.krypt.config.update({ scriptMarketMaxSpreadCents: v })}
+              onCommit={(v) => void patchConfig.mutateAsync({ scriptMarketMaxSpreadCents: v })}
             />
             <span className="text-krypt-dim">(these apply to every script and cannot be raised from inside one)</span>
           </div>

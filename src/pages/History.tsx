@@ -7,11 +7,13 @@ import { useToast } from '../state/ToastProvider';
 import { Card, Empty, Page, ShareableStat, StatCard } from '../components/common';
 import { TickerLink } from '../components/PolymarketTicker';
 import { cls, fmtPct, fmtUsd, fmtDateTime } from '../utils/format';
+import { useConfigQuery } from '../hooks/useConfig';
 
 type HistoryTab = 'runs' | 'trades' | 'crypto15m';
 
 export function HistoryPage() {
-  const { positions, account, config } = useApp();
+  const { positions, account } = useApp();
+  const { data: config } = useConfigQuery();
   const toast = useToast();
   const [tab, setTab] = useState<HistoryTab>('runs');
   const [runs, setRuns] = useState<BotRun[]>([]);

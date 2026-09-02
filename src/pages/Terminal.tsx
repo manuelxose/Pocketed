@@ -4,6 +4,7 @@ import type {
   Crypto15mSnapshot, Crypto15mStatus, Crypto15mAsset,
   BotPosition, PnlPoint,
 } from '@shared/types';
+import { useConfigQuery } from '../hooks/useConfig';
 
 let cachedSnap: Crypto15mSnapshot | null = null;
 let cachedStatus: Crypto15mStatus | null = null;
@@ -34,7 +35,8 @@ interface Orb {
 }
 
 export function TerminalPage() {
-  const { account, positions, signals, logs, scannerStats, backend, config } = useApp();
+  const { account, positions, signals, logs, scannerStats, backend } = useApp();
+  const { data: config } = useConfigQuery();
   const [snap, setSnap] = useState<Crypto15mSnapshot | null>(cachedSnap);
   const [status, setStatus] = useState<Crypto15mStatus | null>(cachedStatus);
   const [pnl, setPnl] = useState<PnlPoint[]>(cachedPnl);

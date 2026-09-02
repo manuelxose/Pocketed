@@ -4,9 +4,12 @@ import type { TraderConfig } from '@shared/types';
 import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, Page, Section, Switch } from '../components/common';
+import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 
 export function SettingsPage() {
-  const { config, refresh, backend } = useApp();
+  const { refresh, backend } = useApp();
+  const { data: config } = useConfigQuery();
+  const patchConfig = usePatchConfigMutation();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
 
@@ -20,8 +23,7 @@ export function SettingsPage() {
 
   const update = async <K extends keyof TraderConfig>(key: K, value: TraderConfig[K]): Promise<void> => {
     try {
-      await window.krypt.config.update({ [key]: value } as Partial<TraderConfig>);
-      await refresh.state();
+      await patchConfig.mutateAsync({ [key]: value } as Partial<TraderConfig>);
     } catch (e: any) {
       toast.error(`${e?.message || e}`);
     }

@@ -8,13 +8,15 @@ import { Card, Empty, Page, ShareableStat, StatCard } from '../components/common
 import { cls, fmtPct, fmtRelative, fmtUsd } from '../utils/format';
 import { WhyNotTrading } from '../components/WhyNotTrading';
 import type { PageId } from '../App';
+import { useConfigQuery } from '../hooks/useConfig';
 
 interface DashboardProps {
   onNav: (p: PageId) => void;
 }
 
 export function DashboardPage({ onNav }: DashboardProps) {
-  const { account, scannerStats, signals, positions, backend, credentials, config, refresh } = useApp();
+  const { account, scannerStats, signals, positions, backend, credentials, refresh } = useApp();
+  const { data: config } = useConfigQuery();
   const toast = useToast();
   const [series, setSeries] = useState<PnlPoint[]>([]);
   const [restarting, setRestarting] = useState(false);

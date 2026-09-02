@@ -5,6 +5,8 @@ import { useApp } from '../state/AppStateProvider';
 import { useToast } from '../state/ToastProvider';
 import { Card, NameDialog, NumberInput, Page, Section, Switch } from '../components/common';
 import { cls, fmtUsd } from '../utils/format';
+import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
+import { useSaveProfileMutation } from '../hooks/useProfiles';
 
 const POLL_MS = 8000;
 
@@ -13,7 +15,10 @@ let cachedStatus: CopyStatus | null = null;
 const isAddr = (s: string): boolean => /^0x[0-9a-fA-F]{40}$/.test(s.trim());
 
 export function CopyTradingPage() {
-  const { config, positions } = useApp();
+  const { positions } = useApp();
+  const { data: config } = useConfigQuery();
+  const patchConfig = usePatchConfigMutation();
+  const saveProfileMutation = useSaveProfileMutation();
   const toast = useToast();
   const [status, setStatus] = useState<CopyStatus | null>(cachedStatus);
   const [addr, setAddr] = useState('');
@@ -38,7 +43,7 @@ export function CopyTradingPage() {
   const update = async (patch: Partial<TraderConfig>): Promise<void> => {
     setBusy(true);
     try {
-      await window.krypt.config.update(patch);
+      await patchConfig.mutateAsync(patch);
       void load();
     } finally {
       setBusy(false);
@@ -87,9 +92,12 @@ export function CopyTradingPage() {
 
   const saveProfile = async (name: string): Promise<void> => {
     setSaveProfileOpen(false);
-    const r = await window.krypt.profiles.save(name, undefined, 'copy');
-    if (r.ok) toast.success(r.message || 'Saved copy-trading profile');
-    else toast.error(r.message || 'Failed to save profile');
+    try {
+      await saveProfileMutation.mutateAsync({ name, scope: 'copy' });
+      toast.success('Saved copy-trading profile');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save profile');
+    }
   };
 
   const walletStat = (w: string) =>

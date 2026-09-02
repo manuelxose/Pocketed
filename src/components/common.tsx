@@ -3,6 +3,7 @@ import { Share2 } from 'lucide-react';
 import { cls } from '../utils/format';
 import { shareToX, X_PROFILE } from '../utils/share';
 import type { RuleCondition, TraderConfig } from '@shared/types';
+import { usePatchConfigMutation } from '../hooks/useConfig';
 
 export function NameDialog({
   open, title, label, initialValue = '', placeholder, confirmLabel = 'Save',
@@ -281,7 +282,8 @@ export function RuleBuilder({
 }) {
   const useRules = !!(config as Record<string, unknown> | null | undefined)?.[useRulesKey as string];
   const rules = (((config as Record<string, unknown> | null | undefined)?.[rulesKey as string]) ?? []) as RuleCondition[];
-  const save = (patch: Partial<TraderConfig>) => void window.krypt.config.update(patch);
+  const patchConfig = usePatchConfigMutation();
+  const save = (patch: Partial<TraderConfig>) => void patchConfig.mutateAsync(patch);
   const setRules = (next: RuleCondition[]) => save({ [rulesKey]: next } as Partial<TraderConfig>);
 
   return (

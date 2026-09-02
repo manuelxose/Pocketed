@@ -5,9 +5,11 @@ import {
   POLYMARKET_REFERRAL_URL, KRYPT_DISCORD, KRYPT_HOME, KRYPT_TOOLS, KRYPT_TRADER_PAGE,
 } from '../utils/links';
 import { useResetOnboardingMutation } from '../hooks/useOnboarding';
+import { useConfigQuery } from '../hooks/useConfig';
 
 export function AboutPage() {
-  const { appVersion, backend, config } = useApp();
+  const { appVersion, backend } = useApp();
+  const { data: config } = useConfigQuery();
   const resetOnboarding = useResetOnboardingMutation();
 
   const open = (url: string) => () => void window.krypt.app.openExternal(url);

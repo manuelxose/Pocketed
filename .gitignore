@@ -83,3 +83,5 @@ simulation/
 # ── aa-service (Node.js sidecar) ────────────────────────────────────
 aa-service/node_modules/
 aa-service/dist/
+
+.superpowers/

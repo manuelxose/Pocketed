@@ -78,6 +78,7 @@ logger = logging.getLogger("service")
 import db  # noqa: E402
 import polymarket_api  # noqa: E402
 import polymarket_auth  # noqa: E402
+import session_key  # noqa: E402
 import scanner  # noqa: E402
 import crypto15m  # noqa: E402
 import trader  # noqa: E402
@@ -1106,6 +1107,47 @@ async def _h_clearCredentials(p: dict) -> dict:
 
 async def _h_credentialStatus(_p: dict) -> dict:
     return polymarket_auth.credentials_status_all()
+
+
+_pending_session_key: dict | None = None
+
+
+async def _h_mintSessionKey(p: dict) -> dict:
+    p = p or {}
+    kernel_address = p["kernelAddress"]
+    policy = {
+        "allowedCaller": p["allowedCaller"],
+        "validUntil": int(p["validUntil"]),
+        "dailyUsdCap": float(p.get("dailyUsdCap") or 0.0),
+        "kernelAddress": kernel_address,
+        "ownerAddress": p["ownerAddress"],
+    }
+    address, priv_hex = session_key.generate_session_key()
+    global _pending_session_key
+    _pending_session_key = {"address": address, "privateKey": priv_hex, "policy": policy}
+    typed_data = session_key.build_enable_typed_data(kernel_address, address, policy)
+    return {"sessionKeyAddress": address, "enableTypedData": typed_data}
+
+
+async def _h_activateSessionKey(p: dict) -> dict:
+    p = p or {}
+    signature = p.get("signature")
+    if not signature:
+        raise ValueError("signature is required")
+    global _pending_session_key
+    if _pending_session_key is None:
+        raise RuntimeError("no pending session key — call mintSessionKey first")
+    pending = _pending_session_key
+    session_key.store_session_key(
+        pending["address"], pending["privateKey"], pending["policy"], signature,
+    )
+    _pending_session_key = None
+    return {"ok": True}
+
+
+async def _h_revokeSessionKey(_p: dict) -> dict:
+    session_key.revoke_session_key_soft()
+    return {"ok": True}
 
 
 _sig_type_reconciled = False
@@ -2160,6 +2202,9 @@ _HANDLERS = {
     "setConfig": _h_setConfig,
     "setCredentials": _h_setCredentials,
     "clearCredentials": _h_clearCredentials,
+    "mintSessionKey": _h_mintSessionKey,
+    "activateSessionKey": _h_activateSessionKey,
+    "revokeSessionKey": _h_revokeSessionKey,
     "credentialStatus": _h_credentialStatus,
     "testCredentials": _h_testCredentials,
     "account": _h_account,

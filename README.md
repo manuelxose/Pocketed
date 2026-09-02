@@ -47,76 +47,75 @@ Whale tracker · momentum scanner · short-term crypto module · copy trading ·
   kill-switch.
 - **Profiles** — save / load / import / export tuned configs, plus built-in strategy presets.
 - **Discord** — optional webhooks for trade events / whales / momentum + Rich Presence.
-- **Local-first** — your wallet key and trade data stay on your machine in a single SQLite DB under
-  `%APPDATA%/Pocketed/`. It talks to Polymarket and public crypto-price feeds, and sends **no**
-  telemetry, analytics, or usage data of any kind (see the [Disclaimer](DISCLAIMER.md)).
+- **Standalone webapp** — Pocketed runs as a normal website: a React app talking to a `webserver/`
+  FastAPI gateway over WebSocket + REST, with no desktop install, no IPC bridge, and no local
+  Electron shell. It sends **no** telemetry, analytics, or usage data of any kind (see the
+  [Disclaimer](DISCLAIMER.md)).
 
 ## How it works
 
 ```
-┌─────────────────────────────┐        JSON-RPC over stdio        ┌──────────────────────────┐
-│  Electron + React renderer  │ ────────────────────────────────▶ │   Python backend (child)  │
-│  (dashboard, settings, …)   │ ◀────────────────────────────────  │  scanners + trade engine  │
-└──────────────┬──────────────┘     events / responses / logs      └────────────┬─────────────┘
-               │ contextBridge (preload)                                          │
-               ▼                                                                   ▼
-        window.krypt.* IPC                                   Polymarket API · CoinGecko · SQLite
+┌───────────────────────┐    WebSocket (RPC) + REST     ┌───────────────────────┐    stdio JSON-RPC    ┌──────────────────────────┐
+│   React app (src/)    │ ─────────────────────────────▶ │  webserver/ (FastAPI) │ ────────────────────▶ │ python/service.py worker │
+│  dashboard, settings…  │ ◀───────────────────────────── │  auth · config · WS   │ ◀──────────────────── │  scanners + trade engine │
+└───────────┬────────────┘   events / responses / logs   └───────────┬───────────┘   events / responses  └────────────┬─────────────┘
+            │ browser (any origin serving the built dist/)           │ one worker process per logged-in wallet        │
+            ▼                                                        ▼                                                ▼
+      SIWE wallet sign-in                                    per-user data dir                        Polymarket API · CoinGecko · SQLite
 ```
 
-The renderer never talks to Polymarket directly — only through `window.krypt.*` IPC. The Python backend runs
-the scanners and trading engine, signs Polymarket CLOB orders locally with your wallet key (EIP-712),
-and persists to a local SQLite DB.
+The browser never talks to Polymarket directly. You sign in with your wallet (SIWE / EIP-4361, no
+passwords); `webserver/` spawns you an isolated `python/service.py` worker that runs the scanners and
+trading engine, signs Polymarket CLOB orders (EIP-712), and persists to a per-user SQLite DB. In
+production `webserver/` also serves the built React app itself (`npm run build` → `dist/`), so
+everything is same-origin — see [Deploy / production build](#deploy--production-build).
 
-## Webapp (Fase 1, in progress)
+## Custody & session keys
 
-Pocketed migrated from an Electron desktop app to a hosted,
-multi-user webapp. Fase 1 (this repo state) adds a `webserver/` FastAPI
-gateway that authenticates users by wallet signature (SIWE / EIP-4361,
-no passwords) and gives each logged-in wallet its own isolated
-`python/service.py` backend worker — the same trading engine the desktop
-app uses, unmodified, just proxied over a WebSocket instead of Electron's
-stdio bridge.
+Pocketed is non-custodial: your wallet's private key never reaches the server. Two paths exist for
+authorizing trades, at different stages of completion:
 
-**Not yet enabled in the webapp:** placing or signing any order. Wallet
-key custody for actual trading arrives in Fase 2 (client-side signing —
-no private key ever reaches the server). Until then, `setCredentials`,
-`clearCredentials`, `testCredentials`, `cancelAllOpen`, and `flatten` are
-refused by the gateway.
+- **Direct credentials** (raw API key/private key handed to the worker) — the historical desktop-app
+  model, still present in the code (`python/polymarket_auth.py`) but **intentionally disabled** at the
+  gateway today: `setCredentials`, `clearCredentials`, `testCredentials`, `cancelAllOpen`, and `flatten`
+  are refused with "not available yet."
+- **Session keys** (the intended webapp path) — you sign one `eth_signTypedData_v4` message authorizing
+  a session key to trade on your behalf via an ERC-4337 Kernel (ZeroDev) smart account, submitted
+  through a self-hosted bundler (Alto) and gas-sponsored by `aa-service/`. See the Sidebar → Session Key
+  page.
 
-Run it locally:
-```bash
-cd webserver
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-POCKETED_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload
-```
+**Known blocking gap — nothing today installs the Kernel permission validator on-chain.** The smart
+account is deployed with an empty `initConfig` (no permission validator, no policies), so a signature
+produced under a session key routes to a permission id the account has no on-chain configuration for,
+and a real verifier would reject it. Concretely:
 
-(Run uvicorn from the repo root, not from inside `webserver/`, so the
-`webserver` package resolves — see `webserver/tests/manual_client.py` for
-a runnable end-to-end smoke test against a live instance.)
+- The daily USD spend cap is **software-enforced only** (a local counter in `python/session_key.py`).
+- The session key's expiry and allowed-caller restriction are **encoded into the signature's permission
+  id but not enforced by any deployed contract**, because that validator is never installed. Do not
+  describe them as contract-enforced until the validator install ships.
+- The `eth_signTypedData_v4` payload you sign (`session_key.build_enable_typed_data`) is a **local
+  consent record** — verified on activation to prove the request came from the account owner, but it is
+  not Kernel's on-chain enable payload and authorizes nothing on-chain.
 
-## Webapp Fase 2a (in progress) — smart account infra
+See the module docstring at the top of `python/session_key.py` for the two candidate ways to close this
+(install at deploy time via `initConfig`, or via a one-time UserOp after deploy). The Session Key page's
+"Activate auto-trading" button exercises the whole mint → sign → activate flow end to end, but treat it
+as a local smoke test — not production-ready unattended trading — until the gap above is closed. Design
+docs: [Fase 2a — smart account infra](docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md),
+[Fase 2b — session keys](docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md).
 
-Adds an ERC-4337 smart-account layer for the webapp: each logged-in
-wallet gets a Kernel (ZeroDev) smart account address, computed
-counterfactually and submitted through our own self-hosted bundler (Alto).
-The daily gas-cap tracking infra exists (`aa-service/src/paymaster.ts`),
-but real paymaster signing/sponsorship and gas estimation are not yet
-wired into UserOp submission — tracked as follow-up work. No
-session-keys or Polymarket trading yet either (that's Fase 2b). See
-[docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md](docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md).
-
-Run it locally (three processes):
+Running the full stack locally (three processes) — only needed if you want to exercise the
+session-key/smart-account flow; the app runs fine without any of these three (see
+[Quick start](#quick-start-development)):
 ```bash
 # 1. bundler
 cd infra/bundler && docker compose up -d
 
-# 2. aa-service (the four env vars below are required — aa-service refuses
-#    to start without them; POLYGON_RPC_URL/BUNDLER_RPC_URL below point at
-#    Polygon Amoy testnet, swap for your own RPC provider; PAYMASTER_PRIVATE_KEY
-#    is the aa-service's own operational signing key, never a user's wallet key.
-#    CHAIN_ID defaults to 137 (Polygon mainnet, the real-deploy target) —
-#    override it to 80002 here since the RPC/bundler above point at Amoy;
-#    aa-service refuses to start on a chain-id mismatch against the bundler)
+# 2. aa-service (all four env vars are required — it refuses to start
+#    without them; POLYGON_RPC_URL/BUNDLER_RPC_URL below point at Polygon
+#    Amoy testnet, swap for your own RPC provider; PAYMASTER_PRIVATE_KEY is
+#    aa-service's own operational signing key, never a user's wallet key.
+#    CHAIN_ID must match the bundler above, 80002 = Amoy, 137 = Polygon mainnet)
 cd aa-service && npm install
 POLYGON_RPC_URL=https://rpc-amoy.polygon.technology \
   BUNDLER_RPC_URL=http://localhost:4337 \
@@ -125,52 +124,11 @@ POLYGON_RPC_URL=https://rpc-amoy.polygon.technology \
   PAYMASTER_DAILY_GAS_CAP_WEI=1000000000000000000 \
   npm run dev
 
-# 3. gateway (Fase 1 + Fase 2a routes)
+# 3. gateway
 cd webserver && POCKETED_SESSION_SECRET=dev-secret \
   POCKETED_AA_SERVICE_URL=http://localhost:4001 \
   .venv/Scripts/python -m uvicorn webserver.main:app --reload
 ```
-
-Open the React app's Session Key page (Sidebar → Session Key) for the smoke-test flow.
-
-## Webapp Fase 2b (in progress, NOT usable against mainnet yet) — session keys, unattended trading
-
-Aims to close the gap Fase 2a left open: letting the
-scanner/whale-tracker/15-min-crypto auto-trader place and cancel real
-Polymarket orders without the user's browser open. The user authorizes a
-session key once (a single `eth_signTypedData_v4` signature naming the
-allowed exchange contracts and an expiry); `python/service.py` then signs
-orders with that session key locally — no dependency on `aa-service`/the
-bundler being up to trade. See
-[docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md](docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md).
-
-**Known blocking gap — nothing here installs the Kernel permission
-validator on-chain.** The account is deployed with an empty `initConfig`
-(no permission validator, no policies), and ZeroDev's ERC-1271 signing
-path has no just-in-time "enable" branch, so the signature this code
-produces routes to a permission id the account has no configuration for
-and a real verifier would reject it. Concretely, today:
-
-- The daily USD spend cap is **software-enforced only** (a local counter in
-  `python/session_key.py`), as the spec's spike findings note.
-- The expiry and the allowed-caller restriction are **encoded into the
-  signature's permission id but not enforced by any deployed contract**,
-  because the validator that would enforce them is never installed. They
-  are not contract-enforced today, and must not be described as such until
-  the validator install ships.
-- The `eth_signTypedData_v4` payload the user signs
-  (`session_key.build_enable_typed_data`) is a **local consent record**
-  — it is verified on activation to prove the request came from the
-  account owner, but it is not Kernel's on-chain enable payload and
-  authorizes nothing on-chain.
-
-See the module docstring at the top of `python/session_key.py` for the two
-candidate ways to close this (install at deploy time via `initConfig`, or
-install after deploy via a one-time UserOp).
-
-The React app's Session Key page's "Activate auto-trading" button
-exercises the whole flow end to end, but treat it as a local smoke test
-until the gap above is closed.
 
 ## Custom strategy scripts
 
@@ -309,65 +267,63 @@ pocketed/
 **Prerequisites:** [Node.js](https://nodejs.org) 18+ and [Python](https://python.org) 3.10+ on PATH
 (`py`, `python`, or `python3`).
 
+Two processes, in separate terminals:
+
 ```bash
+# 1. the FastAPI gateway (webserver/) — spawns your per-wallet Python worker
+cd webserver
+python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+POCKETED_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload --port 8000
+```
+(Run uvicorn from the repo root, not from inside `webserver/`, so the `webserver` package resolves —
+see `webserver/tests/manual_client.py` for a runnable end-to-end smoke test against a live instance.)
+
+```bash
+# 2. the React dev server (repo root) — proxies /auth, /config, /ws, etc. to the gateway above on :8000
 git clone <this-repo-url>
 cd pocketed
 npm install
 npm run dev          # `predev` auto-creates python/.venv and installs backend deps (~30s, one-time)
 ```
 
-Then in the app: **Wallet** → paste your Polygon wallet private key (the one holding your USDC) → it
-derives Polymarket CLOB API credentials and shows your balance → pick a strategy preset. Every engine
-starts **off**; nothing trades until you enable it — and once enabled it places **real orders** (there is
-no paper mode).
+Open the URL Vite prints, connect a wallet (SIWE sign-in), then **Wallet** to connect your Polymarket
+credentials (currently gated, see [Custody & session keys](#custody--session-keys)) or **Session Key**
+for the intended unattended-trading path. Every engine starts **off**; nothing trades until you enable
+it — and once enabled it places **real orders** (there is no paper mode).
 
 Bootstrap just the Python venv without launching the app: `npm run py:setup`.
 
-## Build a Windows installer
+## Deploy / production build
 
 ```bash
-npm run dist         # builds the renderer, bundles the Python backend (PyInstaller), runs electron-builder
+npm run build         # produces dist/ (the built React app)
+cd webserver && POCKETED_SESSION_SECRET=<a-real-secret> \
+  .venv/Scripts/python -m uvicorn webserver.main:app --host 0.0.0.0 --port 8000
 ```
 
-Artifacts land in `release/` (e.g. `Pocketed-Setup-2.0.0.exe`). Note: builds are currently
-**unsigned**, so Windows SmartScreen / antivirus may warn on first run.
-
-The build aborts if the PyInstaller bundle fails its `--selftest` (imports every runtime dep and
-signs an order offline), so a backend missing a dependency can never reach an installer.
-
-<details>
-<summary>Two things that break this build locally on Windows</summary>
-
-- **`build/` must be present.** `package.json` points at `build/installer.nsh`, `build/icon.png`, and
-  `build/HOW TO USE.txt`. They are tracked, but if your working tree is missing them the NSIS step
-  fails with *"cannot find specified resource"*. Restore with `git checkout -- build/`.
-- **`ERROR: Cannot create symbolic link : A required privilege is not held by the client`** —
-  electron-builder extracts its `winCodeSign` toolset, which contains two macOS `.dylib` symlinks.
-  Creating symlinks on Windows needs `SeCreateSymbolicLinkPrivilege`, so the extraction fails and
-  takes the build with it, even though those files are irrelevant to a Windows build. Fix by enabling
-  **Developer Mode** (Settings → System → For developers) or building from an elevated shell. CI is
-  unaffected — GitHub's `windows-latest` runners have the privilege.
-
-</details>
+`webserver/` serves the built `dist/` itself (same-origin with the API/WS routes — see
+`webserver/main.py`'s "Frontend static serving" section), so this one process is the whole deployment.
+Point `POCKETED_WEBAPP_DIST`/`POCKETED_WEBAPP_DATA`/`POCKETED_AA_SERVICE_URL` at your own paths/services
+if you're not running everything from a single checkout. There is currently no packaged installer or
+Docker image — this is a from-source deployment only.
 
 ## Testing & backtesting
 
 ```bash
-npm run py:test                      # Python backend tests (pytest, 820+)
-npm run typecheck                    # TypeScript (renderer + electron)
-npm run test:e2e                     # launches the real app; covers the script arming flow
+npm run py:test                      # Python backend tests (pytest)
+cd webserver && .venv/Scripts/python -m pytest tests/ -q   # gateway tests (auth, config, WS, AA, session-key routes)
+npm test                             # frontend tests (vitest)
+npm run typecheck                    # TypeScript
 npm run py:backtest                  # fee-aware net-of-fee edge over YOUR resolved signals
 npm run py:backtest -- --breakdown   #   + per-category / per-entry-price breakdown
 npm run py:backtest -- --demo        # synthetic data, to see the report format
 ```
 
-`test:e2e` launches the built app in a throwaway profile and asserts the flows that decide whether
-user code can spend real money: a new script is shadow + disabled, arming needs an explicit
-confirmation (and cancelling doesn't arm), *dis*arming is immediate, code that fails validation can't
-be armed, and a script the risk audit flags says so in the arm confirmation. CI runs typecheck + the Python tests on every
-push and pull request; the e2e suite is local-only for now (it needs a display, or `xvfb-run` on
-Linux). **Run the backtest on your own data before trusting any strategy** — it tells you whether the scanners' signals are
-net-positive *after* Polymarket fees (see [Strategies & honesty](#strategies--honesty)).
+Three separate suites, one per layer: the Python trading engine (`python/tests/`), the FastAPI gateway
+(`webserver/tests/`), and the React app (`src/**/*.test.tsx`). CI runs typecheck + all three test suites
+on every push and pull request. **Run the backtest on your own data before trusting any strategy** — it
+tells you whether the scanners' signals are net-positive *after* Polymarket fees (see
+[Strategies & honesty](#strategies--honesty)).
 
 ## Strategies & honesty
 
@@ -384,49 +340,59 @@ sizing up. The one exception is **user scripts**, which start in
 **Beta.** A polished, tested app — but **not** a finished "trust-it-with-real-money" product.
 
 Done:
+- [x] **Migrated off Electron to a standalone webapp** — `src/` is a plain React SPA talking to
+  `webserver/` over WebSocket + REST; no desktop install, no IPC bridge.
 - [x] **Fee-aware backtest harness** (`npm run py:backtest`) — measures the net-of-fee edge of the
   scanners' signals. Run it on your own data before trusting any strategy. (On the author's history
   the default presets were net-*negative* after fees; the `Crypto Whale` and `Sports Momentum` presets
   target the slices that backtested positive — still in-sample, so treat them with caution.)
-- [x] **Test suite + CI** — 820+ pytest tests over the trading engine, sizing, P&L, reconciliation,
-  config validation, credential encryption, the short-term crypto executor, the copy engine, and the
-  script sandbox / money rails.
+- [x] **Test suite + CI** — pytest over the trading engine, sizing, P&L, reconciliation, config
+  validation, credential encryption, the short-term crypto executor, the copy engine, and the script
+  sandbox / money rails, plus a pytest suite for the FastAPI gateway and a vitest suite for the React
+  app; all three run in CI on every push and pull request.
 - [x] **Custom strategy scripts** — sandboxed Python hooks, a backtester, and per-script safety rails.
-- [x] **Encrypted credentials at rest** (Windows DPAPI) and **server-side config validation** (clamps
-  money-critical knobs before they can drive an order).
+- [x] **Server-side config validation** (clamps money-critical knobs before they can drive an order).
 - [x] **15-minute crypto** monitor + live executor (off by default) with a stop-loss exit and a
   **percentage-based** delta filter.
 
-Intentionally skipped:
-- Code signing & auto-update (no certificate; distribute the unsigned installer or run from source).
-
 Still open:
+- [ ] **Install the Kernel permission validator on-chain** — session-key trading is currently a local
+  smoke test, not enforceable by any deployed contract; see [Custody & session keys](#custody--session-keys).
+- [ ] **Re-enable direct credentials** — `setCredentials`/`testCredentials`/`cancelAllOpen`/`flatten`
+  are intentionally gated at the webapp gateway today.
 - [ ] **Validate a strategy forward** — confirm any preset is +EV *out-of-sample*, not just in-sample.
 - [ ] A true "flatten" (sell-to-close) for the main engine (today's "Cancel All" cancels resting orders).
-- [ ] Broader Electron/UI test coverage — `npm run test:e2e` now covers the script arming flow, but
-  the rest of the UI is still untested, and e2e is not yet wired into CI.
+- [ ] Broader React UI test coverage — the vitest suite covers the WS/REST hook layer, but end-to-end
+  UI flows (e.g. the script arming flow) aren't covered yet.
 - [ ] **A backtest path for `decide_market()`** — the recorded tick corpus only covers crypto windows,
   so general-market scripts can only be validated in shadow mode today.
 - [ ] **Exit simulation in shadow mode** — shadow records entries and holds them to settlement, so a
   strategy that leans on `manage()` for its exits behaves differently once armed.
 
-## File locations (Windows)
+## File locations
 
-| What | Where |
-| --- | --- |
-| Settings | `%APPDATA%/Pocketed/settings.json` |
-| Credentials | `%APPDATA%/Pocketed/credentials/` |
-| Database | `%APPDATA%/Pocketed/data/krypt-polybot.db` |
-| Logs | `%APPDATA%/Pocketed/logs/backend.log` |
+Data lives wherever the `webserver/` process runs — your own machine if you self-host it (the default
+for [Quick start](#quick-start-development)), or wherever you deploy it otherwise. Each logged-in wallet
+gets its own isolated directory under `POCKETED_WEBAPP_DATA` (default: `python/data/webapp/` in this
+checkout), and its own worker's SQLite DB under `POCKETED_USERDATA` (set per-worker by the gateway, not
+by you directly).
+
+| What | Where | Configurable via |
+| --- | --- | --- |
+| Per-user webapp data (config, profiles, sessions) | `python/data/webapp/users/<wallet>/` | `POCKETED_WEBAPP_DATA` |
+| Built frontend served by `webserver/` | repo root's `dist/` | `POCKETED_WEBAPP_DIST` |
+| aa-service gas-cap tracking / vault | see `aa-service/` and `python/db.py` | `POCKETED_VAULT` |
 
 ## Security
 
-Pocketed stores your **Polygon wallet private key** (and the CLOB API credentials derived from it)
-**locally**; they are never sent to any server other than Polymarket. On Windows they are **encrypted at
-rest with the OS keystore (DPAPI)** — tied to your user account, with no key stored on disk in plaintext.
-On non-Windows dev builds they fall back to plaintext. Anyone with your private key controls that wallet's
-funds, so use a dedicated trading wallet funded only with what you intend to trade. To report a
-vulnerability, see [SECURITY.md](./SECURITY.md).
+Pocketed is non-custodial by design: your wallet's private key never reaches the server (see
+[Custody & session keys](#custody--session-keys)). The historical direct-credentials path
+(`python/polymarket_auth.py`) is currently disabled at the gateway, but for completeness: when enabled,
+credentials are encrypted at rest with the OS keystore (DPAPI on Windows, OS keychain elsewhere) on
+whichever machine runs the `python/service.py` worker — your own machine if you self-host, the server's
+disk otherwise. Anyone with your private key controls that wallet's funds, so use a dedicated trading
+wallet funded only with what you intend to trade. To report a vulnerability, see
+[SECURITY.md](./SECURITY.md).
 
 ## Contributing
 
@@ -444,13 +410,9 @@ Sign up through our link, then deposit **$20** and place your first trade — Po
 
 The 15-minute crypto module is a generic favorite-follow / momentum approach — buy the late favorite (or
 fade it), gated by an underlying-price delta — reimplemented independently and fully configurable in-app.
-It is a starting point, not a proven edge. Built with Electron, React, Vite, Tailwind, lucide-react,
+It is a starting point, not a proven edge. Built with React, Vite, Tailwind, FastAPI, lucide-react,
 recharts, httpx, and cryptography.
 
 ## License
 
-[MIT](./LICENSE) © Krypt. Provided **as-is, with no warranty** — see the [Disclaimer](./DISCLAIMER.md).
-
-## Links
-
-- Krypt: <https://krypt.cc> · Tools: <https://krypt.cc/tools> · Discord: <https://discord.gg/muzFKR657F>
+[MIT](./LICENSE) © Pocketed. Provided **as-is, with no warranty** — see the [Disclaimer](./DISCLAIMER.md).

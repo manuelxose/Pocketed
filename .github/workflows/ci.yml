@@ -33,3 +33,13 @@ jobs:
       - name: Run Python tests
         working-directory: python
         run: python -m pytest -q
+
+      - name: Install webserver test dependencies
+        run: pip install -r webserver/requirements.txt
+
+      - name: Run webserver tests
+        working-directory: webserver
+        run: python -m pytest tests/ -q
+
+      - name: Run frontend tests
+        run: npm test

@@ -91,7 +91,8 @@ performance or losses.
 
 ## Scope
 
-This project ships a desktop app (Electron) plus a local Python backend. Reports of concern include:
-credential handling, the IPC boundary, request signing, the user-script money rails and risk audit
-(see above), and any path that could place unintended orders. The bundled trading strategies are out
-of scope — strategy performance is not a security issue (see the [Disclaimer](./DISCLAIMER.md)).
+This project ships a React webapp, a FastAPI gateway (`webserver/`), and a Python trading backend
+(`python/`). Reports of concern include: credential handling, session/auth handling, request signing,
+the user-script money rails and risk audit (see above), and any path that could place unintended
+orders. The bundled trading strategies are out of scope — strategy performance is not a security issue
+(see the [Disclaimer](./DISCLAIMER.md)).

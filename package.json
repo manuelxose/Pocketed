@@ -16,11 +16,7 @@
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "py:setup": "node scripts/setup-python.mjs",
-    "py:test": "node scripts/test-python.mjs",
-    "py:backtest": "node scripts/backtest.mjs",
-    "py:backtest15m": "node scripts/backtest.mjs --c15",
-    "py:volume": "node scripts/volume-farm.mjs",
-    "py:dist": "node scripts/build-python.mjs"
+    "py:test": "node scripts/test-python.mjs"
   },
   "dependencies": { "@tanstack/react-query": "^5.102.8" },
   "devDependencies": {

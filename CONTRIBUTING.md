@@ -8,18 +8,24 @@ keep changes small, tested, and easy to review.
 **Prerequisites:** Node.js 18+ and Python 3.10+ on PATH.
 
 ```bash
+cd webserver && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+POCKETED_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload --port 8000
+
+# in a second terminal, from the repo root
 npm install
-npm run dev          # vite + electron + python backend; `predev` sets up python/.venv
+npm run dev           # vite dev server, proxies API/WS calls to the gateway above; `predev` sets up python/.venv
 ```
 
 ## Before you open a PR
 
 ```bash
-npm run typecheck    # TypeScript must pass (renderer + electron)
-npm run py:test      # Python tests must pass
+npm run typecheck                                            # TypeScript must pass
+npm run py:test                                               # Python backend tests must pass
+(cd webserver && .venv/Scripts/python -m pytest tests/ -q)   # gateway tests must pass
+npm test                                                       # frontend tests must pass
 ```
 
-Both are also enforced by CI on every pull request.
+All four are also enforced by CI on every pull request.
 
 ## Guidelines
 
@@ -34,10 +40,12 @@ Both are also enforced by CI on every pull request.
 
 ## Architecture quick reference
 
-- `webserver/` — FastAPI gateway (auth, config/profile persistence, session-key routes).
+- `webserver/` — FastAPI gateway (auth, config/profile persistence, session-key routes). Talks to the
+  browser over WebSocket (RPC) + REST, and to `python/service.py` over stdio JSON-RPC, one worker
+  process per logged-in wallet.
 - `python/` — backend: `service.py` (RPC loop), `scanner.py`, `trader.py`, `crypto15m*.py`, `db.py`.
-  Renderer ↔ backend talk JSON-RPC over stdio.
-- `src/` — React UI. `shared/types.ts` is the IPC contract shared by both sides.
+- `src/` — React UI, built with Vite and served by `webserver/` in production. `shared/types.ts` holds
+  types used across the frontend.
 
 ## Reporting bugs / security issues
 

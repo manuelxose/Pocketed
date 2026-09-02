@@ -33,9 +33,7 @@ Whale tracker · momentum scanner · short-term crypto module · copy trading ·
 - **15-minute crypto** — monitors Polymarket's 15-min crypto markets (BTC/ETH/SOL/XRP/DOGE/HYPE/BNB) with a
   configurable momentum strategy (entry window, favorite threshold, underlying-delta filter, stop-loss,
   favorite-follow or contrarian-fade), plus an optional live executor (off by default). The app
-  passively logs every quarter's signal + outcome to your local DB, which you can then backtest from the
-  CLI (`npm run py:backtest15m` — favorite-vs-contrarian plus price/delta sweeps) to find which settings
-  actually have a net-of-fee edge.
+  passively logs every quarter's signal + outcome to your local DB for review.
 - **Custom strategy scripts** *(new in 2.0)* — write your own strategy in Python, backtest it against your
   own recorded ticks, and let it trade under hard safety rails. See
   [Custom strategy scripts](#custom-strategy-scripts).
@@ -100,9 +98,7 @@ and a real verifier would reject it. Concretely:
 See the module docstring at the top of `python/session_key.py` for the two candidate ways to close this
 (install at deploy time via `initConfig`, or via a one-time UserOp after deploy). The Session Key page's
 "Activate auto-trading" button exercises the whole mint → sign → activate flow end to end, but treat it
-as a local smoke test — not production-ready unattended trading — until the gap above is closed. Design
-docs: [Fase 2a — smart account infra](docs/superpowers/specs/2026-09-01-webapp-fase2a-aa-smart-account-infra-design.md),
-[Fase 2b — session keys](docs/superpowers/specs/2026-09-02-webapp-fase2b-session-keys-design.md).
+as a local smoke test — not production-ready unattended trading — until the gap above is closed.
 
 Running the full stack locally (three processes) — only needed if you want to exercise the
 session-key/smart-account flow; the app runs fine without any of these three (see
@@ -307,32 +303,26 @@ Point `POCKETED_WEBAPP_DIST`/`POCKETED_WEBAPP_DATA`/`POCKETED_AA_SERVICE_URL` at
 if you're not running everything from a single checkout. There is currently no packaged installer or
 Docker image — this is a from-source deployment only.
 
-## Testing & backtesting
+## Testing
 
 ```bash
 npm run py:test                      # Python backend tests (pytest)
 cd webserver && .venv/Scripts/python -m pytest tests/ -q   # gateway tests (auth, config, WS, AA, session-key routes)
 npm test                             # frontend tests (vitest)
 npm run typecheck                    # TypeScript
-npm run py:backtest                  # fee-aware net-of-fee edge over YOUR resolved signals
-npm run py:backtest -- --breakdown   #   + per-category / per-entry-price breakdown
-npm run py:backtest -- --demo        # synthetic data, to see the report format
 ```
 
 Three separate suites, one per layer: the Python trading engine (`python/tests/`), the FastAPI gateway
 (`webserver/tests/`), and the React app (`src/**/*.test.tsx`). CI runs typecheck + all three test suites
-on every push and pull request. **Run the backtest on your own data before trusting any strategy** — it
-tells you whether the scanners' signals are net-positive *after* Polymarket fees (see
-[Strategies & honesty](#strategies--honesty)).
+on every push and pull request.
 
 ## Strategies & honesty
 
 The strategies are **heuristic point systems with hand-tuned constants**, not validated models, and they
 have **no proven, out-of-sample, fee-adjusted edge**. The entry/sizing logic does **not** fully model
 Polymarket's taker fees — which can erode small edges. The built-in engines have **no paper mode** —
-enabling one risks real money — so treat the presets as starting points, backtest them on your own
-resolved signals (`npm run py:backtest`), start with a small amount, and form your own view before
-sizing up. The one exception is **user scripts**, which start in
+enabling one risks real money — so treat the presets as starting points, start with a small amount, and
+form your own view before sizing up. The one exception is **user scripts**, which start in
 [shadow mode](#custom-strategy-scripts) and record what they *would* have traded until you arm them.
 
 ## Project status & roadmap
@@ -342,10 +332,11 @@ sizing up. The one exception is **user scripts**, which start in
 Done:
 - [x] **Migrated off Electron to a standalone webapp** — `src/` is a plain React SPA talking to
   `webserver/` over WebSocket + REST; no desktop install, no IPC bridge.
-- [x] **Fee-aware backtest harness** (`npm run py:backtest`) — measures the net-of-fee edge of the
-  scanners' signals. Run it on your own data before trusting any strategy. (On the author's history
-  the default presets were net-*negative* after fees; the `Crypto Whale` and `Sports Momentum` presets
-  target the slices that backtested positive — still in-sample, so treat them with caution.)
+- [x] **Fee-aware backtest harness** (`cd python && .venv/Scripts/python backtest.py`) — measures the
+  net-of-fee edge of the scanners' signals. Run it on your own data before trusting any strategy. (On
+  the author's history the default presets were net-*negative* after fees; the `Crypto Whale` and
+  `Sports Momentum` presets target the slices that backtested positive — still in-sample, so treat them
+  with caution.)
 - [x] **Test suite + CI** — pytest over the trading engine, sizing, P&L, reconciliation, config
   validation, credential encryption, the short-term crypto executor, the copy engine, and the script
   sandbox / money rails, plus a pytest suite for the FastAPI gateway and a vitest suite for the React

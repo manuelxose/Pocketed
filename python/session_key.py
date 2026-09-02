@@ -51,3 +51,55 @@ def load_session_key_record(env: str = _auth.NETWORK) -> Optional[dict]:
     if not isinstance(data, dict) or not data.get("address") or not data.get("privateKey"):
         return None
     return data
+
+
+def build_enable_typed_data(kernel_address: str, session_key_address: str, policy: dict) -> dict:
+    """EIP-712 payload the owner signs once via eth_signTypedData_v4 to
+    authorize `session_key_address` as a Kernel permission-validator
+    signer restricted to `policy['allowedCaller']`
+    (the Polymarket CTF Exchange), expiring at `policy['validUntil']`."""
+    return {
+        "types": {
+            "EIP712Domain": [
+                {"name": "name", "type": "string"},
+                {"name": "version", "type": "string"},
+                {"name": "chainId", "type": "uint256"},
+                {"name": "verifyingContract", "type": "address"},
+            ],
+            "EnableSessionKey": [
+                {"name": "sessionKeyAddress", "type": "address"},
+                {"name": "allowedCaller", "type": "address"},
+                {"name": "validUntil", "type": "uint256"},
+            ],
+        },
+        "primaryType": "EnableSessionKey",
+        "domain": {
+            "name": "Krypt PolyBot Session Key",
+            "version": "1",
+            "chainId": _auth.CHAIN_ID,
+            "verifyingContract": kernel_address,
+        },
+        "message": {
+            "sessionKeyAddress": session_key_address,
+            "allowedCaller": policy["allowedCaller"],
+            "validUntil": int(policy["validUntil"]),
+        },
+    }
+
+
+def load_active_session_key(env: str = _auth.NETWORK) -> Optional[dict]:
+    record = load_session_key_record(env)
+    if record is None or not record.get("active"):
+        return None
+    valid_until = int(record.get("policy", {}).get("validUntil") or 0)
+    if valid_until and _auth.now_ts() >= valid_until:
+        return None
+    return record
+
+
+def revoke_session_key_soft(env: str = _auth.NETWORK) -> None:
+    record = load_session_key_record(env)
+    if record is None:
+        return
+    record["active"] = False
+    _auth._write_secret_bytes(session_key_file(env), json.dumps(record).encode("utf-8"))

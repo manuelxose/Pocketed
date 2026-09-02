@@ -178,8 +178,102 @@ Eliminados:
   `vite-plugin-electron-renderer`
 - UI de tray/autostart/Discord RPC nativo/title bar frameless en `src/`
 
-Sin cambios: `webserver/`, `python/service.py`, rutas REST
-`/session-key/*` y `/aa/*` ya existentes.
+Nuevo en `webserver/`: `webserver/config_store.py`; rutas `/config`,
+`/strategies`, `/profiles/*` en `webserver/main.py`; `/auth/switch`;
+cambio de shape del JWT y de `require_wallet_address` en
+`webserver/auth.py`/`webserver/main.py`.
+
+Sin cambios: `python/service.py`, rutas REST `/session-key/*` y `/aa/*`
+ya existentes, `Supervisor` (sigue siendo un worker por wallet/`user_id`).
+
+## Amendment: config/profiles/strategies persistence (webserver)
+
+Gap encontrado post-aprobación inicial: `config.get/update/replace/reset`,
+`config.listStrategies/applyStrategy` y todo `profiles.*` viven hoy en
+`electron/system/settings-store.ts` y `electron/system/strategies.ts` —
+lógica Node local, nunca proxeada al worker Python (`python/service.py`
+solo expone `setConfig`, no `config:get` ni nada de profiles/strategies).
+No hay a dónde migrar el transporte porque el backend real no existe.
+
+**Decisión:** esta lógica pasa a `webserver/`, persistida por-usuario
+(mismo aislamiento que ya usan las DBs de cada worker).
+
+Nuevo módulo `webserver/config_store.py` (puerto directo de
+`settings-store.ts`/`strategies.ts`):
+- `get_config(user_id) -> TraderConfig`
+- `patch_config(user_id, patch) -> TraderConfig`
+- `replace_config(user_id, cfg) -> TraderConfig`
+- `reset_config(user_id) -> TraderConfig`
+- `list_strategies() -> list[StrategyPreset]` (presets estáticos, mismo
+  contenido que `strategies.ts` hoy)
+- `apply_strategy(user_id, strategy_id) -> TraderConfig`
+- `list_profiles(user_id) -> list[Profile]`,
+  `save_profile(user_id, name, description, scope) -> Profile`,
+  `apply_profile(user_id, id) -> TraderConfig`,
+  `rename_profile(user_id, id, name) -> Profile`,
+  `delete_profile(user_id, id) -> None`,
+  `duplicate_profile(user_id, id) -> Profile`,
+  `export_profile(user_id, id) -> str` (JSON),
+  `import_profile(user_id, json_str) -> Profile`
+
+Persistencia: un archivo `config.json` y un archivo `profiles.json` por
+usuario, en el mismo directorio `KRYPT_POLYBOT_USERDATA` que ya usa la DB
+de ese usuario (mismo patrón de aislamiento por-proceso/por-directorio de
+Fase 1, sin nueva infra).
+
+Rutas REST nuevas en `webserver/main.py` (config/profiles son operaciones
+CRUD one-shot, no RPC de trading en vivo — mismo patrón que
+`/session-key/*`, no van por el WS):
+- `GET /config`, `PATCH /config`, `PUT /config`, `POST /config/reset`
+- `GET /strategies`, `POST /strategies/{id}/apply`
+- `GET /profiles`, `POST /profiles`, `POST /profiles/{id}/apply`,
+  `PATCH /profiles/{id}`, `DELETE /profiles/{id}`,
+  `POST /profiles/{id}/duplicate`, `GET /profiles/{id}/export`,
+  `POST /profiles/import`
+
+Todas protegidas por la misma `require_wallet_address` (cookie de sesión)
+que ya usan las rutas `/aa/*` y `/session-key/*`. Tras cualquier
+mutación de config, la ruta llama al worker activo del usuario (si está
+corriendo) con el RPC `setConfig` ya existente — mismo `pushConfigToBackend`
+que hace hoy `electron/ipc.ts`.
+
+## Amendment: sesión multi-wallet
+
+Gap encontrado post-aprobación inicial: `accounts.current/list/create/launch`
+en Electron dejaban cambiar entre distintas wallets/perfiles locales en la
+misma máquina. El modelo actual de `webserver/auth.py` es una sesión = una
+wallet (`sub` fijo en el JWT). Se mantiene la feature, redefinida como
+"varias wallets vinculadas a una misma sesión de browser".
+
+**Decisión:** el JWT de sesión pasa a llevar una lista de wallets
+vinculadas más cuál está activa, en vez de una sola:
+
+```
+payload = {
+  "wallets": ["0xAAA...", "0xBBB..."],
+  "active": "0xAAA...",
+  "iat": ..., "exp": ...,
+}
+```
+
+- `POST /auth/verify` — si la request no trae cookie de sesión válida,
+  comportamiento actual (crea sesión nueva con `wallets=[addr]`,
+  `active=addr`). Si trae una cookie de sesión válida, **agrega** `addr`
+  a `wallets` de esa sesión (si no estaba) y la deja como `active` — este
+  es el flujo "accounts:create" (conectar una wallet adicional sin perder
+  la sesión).
+- `POST /auth/switch` — body `{address}`; requiere que `address` ya esté
+  en `wallets` de la sesión actual (si no, 403); reemite el JWT con esa
+  `active` — este es el flujo "accounts:launch".
+- `require_wallet_address` (usado por `/aa/*`, `/session-key/*`,
+  `/config`, `/profiles`, y el `/ws`) pasa a leer `active`, no `sub`.
+- `accounts.list` → `wallets` de la sesión; `accounts.current` → `active`.
+  Cada wallet en `wallets` sigue teniendo su propio worker/DB aislados
+  por `user_id` (= address), sin cambios en `Supervisor`.
+
+Sin cambios en `SESSION_TTL_SECONDS`/`NONCE_TTL_SECONDS` ni en el
+mecanismo de firma SIWE — solo en el shape del payload y en qué endpoints
+lo leen/escriben.
 
 ## Decisiones ya tomadas
 
@@ -190,3 +284,10 @@ Sin cambios: `webserver/`, `python/service.py`, rutas REST
 - `signer.html` se retira; su flujo se migra a React.
 - Se agrega `@tanstack/react-query`; full rewrite del state layer sobre
   WS (no se mantiene el Context custom actual).
+- `config`/`profiles`/`strategies` (sin equivalente en el worker Python)
+  se implementan de cero en `webserver/` (`config_store.py` + rutas REST),
+  persistidos por-usuario junto a la DB de cada worker.
+- `accounts.*` se mantiene, redefinido como sesión multi-wallet: el JWT
+  de `webserver/auth.py` pasa a llevar `wallets[]` + `active` en vez de
+  un `sub` único; `/auth/verify` con sesión existente agrega wallet,
+  `/auth/switch` cambia cuál está activa.

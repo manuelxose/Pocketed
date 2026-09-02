@@ -5,10 +5,16 @@
 // so Python (Task 4) has a byte-exact target to match instead of a
 // hand-derived guess at Kernel's wrap + permission-validator encoding.
 import { writeFileSync } from "node:fs";
-import { createPublicClient, http, type Hex } from "viem";
+import {
+  concatHex,
+  createPublicClient,
+  http,
+  serializeErc6492Signature,
+  type Hex,
+} from "viem";
 import { polygon } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
-import { createKernelAccount } from "@zerodev/sdk";
+import { accountMetadata, createKernelAccount } from "@zerodev/sdk";
 import { signerToEcdsaValidator } from "@zerodev/ecdsa-validator";
 import { toPermissionValidator } from "@zerodev/permissions";
 import { toECDSASigner } from "@zerodev/permissions/signers";
@@ -68,9 +74,52 @@ async function main() {
     plugins: { sudo: sudoValidator, regular: permissionValidator },
   });
 
-  const signature = await kernelAccount.signMessage({
-    message: { raw: ORDER_DIGEST_MESSAGE as Hex },
+  // NOTE: deliberately *not* `kernelAccount.signMessage({ message: { raw } })`.
+  // That path runs viem's `hashMessage()` first, i.e. it EIP-191
+  // personal-sign-prefixes the digest ("\x19Ethereum Signed Message:\n32" ||
+  // digest) *before* Kernel's own EIP-712 wrap. The Polymarket CTF Exchange
+  // calls `isValidSignature(orderHash, sig)` with the RAW order hash, and
+  // Kernel's ERC1271 wraps that raw hash directly — no personal-sign layer.
+  // So we reproduce exactly what `createKernelAccount`'s signMessage does
+  // *after* the hashMessage step, feeding it the raw digest instead:
+  // Kernel(bytes32 hash) EIP-712 wrap -> permission-validator signature ->
+  // validation-id prefix -> ERC-6492 wrap while counterfactual.
+  const accountAddress = await kernelAccount.getAddress();
+  const { name, version, chainId } = await accountMetadata(
+    publicClient,
+    accountAddress,
+    "0.3.1",
+    polygon.id
+  );
+
+  const innerSignature = await kernelAccount.kernelPluginManager.signTypedData({
+    message: { hash: ORDER_DIGEST_MESSAGE as Hex },
+    primaryType: "Kernel",
+    types: { Kernel: [{ name: "hash", type: "bytes32" }] },
+    domain: {
+      name,
+      version,
+      chainId: Number(chainId),
+      verifyingContract: accountAddress,
+    },
   });
+  // Same framing createKernelAccount.signMessage applies: the plugin
+  // manager's identifier (VALIDATOR_TYPE.PERMISSION || permissionId).
+  const framed = concatHex([
+    kernelAccount.kernelPluginManager.getIdentifier(),
+    innerSignature,
+  ]);
+  // Same ERC-6492 wrap viem's toSmartAccount applies while the account is
+  // not deployed (getFactoryArgs returns undefined once it is).
+  const { factory, factoryData } = await kernelAccount.getFactoryArgs();
+  const signature =
+    factory && factoryData
+      ? serializeErc6492Signature({
+          address: factory,
+          data: factoryData,
+          signature: framed,
+        })
+      : framed;
 
   writeFileSync(
     new URL("../../python/tests/fixtures/session_key_golden.json", import.meta.url),

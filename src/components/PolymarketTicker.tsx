@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { cls } from '../utils/format';
 import { useMarketUrlMutation } from '../hooks/usePolymarket';
@@ -16,17 +17,25 @@ export function TickerLink({
   className?: string;
 }) {
   const marketUrlMutation = useMarketUrlMutation();
+  const inFlightRef = useRef(false);
   if (!ticker) return <span className="text-krypt-dim">{label ?? '—'}</span>;
   const openMarket = async (): Promise<void> => {
+    if (inFlightRef.current || marketUrlMutation.isPending) return;
+    inFlightRef.current = true;
     try {
       const { url } = await marketUrlMutation.mutateAsync({ ticker, eventTicker, env });
       if (url) await window.krypt.app.openExternal(url);
-    } catch {}
+    } catch {
+      // ignore
+    } finally {
+      inFlightRef.current = false;
+    }
   };
   return (
     <button
       type="button"
       onClick={() => void openMarket()}
+      disabled={marketUrlMutation.isPending}
       title="Open this market on Polymarket"
       className={cls(
         'group inline-flex items-center gap-1 font-mono text-xs text-krypt-purple',

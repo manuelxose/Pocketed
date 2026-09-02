@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { connectWallet, signSiwe } from './wallet';
+import { connectWallet, signSiwe, signTypedData } from './wallet';
 
 beforeEach(() => {
   vi.unstubAllGlobals();
@@ -30,6 +30,19 @@ describe('signSiwe', () => {
     expect(request).toHaveBeenCalledWith({
       method: 'personal_sign',
       params: [message, '0xAAA'],
+    });
+  });
+});
+
+describe('signTypedData', () => {
+  it('calls eth_signTypedData_v4 with the address and JSON-stringified data', async () => {
+    const request = vi.fn().mockResolvedValue('0xsig');
+    vi.stubGlobal('ethereum', { request, selectedAddress: '0xAAA' });
+    const sig = await signTypedData('0xAAA', { domain: {}, types: {}, message: {} });
+    expect(sig).toBe('0xsig');
+    expect(request).toHaveBeenCalledWith({
+      method: 'eth_signTypedData_v4',
+      params: ['0xAAA', JSON.stringify({ domain: {}, types: {}, message: {} })],
     });
   });
 });

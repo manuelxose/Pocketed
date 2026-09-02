@@ -21,12 +21,13 @@ import { AccountsPage } from './pages/Accounts';
 import { BacktestPage } from './pages/Backtest';
 import { TerminalPage } from './pages/Terminal';
 import { ScriptsPage } from './pages/Scripts';
+import { SessionKeyPage } from './pages/SessionKey';
 
 export type PageId =
   | 'dashboard' | 'main' | 'positions' | 'signals' | 'history'
   | 'profiles' | 'settings' | 'api' | 'guide' | 'about'
   | 'visualizer' | 'crypto15m' | 'copy' | 'accounts' | 'backtest'
-  | 'terminal' | 'scripts';
+  | 'terminal' | 'scripts' | 'sessionkey';
 
 export default function App() {
   return <Shell />;
@@ -65,6 +66,7 @@ function PageRouter({ page, setPage }: { page: PageId; setPage: (p: PageId) => v
     case 'profiles': return <ProfilesPage />;
     case 'settings': return <SettingsPage />;
     case 'api': return <ApiKeysPage />;
+    case 'sessionkey': return <SessionKeyPage />;
     case 'guide': return <GuidePage />;
     case 'about': return <AboutPage />;
     case 'visualizer': return <VisualizerPage />;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Activity, BarChart3, Bitcoin, BookOpen, Briefcase, Code2, Copy, FlaskConical, Folder,
-  Info, LayoutDashboard, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
+  Info, KeyRound, LayoutDashboard, Orbit, Settings, Share2, Sparkles, SquareTerminal, Users, Wallet,
 } from 'lucide-react';
 import { cls, fmtUsd } from '../utils/format';
 import { KryptSprite } from './KryptSprite';
@@ -26,6 +26,7 @@ const NAV: { id: PageId; label: string; icon: React.ComponentType<{ className?: 
   { id: 'accounts', label: 'Accounts', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'api', label: 'Wallet', icon: Wallet },
+  { id: 'sessionkey', label: 'Session Key', icon: KeyRound },
   { id: 'guide', label: 'Guide', icon: BookOpen },
   { id: 'about', label: 'About', icon: Info },
 ];

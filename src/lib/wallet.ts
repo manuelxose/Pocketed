@@ -27,3 +27,12 @@ export async function signSiwe(
   })) as string;
   return { message, signature };
 }
+
+export async function signTypedData(address: string, typedData: unknown): Promise<string> {
+  const eth = (window as unknown as { ethereum?: EthereumProvider }).ethereum;
+  if (!eth) throw new Error('window.ethereum not found');
+  return (await eth.request({
+    method: 'eth_signTypedData_v4',
+    params: [address, JSON.stringify(typedData)],
+  })) as string;
+}

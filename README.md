@@ -132,7 +132,7 @@ cd webserver && KRYPT_POLYBOT_SESSION_SECRET=dev-secret \
   .venv/Scripts/python -m uvicorn webserver.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000/static/signer.html` for the smoke-test harness.
+Open the React app's Session Key page (Sidebar → Session Key) for the smoke-test flow.
 
 ## Webapp Fase 2b (in progress, NOT usable against mainnet yet) — session keys, unattended trading
 
@@ -169,9 +169,9 @@ See the module docstring at the top of `python/session_key.py` for the two
 candidate ways to close this (install at deploy time via `initConfig`, or
 install after deploy via a one-time UserOp).
 
-`http://127.0.0.1:8000/static/signer.html`'s "Activate auto-trading"
-button exercises the whole flow end to end, but treat it as a local
-smoke test until the gap above is closed.
+The React app's Session Key page's "Activate auto-trading" button
+exercises the whole flow end to end, but treat it as a local smoke test
+until the gap above is closed.
 
 ## Custom strategy scripts
 

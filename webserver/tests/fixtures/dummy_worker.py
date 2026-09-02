@@ -28,6 +28,18 @@ def main() -> None:
             continue
         if method == "crash":
             sys.exit(1)
+        if method == "mintSessionKey":
+            _send({"type": "rpc", "id": req["id"], "ok": True, "result": {
+                "sessionKeyAddress": "0xSessionKeyDummy00000000000000000000000",
+                "enableTypedData": {"domain": {}, "message": {"sessionKeyAddress": "0xSessionKeyDummy00000000000000000000000"}},
+            }})
+            continue
+        if method == "activateSessionKey":
+            _send({"type": "rpc", "id": req["id"], "ok": True, "result": {"ok": True}})
+            continue
+        if method == "revokeSessionKey":
+            _send({"type": "rpc", "id": req["id"], "ok": True, "result": {"ok": True}})
+            continue
         _send({"type": "rpc", "id": req["id"], "ok": False, "error": f"unknown method {method}"})
 
 

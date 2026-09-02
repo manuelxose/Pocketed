@@ -178,6 +178,55 @@ async def get_test_userop_status(
     return JSONResponse(result)
 
 
+CTF_EXCHANGE_V2_ADDRESS = "0xE111180000d2663C0091e4f400237545B87B996B"
+
+
+class SessionKeyInitRequest(BaseModel):
+    validUntil: int
+    dailyUsdCap: float
+
+
+@app.post("/session-key/init")
+async def post_session_key_init(
+    body: SessionKeyInitRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    try:
+        kernel_address = await aa.compute_account_address(wallet_address, base_url=AA_SERVICE_URL)
+    except aa.AAServiceError as e:
+        raise HTTPException(status_code=_gateway_status_for_aa_error(e), detail=str(e)) from e
+    worker = await supervisor.get_or_create(wallet_address)
+    result = await worker.request("mintSessionKey", {
+        "ownerAddress": wallet_address,
+        "kernelAddress": kernel_address,
+        "allowedCaller": CTF_EXCHANGE_V2_ADDRESS,
+        "validUntil": body.validUntil,
+        "dailyUsdCap": body.dailyUsdCap,
+    })
+    return JSONResponse(result)
+
+
+class SessionKeyActivateRequest(BaseModel):
+    signature: str
+
+
+@app.post("/session-key/activate")
+async def post_session_key_activate(
+    body: SessionKeyActivateRequest, wallet_address: str = Depends(require_wallet_address)
+) -> JSONResponse:
+    worker = await supervisor.get_or_create(wallet_address)
+    result = await worker.request("activateSessionKey", {"signature": body.signature})
+    return JSONResponse(result)
+
+
+@app.post("/session-key/revoke")
+async def post_session_key_revoke(
+    wallet_address: str = Depends(require_wallet_address),
+) -> JSONResponse:
+    worker = await supervisor.get_or_create(wallet_address)
+    result = await worker.request("revokeSessionKey", {})
+    return JSONResponse(result)
+
+
 @app.websocket("/ws")
 async def ws_endpoint(
     websocket: WebSocket,

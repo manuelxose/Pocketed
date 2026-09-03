@@ -73,3 +73,39 @@ def test_two_store_instances_racing_consume_under_real_concurrency(tmp_path):
     t2.join()
 
     assert sorted(results.values()) == [False, True]
+
+
+import os
+
+from webserver._store_common import redis_client_from_env
+from webserver.nonce_store import RedisNonceStore
+
+requires_redis = pytest.mark.skipif(
+    "POCKETED_REDIS_URL" not in os.environ,
+    reason="set POCKETED_REDIS_URL to a reachable Redis to run this test",
+)
+
+
+@requires_redis
+def test_redis_store_consume_succeeds_exactly_once():
+    client = redis_client_from_env()
+    store = RedisNonceStore(client)
+    nonce = store.issue()
+    assert store.consume(nonce) is True
+    assert store.consume(nonce) is False
+
+
+@requires_redis
+def test_two_redis_clients_only_let_one_consumer_win():
+    """Stands in for two separate gateway *processes* against the same
+    Redis — this is acceptance criterion F for the real multi-instance
+    backend, not just the SQLite same-host proxy from Task 1."""
+    client_a = redis_client_from_env()
+    client_b = redis_client_from_env()
+    store_a = RedisNonceStore(client_a)
+    store_b = RedisNonceStore(client_b)
+    nonce = store_a.issue()
+
+    results = [store_a.consume(nonce), store_b.consume(nonce)]
+
+    assert sorted(results) == [False, True]

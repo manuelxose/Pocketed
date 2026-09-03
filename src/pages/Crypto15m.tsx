@@ -13,6 +13,7 @@ import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
 import { useCrypto15mSnapshotQuery, useCrypto15mStatusQuery } from '../hooks/useCrypto15m';
+import { useDisclaimerGate } from '../hooks/useOnboarding';
 
 const POLL_MS = 2500;
 
@@ -49,6 +50,7 @@ export function Crypto15mPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<number | null>(null);
+  const requireDisclaimer = useDisclaimerGate();
 
   async function load() {
     try {
@@ -83,11 +85,11 @@ export function Crypto15mPage() {
   }
 
   async function toggleEnabled(next: boolean) {
-    if (next && !window.confirm(
+    if (next && !(await requireDisclaimer(
       'Enable the 15-minute crypto executor?\n\nIt will place REAL orders with your '
       + 'Polymarket balance whenever your wallet is connected. This runs independently '
       + 'of the main bot. There is no paper mode.',
-    )) return;
+    ))) return;
     await patchAndReload({ crypto15mEnabled: next });
   }
 

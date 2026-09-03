@@ -1,14 +1,28 @@
 from __future__ import annotations
 
+import os
 import secrets
 import time
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 import jwt
 from siwe import SiweMessage, VerificationError
 
 NONCE_TTL_SECONDS = 5 * 60
-SESSION_TTL_SECONDS = 24 * 60 * 60
+# Overridable only for deterministic E2E/integration testing (e.g. exercising
+# session-expiry rejection without a real 24h wait). Never set in production —
+# nothing here weakens the check itself, only how long a valid token lasts.
+SESSION_TTL_SECONDS = int(os.environ.get("POCKETED_SESSION_TTL_SECONDS", 24 * 60 * 60))
+
+# EIP-155 chain IDs this deployment accepts SIWE sign-ins for. Polygon
+# mainnet (137) is Pocketed's only supported chain today (see CTF_EXCHANGE_V2
+# constants in webserver/main.py); override via env for staging/testnets
+# (e.g. "80002" for Polygon Amoy) — never left open ("any chain accepted")
+# since that would let a message signed for an unrelated chain authenticate.
+_ALLOWED_CHAIN_IDS = {
+    int(c) for c in os.environ.get("POCKETED_SIWE_CHAIN_IDS", "137").split(",") if c.strip()
+}
 
 # MVP: in-process nonce store. A restart or a multi-instance deployment
 # invalidates outstanding nonces — acceptable for a single-process Fase 1
@@ -39,10 +53,19 @@ def _consume_nonce(nonce: str) -> bool:
     return exp is not None and exp >= time.monotonic()
 
 
-def verify_siwe(message: str, signature: str) -> str:
+def verify_siwe(message: str, signature: str, *, expected_domain: str) -> str:
     """Verify a signed SIWE (EIP-4361) message. Returns the wallet address on
     success. Raises AuthError on any failure — bad signature, malformed
-    message, or a nonce we didn't issue / already consumed."""
+    message, wrong domain/URI/chain, or a nonce we didn't issue / already used.
+
+    `expected_domain` is the Host this request actually arrived on (or an
+    operator-configured public domain — see POCKETED_SIWE_DOMAINS in
+    webserver/main.py). Without pinning `domain` (and `uri`'s host, which
+    EIP-4361 requires to match `domain`) an attacker could relay a SIWE
+    message the user signed for a *different* site — siwe's own `.verify()`
+    only checks domain/nonce/expiry when explicitly told to, so every check
+    below is deliberate, not redundant with the library.
+    """
     try:
         siwe_message = SiweMessage.from_message(message)
     except Exception as e:
@@ -51,8 +74,18 @@ def verify_siwe(message: str, signature: str) -> str:
     if not _consume_nonce(siwe_message.nonce):
         raise AuthError("nonce missing, expired, or already used")
 
+    if siwe_message.chain_id not in _ALLOWED_CHAIN_IDS:
+        raise AuthError(
+            f"chain_id {siwe_message.chain_id} is not accepted "
+            f"(allowed: {sorted(_ALLOWED_CHAIN_IDS)})"
+        )
+
+    uri_host = urlsplit(siwe_message.uri).netloc
+    if uri_host != siwe_message.domain:
+        raise AuthError("SIWE uri does not match SIWE domain")
+
     try:
-        siwe_message.verify(signature)
+        siwe_message.verify(signature, domain=expected_domain)
     except VerificationError as e:
         raise AuthError(f"signature verification failed: {e}") from e
     except Exception as e:

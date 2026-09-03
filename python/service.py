@@ -135,7 +135,12 @@ async def _send(obj: dict) -> None:
 
 
 async def emit_event(name: str, data: Any = None) -> None:
-    await _send({"type": "event", "name": name, "data": data})
+    # Wire contract: {"type": "event", "event": <name>, "data": <any>} —
+    # must match the key the frontend reads (src/lib/ws-client.ts's
+    # handleMessage uses msg.event, not msg.name) and the gateway's own
+    # synthetic events (webserver/main.py backend:startError,
+    # webserver/supervisor.py backend:workerExited).
+    await _send({"type": "event", "event": name, "data": data})
 
 
 async def respond_ok(req_id: str, result: Any = None) -> None:

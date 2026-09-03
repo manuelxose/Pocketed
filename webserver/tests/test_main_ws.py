@@ -90,13 +90,45 @@ def test_verify_endpoint_rejects_bad_signature(client):
 
 
 def test_ws_requires_session_cookie(client):
-    with client.websocket_connect("/ws") as ws:
+    with client.websocket_connect("/ws", headers={"origin": "http://testserver"}) as ws:
         with pytest.raises(Exception):
             ws.receive_json()
 
 
+def test_ws_rejects_missing_origin(client):
+    _, session_cookie = _login(client)
+    with pytest.raises(Exception):
+        with client.websocket_connect(
+            "/ws", headers={"cookie": f"{main_module.SESSION_COOKIE_NAME}={session_cookie}"}
+        ):
+            pass
+
+
+def test_ws_rejects_cross_site_origin(client):
+    """A cookie-authenticated WS is exactly what a malicious third-party
+    page could try to ride on (the browser attaches cookies regardless of
+    which page opened the connection) — Origin pinning is what stops it."""
+    _, session_cookie = _login(client)
+    with pytest.raises(Exception):
+        with client.websocket_connect(
+            "/ws",
+            headers={
+                "cookie": f"{main_module.SESSION_COOKIE_NAME}={session_cookie}",
+                "origin": "http://evil.example",
+            },
+        ):
+            pass
+
+
 def _ws_cookie_header(session_cookie: str) -> dict:
-    return {"cookie": f"{main_module.SESSION_COOKIE_NAME}={session_cookie}"}
+    # Origin must match the gateway's own same-origin default (see
+    # webserver/main.py::_ws_origin_allowed) — TestClient.websocket_connect
+    # builds a ws://testserver/... URL regardless of base_url, so that's the
+    # Origin a real browser page served from this same gateway would send.
+    return {
+        "cookie": f"{main_module.SESSION_COOKIE_NAME}={session_cookie}",
+        "origin": "http://testserver",
+    }
 
 
 def _receive_rpc_reply(ws, expected_id: str) -> dict:
@@ -125,3 +157,24 @@ def test_ws_blocks_phase1_disabled_trading_methods(client):
         reply = _receive_rpc_reply(ws, "2")
         assert reply["ok"] is False
         assert "Fase 2" in reply["error"]
+
+
+def test_ws_worker_start_error_uses_event_field_not_name(client, monkeypatch):
+    """Regression guard for the name/event wire-format mismatch: the
+    frontend (src/lib/ws-client.ts) reads msg.event, not msg.name. Every
+    gateway- and worker-generated push event must use the "event" key."""
+    from webserver.supervisor import WorkerStartError
+
+    _, session_cookie = _login(client)
+
+    async def _boom(user_id):
+        raise WorkerStartError("backend script not found")
+
+    monkeypatch.setattr(main_module.supervisor, "get_or_create", _boom)
+
+    with client.websocket_connect("/ws", headers=_ws_cookie_header(session_cookie)) as ws:
+        msg = ws.receive_json()
+        assert msg["type"] == "event"
+        assert msg["event"] == "backend:startError"
+        assert "name" not in msg
+        assert "backend script not found" in msg["data"]["error"]

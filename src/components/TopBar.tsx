@@ -1,9 +1,11 @@
+import { Loader2, LogIn, Wallet } from 'lucide-react';
 import { ShareButton } from './common';
 import { BossWidget } from './BossFight';
 import { cls, fmtPct, fmtUsd } from '../utils/format';
 import { useConfigQuery } from '../hooks/useConfig';
 import { useAccountQuery } from '../hooks/useAccountData';
 import { useBackendConnectionStatus } from '../hooks/useTrading';
+import { useAuthSession } from '../state/AuthGate';
 
 const ENGINES: { key: 'main' | 'crypto' | 'copy' | 'scripts'; label: string }[] = [
   { key: 'main', label: 'Main' },
@@ -63,6 +65,7 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <SessionButton />
         <BossWidget />
         <div className="hidden items-center gap-3 px-3 md:flex">
           <Stat label="Balance" value={fmtUsd(account?.totalUsd ?? 0)} />
@@ -93,6 +96,37 @@ export function TopBar() {
         </div>
       </div>
     </header>
+  );
+}
+
+/**
+ * Non-blocking session indicator. Browsing Pocketed never requires signing
+ * in — this just offers to personalize/save your config to an account.
+ */
+function SessionButton() {
+  const { status, login } = useAuthSession();
+
+  if (status === 'checking' || status === 'loggedIn') return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => void login()}
+      disabled={status === 'loggingIn'}
+      title="Sign in to save your config to an account (optional — Pocketed works without it)"
+      className="flex items-center gap-1.5 rounded-md border border-pocketed-border bg-pocketed-surface2 px-2.5 py-1.5 text-xs font-medium text-pocketed-muted transition-colors hover:border-pocketed-purple/40 hover:text-white"
+    >
+      {status === 'loggingIn' ? (
+        <>
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Confirm in wallet…
+        </>
+      ) : (
+        <>
+          {status === 'error' ? <Wallet className="h-3.5 w-3.5" /> : <LogIn className="h-3.5 w-3.5" />}
+          Sign in
+        </>
+      )}
+    </button>
   );
 }
 

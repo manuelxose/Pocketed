@@ -6,8 +6,10 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
-from fastapi import Cookie, Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -18,12 +20,27 @@ from webserver.supervisor import Supervisor, WorkerStartError
 logger = logging.getLogger("webserver.main")
 
 SESSION_COOKIE_NAME = "kpb_session"
+
+# APP_ENV gates how strict startup is. Production must always supply a real
+# secret; anything else (unset, "development", "test", ...) gets a clearly
+# labeled dev-only fallback so `npm run dev` works out of the box without
+# ever weakening the production check below.
+APP_ENV = os.environ.get("APP_ENV", "development")
+_DEV_INSECURE_SESSION_SECRET = "dev-insecure-session-secret-do-not-use-in-prod"
+
 SESSION_SECRET = os.environ.get("POCKETED_SESSION_SECRET")
 if not SESSION_SECRET:
-    raise RuntimeError(
-        "POCKETED_SESSION_SECRET must be set — refusing to sign "
-        "sessions with a default secret."
+    if APP_ENV == "production":
+        raise RuntimeError(
+            "POCKETED_SESSION_SECRET must be set — refusing to sign "
+            "sessions with a default secret."
+        )
+    logger.warning(
+        "POCKETED_SESSION_SECRET not set — using an insecure development "
+        "default. Set POCKETED_SESSION_SECRET (and APP_ENV=production) "
+        "before deploying."
     )
+    SESSION_SECRET = _DEV_INSECURE_SESSION_SECRET
 
 DATA_ROOT = Path(
     os.environ.get(
@@ -32,11 +49,18 @@ DATA_ROOT = Path(
     )
 )
 
+# ERC-4337 (aa-service/bundler/paymaster) is optional infrastructure. The
+# gateway, /ws, worker RPCs, config/profiles/onboarding and everything else
+# must work without it. AA-specific routes below already call into
+# `webserver.aa`, whose `_resolve_base_url` raises `AAServiceError` when this
+# is unset — the routes map that to a 503, which is the correct behavior for
+# "capability unavailable", not a reason to refuse to start the gateway.
 AA_SERVICE_URL = os.environ.get(aa.AA_SERVICE_URL_ENV)
 if not AA_SERVICE_URL:
-    raise RuntimeError(
-        f"{aa.AA_SERVICE_URL_ENV} must be set — refusing to start without the "
-        "ERC-4337 sidecar configured"
+    logger.warning(
+        "%s not set — ERC-4337 routes (/aa/*, /session-key/*) will return "
+        "503 until the aa-service sidecar is configured.",
+        aa.AA_SERVICE_URL_ENV,
     )
 
 # Fase 1 explicitly excludes order signing/execution (see spec). Any RPC
@@ -47,7 +71,84 @@ _TRADING_METHODS_DISABLED_PHASE1 = {
     "cancelAllOpen", "flatten",
 }
 
-supervisor = Supervisor(DATA_ROOT)
+# --- Origin / CORS configuration ----------------------------------------
+#
+# In the normal deployment shape (dev: Vite proxies /auth,/ws,... to this
+# process — see vite.config.ts; prod: this same FastAPI process serves the
+# built dist/ — see the static-serving block at the bottom of this file)
+# every request is same-origin, so no cross-origin allowance is needed and
+# the default here is deliberately empty (CORSMiddleware below then denies
+# cross-origin requests, matching the app's actual architecture). Set
+# POCKETED_ALLOWED_ORIGINS (comma-separated, e.g.
+# "https://app.pocketed.online") only for a deployment that genuinely serves
+# the frontend from a different origin than this gateway.
+_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("POCKETED_ALLOWED_ORIGINS", "").split(",") if o.strip()
+]
+
+# SIWE `domain` pinning (see webserver/auth.py's verify_siwe docstring).
+# Defaults to "derive from this request's own Host header" — correct for
+# the same-origin shapes above. Set POCKETED_SIWE_DOMAINS (comma-separated
+# host[:port] values, no scheme) when a reverse proxy rewrites Host, or to
+# accept sign-ins addressed to more than one public hostname.
+_SIWE_DOMAINS_OVERRIDE = {
+    d.strip() for d in os.environ.get("POCKETED_SIWE_DOMAINS", "").split(",") if d.strip()
+}
+
+
+def _expected_siwe_domain(request: Request) -> str:
+    """The `domain` a SIWE message signed for *this* request must carry.
+
+    Prefers the browser's own `Origin` header over `Host`: in local dev,
+    Vite's proxy (vite.config.ts) forwards `/auth/*` to this gateway on a
+    different port and — like most dev proxies — rewrites `Host` to the
+    proxy target rather than preserving the page's real origin, so pinning
+    against `Host` here would reject every real browser login in dev even
+    though nothing suspicious happened. `Origin` isn't rewritten by the
+    proxy and is exactly "the page that made this request", which is what
+    SIWE's `domain` field is meant to pin against in the first place (see
+    verify_siwe's docstring). Falls back to `Host` only when no Origin was
+    sent (e.g. a same-site GET, or a non-browser caller).
+    """
+    origin = request.headers.get("origin")
+    host = urlsplit(origin).netloc if origin else request.headers.get("host", "")
+    if _SIWE_DOMAINS_OVERRIDE and host not in _SIWE_DOMAINS_OVERRIDE:
+        # Host didn't match an explicit allowlist: keep the check meaningful
+        # (fail closed) rather than silently falling back to trusting it.
+        return next(iter(_SIWE_DOMAINS_OVERRIDE))
+    return host
+
+
+def _is_request_secure(request: Request) -> bool:
+    """True if this request arrived over TLS, honoring a reverse proxy's
+    X-Forwarded-Proto (Starlette's own `request.url.scheme` only reflects
+    the proxy-to-gateway hop, which is typically plain HTTP behind a TLS
+    terminator)."""
+    forwarded = request.headers.get("x-forwarded-proto")
+    if forwarded:
+        return forwarded.split(",")[0].strip().lower() == "https"
+    return request.url.scheme == "https"
+
+
+def _set_session_cookie(resp: JSONResponse, token: str, *, secure: bool) -> None:
+    resp.set_cookie(
+        SESSION_COOKIE_NAME, token,
+        httponly=True, secure=secure, samesite="lax", path="/",
+        max_age=auth.SESSION_TTL_SECONDS,
+    )
+
+
+# Test-only override so E2E/integration runs can point every new worker at a
+# deterministic fixture (e.g. webserver/tests/fixtures/dummy_worker.py)
+# instead of spawning the real python/service.py trading engine. Unset in
+# every real deployment, where this is a no-op and Supervisor uses its own
+# default (python/service.py) exactly as before.
+_WORKER_SCRIPT_OVERRIDE = os.environ.get("POCKETED_WORKER_SCRIPT")
+
+supervisor = Supervisor(
+    DATA_ROOT,
+    script_path=Path(_WORKER_SCRIPT_OVERRIDE) if _WORKER_SCRIPT_OVERRIDE else None,
+)
 
 
 @asynccontextmanager
@@ -57,6 +158,35 @@ async def _lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Pocketed webapp gateway", lifespan=_lifespan)
+
+if _ALLOWED_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_ALLOWED_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
+        allow_headers=["Content-Type"],
+    )
+
+
+@app.get("/health")
+async def health() -> JSONResponse:
+    """Process-alive liveness check. Never depends on optional
+    infrastructure (AA/bundler/paymaster) — a dev launcher or deployment
+    orchestrator polls this to know the gateway itself is up."""
+    return JSONResponse({"status": "ok"})
+
+
+@app.get("/ready")
+async def ready() -> JSONResponse:
+    """Readiness check that also reports optional-subsystem status.
+    `aa_configured: false` is a normal, healthy value — it must never make
+    this endpoint fail, since the web app works without ERC-4337."""
+    return JSONResponse({
+        "status": "ok",
+        "aa_configured": bool(AA_SERVICE_URL),
+        "workers": len(supervisor.workers),
+    })
 
 
 class NonceResponse(BaseModel):
@@ -74,9 +204,13 @@ class VerifyRequest(BaseModel):
 
 
 @app.post("/auth/verify")
-async def verify(body: VerifyRequest, kpb_session: str | None = Cookie(default=None)) -> JSONResponse:
+async def verify(
+    body: VerifyRequest, request: Request, kpb_session: str | None = Cookie(default=None)
+) -> JSONResponse:
     try:
-        address = auth.verify_siwe(body.message, body.signature)
+        address = auth.verify_siwe(
+            body.message, body.signature, expected_domain=_expected_siwe_domain(request)
+        )
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
 
@@ -89,11 +223,21 @@ async def verify(body: VerifyRequest, kpb_session: str | None = Cookie(default=N
         token = auth.create_session_token([address], active=address, secret=SESSION_SECRET)
 
     resp = JSONResponse({"walletAddress": address})
-    resp.set_cookie(
-        SESSION_COOKIE_NAME, token,
-        httponly=True, secure=True, samesite="lax",
-        max_age=auth.SESSION_TTL_SECONDS,
-    )
+    _set_session_cookie(resp, token, secure=_is_request_secure(request))
+    return resp
+
+
+@app.post("/auth/logout")
+async def logout(request: Request) -> JSONResponse:
+    """Clear the session cookie in the browser. The session token is a
+    stateless signed JWT (no server-side session store), so this cannot
+    revoke a copy of the token an attacker already exfiltrated before its
+    natural expiry — see the SESSION_TTL_SECONDS-bounded blast radius in the
+    architecture writeup. It does correctly end the *browser's* session:
+    the cookie is gone, so neither the app's own fetches nor a new /ws
+    connection can present it again."""
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(SESSION_COOKIE_NAME, path="/", samesite="lax", secure=_is_request_secure(request))
     return resp
 
 
@@ -103,7 +247,7 @@ class SwitchWalletRequest(BaseModel):
 
 @app.post("/auth/switch")
 async def switch_wallet(
-    body: SwitchWalletRequest, kpb_session: str | None = Cookie(default=None)
+    body: SwitchWalletRequest, request: Request, kpb_session: str | None = Cookie(default=None)
 ) -> JSONResponse:
     if not kpb_session:
         raise HTTPException(status_code=401, detail="no active session")
@@ -112,11 +256,7 @@ async def switch_wallet(
     except auth.AuthError as e:
         raise HTTPException(status_code=403, detail=str(e)) from e
     resp = JSONResponse({"walletAddress": body.address})
-    resp.set_cookie(
-        SESSION_COOKIE_NAME, token,
-        httponly=True, secure=True, samesite="lax",
-        max_age=auth.SESSION_TTL_SECONDS,
-    )
+    _set_session_cookie(resp, token, secure=_is_request_secure(request))
     return resp
 
 
@@ -493,11 +633,44 @@ async def _push_config_to_worker(wallet_address: str, cfg: dict) -> None:
             pass
 
 
+def _ws_origin_allowed(websocket: WebSocket) -> bool:
+    """Reject a WS upgrade whose Origin header doesn't match this gateway's
+    own same-origin default or an explicitly configured cross-origin
+    frontend (POCKETED_ALLOWED_ORIGINS). A cookie-authenticated WebSocket is
+    exactly the kind of request CSRF-style cross-site abuse targets — the
+    browser attaches the session cookie automatically regardless of which
+    page opened the connection, so Origin is the only thing standing between
+    a same-site session and a page on an unrelated site silently riding it.
+    Browsers always send Origin on a WS handshake; a request with no Origin
+    header at all is not a browser page load and is rejected too.
+    """
+    origin = websocket.headers.get("origin")
+    if not origin:
+        return False
+    if origin in _ALLOWED_ORIGINS:
+        return True
+    host = websocket.headers.get("host", "")
+    forwarded = websocket.headers.get("x-forwarded-proto")
+    secure = (
+        forwarded.split(",")[0].strip().lower() == "https"
+        if forwarded
+        else websocket.url.scheme == "wss"
+    )
+    same_origin = f"{'https' if secure else 'http'}://{host}"
+    return origin == same_origin
+
+
 @app.websocket("/ws")
 async def ws_endpoint(
     websocket: WebSocket,
     kpb_session: str | None = Cookie(default=None),
 ) -> None:
+    if not _ws_origin_allowed(websocket):
+        # Reject before accept() so the handshake itself fails (the browser
+        # never sees a usable socket) rather than accepting and then closing.
+        await websocket.close(code=4403)
+        return
+
     await websocket.accept()
 
     try:
@@ -510,7 +683,7 @@ async def ws_endpoint(
         worker = await supervisor.get_or_create(wallet_address)
     except WorkerStartError as e:
         await websocket.send_json(
-            {"type": "event", "name": "backend:startError", "data": {"error": str(e)}}
+            {"type": "event", "event": "backend:startError", "data": {"error": str(e)}}
         )
         await websocket.close(code=1011)
         return

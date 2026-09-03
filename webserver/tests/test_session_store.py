@@ -60,6 +60,13 @@ def test_touch_of_unknown_sid_raises(store):
         store.touch("never-created", wallets=["0xAAA"], active="0xAAA", ttl_seconds=60)
 
 
+def test_touch_of_expired_session_raises(store):
+    sid, _jti = store.create(["0xAAA"], "0xAAA", ttl_seconds=0)
+    time.sleep(0.01)
+    with pytest.raises(SessionNotFound):
+        store.touch(sid, wallets=["0xAAA"], active="0xAAA", ttl_seconds=60)
+
+
 def test_survives_reopening_the_same_db_file(tmp_path):
     """Proxy for 'revocation survives process restart' — a fresh
     SqliteSessionStore instance opened against the same file must see the
@@ -159,5 +166,15 @@ def test_redis_touch_of_revoked_session_raises():
     store = RedisSessionStore(client)
     sid, _jti = store.create(["0xAAA"], "0xAAA", ttl_seconds=60)
     store.revoke(sid)
+    with pytest.raises(SessionNotFound):
+        store.touch(sid, wallets=["0xAAA"], active="0xAAA", ttl_seconds=60)
+
+
+@requires_redis
+def test_redis_touch_of_expired_session_raises():
+    client = redis_client_from_env()
+    store = RedisSessionStore(client)
+    sid, _jti = store.create(["0xAAA"], "0xAAA", ttl_seconds=0)
+    time.sleep(0.5)  # Redis EX is second-granularity; give the key time to expire
     with pytest.raises(SessionNotFound):
         store.touch(sid, wallets=["0xAAA"], active="0xAAA", ttl_seconds=60)

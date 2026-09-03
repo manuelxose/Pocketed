@@ -14,6 +14,19 @@ os.environ.setdefault(
 os.environ.setdefault("POCKETED_AA_SERVICE_URL", "http://aa-service.test")
 
 
+@pytest.fixture(autouse=True)
+def _isolated_auth_stores(tmp_path, monkeypatch):
+    """Every webserver test gets its own SQLite-backed nonce/session store
+    file under tmp_path — never shared between tests, and never the real
+    python/data/webapp/auth/ a developer's own `npm run dev` would use."""
+    from webserver import auth
+    from webserver.nonce_store import SqliteNonceStore
+    from webserver.session_store import SqliteSessionStore
+
+    monkeypatch.setattr(auth, "_nonce_store", SqliteNonceStore(tmp_path / "nonces.db"))
+    monkeypatch.setattr(auth, "_session_store", SqliteSessionStore(tmp_path / "sessions.db"))
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _windows_proactor_event_loop_policy():
     # asyncio.create_subprocess_exec needs the Proactor loop on Windows.

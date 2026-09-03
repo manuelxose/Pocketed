@@ -1,0 +1,32 @@
+# infra/reverse-proxy/docker-compose.yml
+services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: infra/reverse-proxy/Dockerfile.gateway
+    environment:
+      APP_ENV: test
+      POCKETED_SESSION_SECRET: e2e-test-session-secret-not-for-production-use-only
+      POCKETED_WORKER_SCRIPT: /app/webserver/tests/fixtures/dummy_worker.py
+      POCKETED_SIWE_CHAIN_IDS: "1337"
+      POCKETED_SIWE_DOMAINS: "localhost:8443"
+      POCKETED_ALLOWED_ORIGINS: "https://localhost:8443"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      gateway:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../e2e/certs/.gen:/certs:ro
+    ports:
+      - "8443:8443"

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import os
-import secrets
-import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
 import jwt
 from siwe import SiweMessage, VerificationError
 
-NONCE_TTL_SECONDS = 5 * 60
+from webserver.nonce_store import NonceStore, create_nonce_store
+from webserver.session_store import SessionNotFound, SessionStore, create_session_store
+
 # Overridable only for deterministic E2E/integration testing (e.g. exercising
 # session-expiry rejection without a real 24h wait). Never set in production —
 # nothing here weakens the check itself, only how long a valid token lasts.
@@ -24,11 +24,8 @@ _ALLOWED_CHAIN_IDS = {
     int(c) for c in os.environ.get("POCKETED_SIWE_CHAIN_IDS", "137").split(",") if c.strip()
 }
 
-# MVP: in-process nonce store. A restart or a multi-instance deployment
-# invalidates outstanding nonces — acceptable for a single-process Fase 1
-# foundation; move to a shared store (e.g. Redis) before Fase 4 scales past
-# one gateway process.
-_nonces: dict[str, float] = {}
+_nonce_store: NonceStore = create_nonce_store()
+_session_store: SessionStore = create_session_store()
 
 
 class AuthError(Exception):
@@ -36,21 +33,11 @@ class AuthError(Exception):
 
 
 def generate_nonce() -> str:
-    nonce = secrets.token_hex(16)
-    _nonces[nonce] = time.monotonic() + NONCE_TTL_SECONDS
-    _prune_nonces()
-    return nonce
-
-
-def _prune_nonces() -> None:
-    now = time.monotonic()
-    for n in [n for n, exp in _nonces.items() if exp < now]:
-        _nonces.pop(n, None)
+    return _nonce_store.issue()
 
 
 def _consume_nonce(nonce: str) -> bool:
-    exp = _nonces.pop(nonce, None)
-    return exp is not None and exp >= time.monotonic()
+    return _nonce_store.consume(nonce)
 
 
 def verify_siwe(message: str, signature: str, *, expected_domain: str) -> str:
@@ -97,15 +84,25 @@ def verify_siwe(message: str, signature: str, *, expected_domain: str) -> str:
     return siwe_message.address
 
 
-def create_session_token(wallets: list[str], *, active: str, secret: str) -> str:
+def _sign(wallets: list[str], active: str, *, sid: str, jti: str, secret: str) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "wallets": wallets,
         "active": active,
+        "sid": sid,
+        "jti": jti,
         "iat": now,
         "exp": now + timedelta(seconds=SESSION_TTL_SECONDS),
     }
     return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def create_session_token(
+    wallets: list[str], *, active: str, secret: str, store: SessionStore | None = None
+) -> str:
+    store = store or _session_store
+    sid, jti = store.create(wallets, active, ttl_seconds=SESSION_TTL_SECONDS)
+    return _sign(wallets, active, sid=sid, jti=jti, secret=secret)
 
 
 def decode_session_token(token: str, *, secret: str) -> dict:
@@ -115,21 +112,54 @@ def decode_session_token(token: str, *, secret: str) -> dict:
         raise AuthError(f"invalid session token: {e}") from e
     wallets = payload.get("wallets")
     active = payload.get("active")
-    if not wallets or not active:
-        raise AuthError("session token missing wallets/active")
-    return {"wallets": wallets, "active": active}
+    sid = payload.get("sid")
+    if not wallets or not active or not sid:
+        raise AuthError("session token missing wallets/active/sid")
+    return {"wallets": wallets, "active": active, "sid": sid, "jti": payload.get("jti")}
 
 
-def add_wallet_to_session(token: str, new_wallet: str, *, secret: str) -> str:
+def session_is_active(sid: str, *, store: SessionStore | None = None) -> bool:
+    store = store or _session_store
+    return store.is_active(sid)
+
+
+def add_wallet_to_session(
+    token: str, new_wallet: str, *, secret: str, store: SessionStore | None = None
+) -> str:
+    store = store or _session_store
     payload = decode_session_token(token, secret=secret)
     wallets = payload["wallets"]
     if new_wallet not in wallets:
         wallets = [*wallets, new_wallet]
-    return create_session_token(wallets, active=new_wallet, secret=secret)
+    try:
+        jti = store.touch(payload["sid"], wallets=wallets, active=new_wallet, ttl_seconds=SESSION_TTL_SECONDS)
+    except SessionNotFound as e:
+        raise AuthError("session no longer active") from e
+    return _sign(wallets, new_wallet, sid=payload["sid"], jti=jti, secret=secret)
 
 
-def switch_active_wallet(token: str, wallet: str, *, secret: str) -> str:
+def switch_active_wallet(
+    token: str, wallet: str, *, secret: str, store: SessionStore | None = None
+) -> str:
+    store = store or _session_store
     payload = decode_session_token(token, secret=secret)
     if wallet not in payload["wallets"]:
         raise AuthError(f"wallet {wallet} is not linked to this session")
-    return create_session_token(payload["wallets"], active=wallet, secret=secret)
+    try:
+        jti = store.touch(
+            payload["sid"], wallets=payload["wallets"], active=wallet, ttl_seconds=SESSION_TTL_SECONDS
+        )
+    except SessionNotFound as e:
+        raise AuthError("session no longer active") from e
+    return _sign(payload["wallets"], wallet, sid=payload["sid"], jti=jti, secret=secret)
+
+
+def revoke_session(token: str, *, secret: str, store: SessionStore | None = None) -> None:
+    """Best-effort: a missing/garbled cookie is not an error (matches the
+    pre-existing /auth/logout behavior of always succeeding)."""
+    store = store or _session_store
+    try:
+        payload = decode_session_token(token, secret=secret)
+    except AuthError:
+        return
+    store.revoke(payload["sid"])

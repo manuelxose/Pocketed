@@ -229,4 +229,59 @@ test.describe('SIWE wallet login -> authenticated WSS -> RPC', () => {
     );
     expect(closeCode).toBe(4401);
   });
+
+  test('logout revokes the session: a captured token can no longer authenticate over HTTP or WS', async ({
+    page,
+    context,
+  }) => {
+    await login(page);
+    const cookies = await page.context().cookies();
+    const capturedToken = cookies.find((c) => c.name === SESSION_COOKIE_NAME)!.value;
+
+    const logoutStatus = await page.evaluate(() =>
+      fetch('/auth/logout', { method: 'POST' }).then((r) => r.status),
+    );
+    expect(logoutStatus).toBe(200);
+
+    // Re-attach the captured (now-revoked) token — simulating an attacker who
+    // exfiltrated it before logout — and prove it no longer authenticates.
+    await context.addCookies([
+      {
+        name: SESSION_COOKIE_NAME,
+        value: capturedToken,
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+    ]);
+
+    const sessionStatus = await page.evaluate(() => fetch('/auth/session').then((r) => r.status));
+    expect(sessionStatus, 'a captured token must not authenticate over HTTP after logout').toBe(401);
+
+    const closeCode = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          const ws = new WebSocket(`ws://${window.location.host}/ws`);
+          ws.onclose = (e) => resolve(e.code);
+        }),
+    );
+    expect(closeCode, 'a captured token must not open a new WS after logout').toBe(4401);
+  });
+
+  test('logout closes an already-open WebSocket for that session', async ({ page }) => {
+    await login(page);
+
+    const closeCode = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          const ws = new WebSocket(`ws://${window.location.host}/ws`);
+          ws.onopen = () => {
+            fetch('/auth/logout', { method: 'POST' });
+          };
+          ws.onclose = (e) => resolve(e.code);
+        }),
+    );
+    expect(closeCode, 'an open socket must be closed once its session is revoked').toBe(4402);
+  });
 });

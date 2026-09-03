@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AUTH_REQUIRED_CLOSE_CODE, WsClient, WsDisconnected } from './ws-client';
+import { AUTH_REQUIRED_CLOSE_CODE, SESSION_REVOKED_CLOSE_CODE, WsClient, WsDisconnected } from './ws-client';
 
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
@@ -202,6 +202,23 @@ describe('WsClient', () => {
     sock.triggerOpen();
 
     sock.close(AUTH_REQUIRED_CLOSE_CODE);
+    expect(client.getState()).toBe('auth-required');
+    vi.advanceTimersByTime(30000);
+    expect(MockWebSocket.instances.length).toBe(1);
+    expect(states).toContain('auth-required');
+    vi.useRealTimers();
+  });
+
+  it('close code 4402 (session revoked) surfaces auth-required and does not reconnect', () => {
+    vi.useFakeTimers();
+    const client = new WsClient('ws://test');
+    const states: string[] = [];
+    client.onStateChange((s) => states.push(s));
+    client.connect();
+    const sock = MockWebSocket.instances[0];
+    sock.triggerOpen();
+
+    sock.close(SESSION_REVOKED_CLOSE_CODE);
     expect(client.getState()).toBe('auth-required');
     vi.advanceTimersByTime(30000);
     expect(MockWebSocket.instances.length).toBe(1);

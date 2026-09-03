@@ -6,84 +6,122 @@ on:
   pull_request:
 
 jobs:
-  build:
+  unit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install Node dependencies
         run: npm install
-
       - name: TypeScript typecheck
         run: npm run typecheck
-
+      - name: Run frontend tests
+        run: npm test
       - name: Install Python test dependencies
         run: pip install -r python/requirements-dev.txt
-
       - name: Run Python tests
         working-directory: python
         run: python -m pytest -q
 
+  backend-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        store: [sqlite, redis]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Redis (host package, not docker-compose)
+        if: matrix.store == 'redis'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+          redis-server --daemonize yes
       - name: Install webserver test dependencies
         run: pip install -r webserver/requirements.txt
-
-      - name: Run webserver tests
+      - name: Run webserver tests (${{ matrix.store }} store backend)
         working-directory: webserver
+        env:
+          POCKETED_SESSION_STORE: ${{ matrix.store }}
+          POCKETED_NONCE_STORE: ${{ matrix.store }}
+          POCKETED_REDIS_URL: ${{ matrix.store == 'redis' && 'redis://127.0.0.1:6379/0' || '' }}
         run: python -m pytest tests/ -q
 
-      - name: Run frontend tests
-        run: npm test
-
-  e2e:
+  e2e-http:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install Node dependencies
         run: npm install
-
-      # Only the gateway's own deps are needed — the E2E harness points every
-      # spawned worker at webserver/tests/fixtures/dummy_worker.py (via
-      # POCKETED_WORKER_SCRIPT, set in e2e/playwright.config.ts), never at
-      # python/service.py, so python/requirements-dev.txt's real trading
-      # dependencies (py_clob_client_v2, keyring, ...) aren't needed here.
       - name: Install webserver dependencies
         run: pip install -r webserver/requirements.txt
-
       - name: Install Playwright's Chromium
         run: npx playwright install --with-deps chromium
-
-      # Deterministic, publicly-known test-only wallet + a short-lived
-      # gateway/frontend pair on non-default ports (see
-      # e2e/fixtures/test-wallet.ts and e2e/playwright.config.ts) — no
-      # secrets, no real network, no manual interaction.
-      - name: Run wallet -> SIWE -> WSS -> RPC E2E suite
+      - name: Run wallet -> SIWE -> WS -> RPC E2E suite (A, C)
         run: npm run test:e2e
-
-      - name: Upload Playwright report
-        if: always()
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-http
           path: e2e/playwright-report/
+          retention-days: 14
+
+  e2e-tls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Node dependencies
+        run: npm install
+      - name: Install webserver dependencies
+        run: pip install -r webserver/requirements.txt
+      - name: Install Playwright's Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run HTTPS/WSS + malicious-origin E2E suite (B, C)
+        run: npm run test:e2e:tls
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-tls
+          path: e2e/playwright-report-tls/
+          retention-days: 14
+
+  e2e-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Node dependencies
+        run: npm install
+      - name: Build frontend (dist/ is baked into the gateway's Docker image)
+        run: npm run build
+      - name: Install Playwright's Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E suite through the dockerized nginx reverse proxy (B)
+        run: npm run test:e2e:proxy
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-proxy
+          path: e2e/playwright-report-proxy/
           retention-days: 14

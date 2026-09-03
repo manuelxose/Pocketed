@@ -1,0 +1,14 @@
+# infra/reverse-proxy/Dockerfile.gateway
+# Built from the repo root (see docker-compose.yml's `context: ../..`).
+# Expects `dist/` (the built frontend) to already exist — CI runs
+# `npm run build` before `docker compose build` for this service.
+FROM python:3.11-slim
+WORKDIR /app
+COPY webserver/requirements.txt webserver/requirements.txt
+RUN pip install --no-cache-dir -r webserver/requirements.txt
+COPY webserver webserver
+COPY python python
+COPY dist dist
+ENV POCKETED_WEBAPP_DIST=/app/dist
+EXPOSE 8000
+CMD ["python", "-m", "uvicorn", "webserver.main:app", "--host", "0.0.0.0", "--port", "8000"]

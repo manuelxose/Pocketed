@@ -174,7 +174,7 @@ def test_redis_touch_of_revoked_session_raises():
 def test_redis_touch_of_expired_session_raises():
     client = redis_client_from_env()
     store = RedisSessionStore(client)
-    sid, _jti = store.create(["0xAAA"], "0xAAA", ttl_seconds=0)
-    time.sleep(0.5)  # Redis EX is second-granularity; give the key time to expire
+    sid, _jti = store.create(["0xAAA"], "0xAAA", ttl_seconds=1)
+    time.sleep(1.5)  # Redis EX is second-granularity; give the key time to actually expire
     with pytest.raises(SessionNotFound):
         store.touch(sid, wallets=["0xAAA"], active="0xAAA", ttl_seconds=60)

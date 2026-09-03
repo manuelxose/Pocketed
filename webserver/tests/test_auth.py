@@ -116,7 +116,9 @@ def test_session_token_round_trip():
 
     payload = auth.decode_session_token(token, secret=_TEST_SECRET)
 
-    assert payload == {"wallets": ["0xABC"], "active": "0xABC"}
+    assert payload["wallets"] == ["0xABC"]
+    assert payload["active"] == "0xABC"
+    assert payload["sid"] and payload["jti"]
 
 
 def test_session_token_rejects_wrong_secret():
@@ -129,7 +131,8 @@ def test_session_token_rejects_wrong_secret():
 def test_create_session_token_carries_wallets_and_active():
     token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
     payload = auth.decode_session_token(token, secret="s")
-    assert payload == {"wallets": ["0xAAA"], "active": "0xAAA"}
+    assert payload["wallets"] == ["0xAAA"]
+    assert payload["active"] == "0xAAA"
 
 
 def test_add_wallet_to_session_appends_and_activates():
@@ -138,6 +141,14 @@ def test_add_wallet_to_session_appends_and_activates():
     payload = auth.decode_session_token(token2, secret="s")
     assert payload["wallets"] == ["0xAAA", "0xBBB"]
     assert payload["active"] == "0xBBB"
+
+
+def test_add_wallet_to_session_keeps_the_same_sid():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    sid1 = auth.decode_session_token(token, secret="s")["sid"]
+    token2 = auth.add_wallet_to_session(token, "0xBBB", secret="s")
+    sid2 = auth.decode_session_token(token2, secret="s")["sid"]
+    assert sid1 == sid2
 
 
 def test_add_wallet_to_session_dedupes():
@@ -159,3 +170,30 @@ def test_switch_active_wallet_ok():
     token2 = auth.switch_active_wallet(token, "0xBBB", secret="s")
     payload = auth.decode_session_token(token2, secret="s")
     assert payload["active"] == "0xBBB"
+
+
+def test_session_is_active_true_for_a_fresh_session():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    sid = auth.decode_session_token(token, secret="s")["sid"]
+    assert auth.session_is_active(sid) is True
+
+
+def test_revoke_session_deactivates_it():
+    token = auth.create_session_token(["0xAAA"], active="0xAAA", secret="s")
+    sid = auth.decode_session_token(token, secret="s")["sid"]
+
+    auth.revoke_session(token, secret="s")
+
+    assert auth.session_is_active(sid) is False
+
+
+def test_revoke_session_on_a_garbled_token_does_not_raise():
+    auth.revoke_session("not-a-valid-jwt", secret="s")  # best-effort, no exception
+
+
+def test_switch_active_wallet_fails_after_revoke():
+    token = auth.create_session_token(["0xAAA", "0xBBB"], active="0xAAA", secret="s")
+    auth.revoke_session(token, secret="s")
+
+    with pytest.raises(auth.AuthError):
+        auth.switch_active_wallet(token, "0xBBB", secret="s")

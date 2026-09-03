@@ -5,7 +5,7 @@
 **A free, open-source Polymarket auto-trading webapp.**
 Whale tracker · momentum scanner · short-term crypto module · copy trading · **your own Python strategy scripts** — in one polished app.
 
-[![CI](https://github.com/TODO/pocketed/actions/workflows/ci.yml/badge.svg)](https://github.com/TODO/pocketed/actions/workflows/ci.yml)
+[![CI](https://github.com/manuelxose/Pocketed/actions/workflows/ci.yml/badge.svg)](https://github.com/manuelxose/Pocketed/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Status: beta](https://img.shields.io/badge/status-beta-orange)
 

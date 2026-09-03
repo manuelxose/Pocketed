@@ -5,8 +5,8 @@
   "description": "A free, fully-featured Polymarket auto-trading bot.",
   "author": { "name": "Pocketed", "email": "hi@pocketed.online", "url": "https://pocketed.online" },
   "homepage": "https://pocketed.online",
-  "repository": { "type": "git", "url": "TODO: set once the repo has a remote" },
-  "bugs": { "url": "TODO: set once the repo has a remote" },
+  "repository": { "type": "git", "url": "git+https://github.com/manuelxose/Pocketed.git" },
+  "bugs": { "url": "https://github.com/manuelxose/Pocketed/issues" },
   "license": "MIT",
   "private": true,
   "scripts": {

@@ -147,6 +147,19 @@ def test_aa_account_route_maps_paymaster_declined_to_402(client):
 
 
 @respx.mock
+def test_aa_account_route_rejects_a_revoked_session(client, monkeypatch):
+    from webserver import auth
+
+    wallet_address, session_cookie = _login(client)
+    auth.revoke_session(session_cookie, secret=main_module.SESSION_SECRET)
+
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    resp = client.get("/aa/account")
+
+    assert resp.status_code == 401
+
+
+@respx.mock
 def test_aa_account_route_maps_unreachable_aa_service_to_503(client):
     """A connection failure talking to aa-service propagates as 503, not the
     generic 502."""

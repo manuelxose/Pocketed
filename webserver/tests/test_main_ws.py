@@ -6,6 +6,7 @@ from eth_account import Account
 from eth_account.messages import encode_defunct
 from fastapi.testclient import TestClient
 from siwe import SiweMessage
+from starlette.websockets import WebSocketDisconnect
 
 import webserver.main as main_module
 from webserver.supervisor import Supervisor
@@ -157,6 +158,55 @@ def test_ws_blocks_phase1_disabled_trading_methods(client):
         reply = _receive_rpc_reply(ws, "2")
         assert reply["ok"] is False
         assert "Fase 2" in reply["error"]
+
+
+def test_logout_revokes_the_session_for_future_http_requests(client):
+    _wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+
+    logout_resp = client.post("/auth/logout")
+    assert logout_resp.status_code == 200
+
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)  # re-attach the captured token
+    session_resp = client.get("/auth/session")
+    assert session_resp.status_code == 401
+
+
+def test_ws_rejects_a_revoked_session(client):
+    """The handshake itself succeeds (auth is checked after accept() — same
+    as the missing-cookie case in test_ws_requires_session_cookie above, and
+    for the same reason: FastAPI/Starlette only reports a close code to the
+    client once the accept has happened), but the server closes immediately
+    with 4401 and sends nothing else, so the first receive observes it."""
+    from webserver import auth
+
+    _, session_cookie = _login(client)
+    auth.revoke_session(session_cookie, secret=main_module.SESSION_SECRET)
+
+    with client.websocket_connect("/ws", headers=_ws_cookie_header(session_cookie)) as ws:
+        with pytest.raises(WebSocketDisconnect) as excinfo:
+            ws.receive_json()
+        assert excinfo.value.code == 4401
+
+
+def test_open_ws_is_closed_when_its_session_is_revoked(client, monkeypatch):
+    """Exercises the live revocation poll: shrink the poll interval so the
+    test doesn't wait on the production default."""
+    from webserver import auth
+
+    monkeypatch.setattr(main_module, "SESSION_REVOCATION_POLL_SECONDS", 0.05)
+    _, session_cookie = _login(client)
+
+    with client.websocket_connect("/ws", headers=_ws_cookie_header(session_cookie)) as ws:
+        auth.revoke_session(session_cookie, secret=main_module.SESSION_SECRET)
+        # Other traffic (e.g. the dummy worker's startup event) can arrive
+        # interleaved before the poll task notices the revocation — keep
+        # draining until the close actually surfaces, but assert the real
+        # close code rather than accepting any disconnect.
+        with pytest.raises(WebSocketDisconnect) as excinfo:
+            for _ in range(50):
+                ws.receive_json()
+        assert excinfo.value.code == main_module.SESSION_REVOKED_CLOSE_CODE
 
 
 def test_ws_worker_start_error_uses_event_field_not_name(client, monkeypatch):

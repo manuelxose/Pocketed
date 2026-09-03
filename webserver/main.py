@@ -228,14 +228,12 @@ async def verify(
 
 
 @app.post("/auth/logout")
-async def logout(request: Request) -> JSONResponse:
-    """Clear the session cookie in the browser. The session token is a
-    stateless signed JWT (no server-side session store), so this cannot
-    revoke a copy of the token an attacker already exfiltrated before its
-    natural expiry — see the SESSION_TTL_SECONDS-bounded blast radius in the
-    architecture writeup. It does correctly end the *browser's* session:
-    the cookie is gone, so neither the app's own fetches nor a new /ws
-    connection can present it again."""
+async def logout(request: Request, kpb_session: str | None = Cookie(default=None)) -> JSONResponse:
+    """Revokes the session server-side (any copy of this JWT — including one
+    already exfiltrated — stops authenticating immediately) and clears the
+    browser cookie. See webserver/session_store.py for the revocation store."""
+    if kpb_session:
+        auth.revoke_session(kpb_session, secret=SESSION_SECRET)
     resp = JSONResponse({"ok": True})
     resp.delete_cookie(SESSION_COOKIE_NAME, path="/", samesite="lax", secure=_is_request_secure(request))
     return resp
@@ -267,6 +265,8 @@ async def require_wallet_address(kpb_session: str | None = Cookie(default=None))
         payload = auth.decode_session_token(kpb_session, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
+    if not auth.session_is_active(payload["sid"]):
+        raise HTTPException(status_code=401, detail="session revoked")
     return payload["active"]
 
 
@@ -278,7 +278,9 @@ async def get_session(kpb_session: str | None = Cookie(default=None)) -> JSONRes
         payload = auth.decode_session_token(kpb_session, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
-    return JSONResponse(payload)
+    if not auth.session_is_active(payload["sid"]):
+        raise HTTPException(status_code=401, detail="session revoked")
+    return JSONResponse({"wallets": payload["wallets"], "active": payload["active"]})
 
 
 def _gateway_status_for_aa_error(e: aa.AAServiceError) -> int:
@@ -660,6 +662,17 @@ def _ws_origin_allowed(websocket: WebSocket) -> bool:
     return origin == same_origin
 
 
+SESSION_REVOKED_CLOSE_CODE = 4402
+# How often the /ws handler polls the session store for a revocation that
+# happened *after* the socket was accepted (e.g. the user logged out on
+# another tab). Read at each poll iteration (not captured once) so tests can
+# monkeypatch it to shrink the wait instead of exercising the production
+# default.
+SESSION_REVOCATION_POLL_SECONDS = float(
+    os.environ.get("POCKETED_SESSION_REVOCATION_POLL_SECONDS", "2")
+)
+
+
 @app.websocket("/ws")
 async def ws_endpoint(
     websocket: WebSocket,
@@ -674,10 +687,14 @@ async def ws_endpoint(
     await websocket.accept()
 
     try:
-        wallet_address = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)["active"]
+        payload = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
+        if not auth.session_is_active(payload["sid"]):
+            raise auth.AuthError("session revoked")
     except auth.AuthError:
         await websocket.close(code=4401)
         return
+    wallet_address = payload["active"]
+    sid = payload["sid"]
 
     try:
         worker = await supervisor.get_or_create(wallet_address)
@@ -695,7 +712,19 @@ async def ws_endpoint(
             msg = await outbound.get()
             await websocket.send_json(msg)
 
+    async def watch_revocation() -> None:
+        # Polls (rather than pushes) because the session store has no
+        # subscribe/notify mechanism — this is deliberately simple and
+        # bounded by SESSION_REVOCATION_POLL_SECONDS, matching the
+        # already-bounded blast radius of a revoked-but-still-open socket.
+        while True:
+            await asyncio.sleep(SESSION_REVOCATION_POLL_SECONDS)
+            if not auth.session_is_active(sid):
+                await websocket.close(code=SESSION_REVOKED_CLOSE_CODE)
+                return
+
     outbound_task = asyncio.create_task(pump_outbound())
+    revocation_task = asyncio.create_task(watch_revocation())
     try:
         while True:
             raw = await websocket.receive_text()
@@ -728,6 +757,7 @@ async def ws_endpoint(
         pass
     finally:
         outbound_task.cancel()
+        revocation_task.cancel()
         worker.unsubscribe(outbound)
 
 

@@ -47,6 +47,12 @@ const DEFAULT_RPC_TIMEOUT_MS = 15000;
 // unauthenticated socket — surface it instead so AuthGate can reauth.
 export const AUTH_REQUIRED_CLOSE_CODE = 4401;
 
+// Gateway-side custom close code for "session was revoked server-side"
+// (webserver/main.py's /ws handler's live revocation poll, and its
+// /auth/logout handler). Treated identically to AUTH_REQUIRED_CLOSE_CODE —
+// reconnecting would just spin against a session that no longer exists.
+export const SESSION_REVOKED_CLOSE_CODE = 4402;
+
 export class WsClient {
   private ws: WebSocket | null = null;
   private pending = new Map<string, Pending>();
@@ -102,9 +108,9 @@ export class WsClient {
     socket.onclose = (e: CloseEvent) => {
       if (this.ws !== socket) return; // stale handler from a superseded socket
       this.rejectAllPending(new WsDisconnected());
-      if (e?.code === AUTH_REQUIRED_CLOSE_CODE) {
+      if (e?.code === AUTH_REQUIRED_CLOSE_CODE || e?.code === SESSION_REVOKED_CLOSE_CODE) {
         this.setState('auth-required');
-        return; // do not reconnect against an unauthenticated session
+        return; // do not reconnect against an unauthenticated/revoked session
       }
       if (this.closedByUser) {
         this.setState('closed');

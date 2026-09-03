@@ -1,3 +1,4 @@
+import threading
 import time
 
 import pytest
@@ -44,3 +45,31 @@ def test_two_store_instances_sharing_a_file_only_let_one_consumer_win(tmp_path):
     results = [store_a.consume(nonce), store_b.consume(nonce)]
 
     assert sorted(results) == [False, True]
+
+
+def test_two_store_instances_racing_consume_under_real_concurrency(tmp_path):
+    """A stronger version of the sequential test above: this one actually
+    races two consume() calls against each other via a threading.Barrier,
+    so a non-atomic implementation (e.g. SELECT-then-DELETE without a
+    transaction) would be caught, not just row-correctness under a
+    sequential call order."""
+    db_path = tmp_path / "nonces.db"
+    store_a = SqliteNonceStore(db_path)
+    store_b = SqliteNonceStore(db_path)
+    nonce = store_a.issue()
+
+    barrier = threading.Barrier(2)
+    results = {}
+
+    def consume(store, key):
+        barrier.wait()
+        results[key] = store.consume(nonce)
+
+    t1 = threading.Thread(target=consume, args=(store_a, "a"))
+    t2 = threading.Thread(target=consume, args=(store_b, "b"))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    assert sorted(results.values()) == [False, True]

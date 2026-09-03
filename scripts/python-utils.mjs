@@ -3,15 +3,21 @@ import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const isWin = process.platform === 'win32';
+
+function venvPython(venvDir) {
+  return isWin ? join(venvDir, 'Scripts', 'python.exe') : join(venvDir, 'bin', 'python');
+}
+
 export const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = dirname(__dirname);
 export const PY_DIR = join(ROOT, 'python');
 export const VENV = join(PY_DIR, '.venv');
-export const VENV_PY = process.platform === 'win32'
-  ? join(VENV, 'Scripts', 'python.exe')
-  : join(VENV, 'bin', 'python');
+export const VENV_PY = venvPython(VENV);
 
-const isWin = process.platform === 'win32';
+export const WEBSERVER_DIR = join(ROOT, 'webserver');
+export const WEBSERVER_VENV = join(WEBSERVER_DIR, '.venv');
+export const WEBSERVER_VENV_PY = venvPython(WEBSERVER_VENV);
 
 export function run(cmd, args, opts = {}) {
   const display = `${cmd} ${args.map((a) => (a.includes(' ') ? `"${a}"` : a)).join(' ')}`;
@@ -88,4 +94,30 @@ export function ensureVenv({ force = false } = {}) {
   console.log('>> Installing Python deps into venv (one-time, ~30s)');
   run(VENV_PY, ['-m', 'pip', 'install', '--upgrade', 'pip', 'wheel', '--disable-pip-version-check']);
   run(VENV_PY, ['-m', 'pip', 'install', '-r', 'requirements.txt', '--disable-pip-version-check']);
+}
+
+// The gateway (webserver/) has its own separate venv and requirements.txt
+// from the trading worker (python/) — different dependency sets (FastAPI/
+// uvicorn/siwe vs. py_clob_client_v2/keyring/etc.), started as different
+// processes. Mirrors `ensureVenv` above but scoped to webserver/.
+export function ensureWebserverVenv({ force = false } = {}) {
+  if (!existsSync(WEBSERVER_VENV) || force) {
+    const sys = findSystemPython();
+    console.log('>> Creating Python venv at webserver/.venv');
+    run(sys, [...systemPyPrefix(), '-m', 'venv', '.venv'], { cwd: WEBSERVER_DIR });
+  }
+  if (!existsSync(WEBSERVER_VENV_PY)) {
+    throw new Error(`venv created but no interpreter at ${WEBSERVER_VENV_PY}`);
+  }
+
+  if (!force && tryCmd(WEBSERVER_VENV_PY, ['-c', 'import fastapi, uvicorn, siwe, jwt'])) {
+    return;
+  }
+  console.log('>> Installing gateway deps into webserver/.venv (one-time, ~30s)');
+  run(WEBSERVER_VENV_PY, ['-m', 'pip', 'install', '--upgrade', 'pip', 'wheel', '--disable-pip-version-check'], {
+    cwd: WEBSERVER_DIR,
+  });
+  run(WEBSERVER_VENV_PY, ['-m', 'pip', 'install', '-r', 'requirements.txt', '--disable-pip-version-check'], {
+    cwd: WEBSERVER_DIR,
+  });
 }

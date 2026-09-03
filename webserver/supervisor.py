@@ -181,7 +181,7 @@ class WorkerProcess:
         for q in list(self.subscribers):
             try:
                 q.put_nowait(
-                    {"type": "event", "name": "backend:workerExited", "data": {"code": code}}
+                    {"type": "event", "event": "backend:workerExited", "data": {"code": code}}
                 )
             except asyncio.QueueFull:
                 pass

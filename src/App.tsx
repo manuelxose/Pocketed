@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
-import { OnboardingModal } from './pages/Onboarding';
+import { WelcomeCard } from './pages/Onboarding';
 import { useOnboardingQuery } from './hooks/useOnboarding';
 import { DashboardPage } from './pages/Dashboard';
 import { MainEnginePage } from './pages/MainEngine';
@@ -33,11 +33,24 @@ export default function App() {
   return <Shell />;
 }
 
+const WELCOME_DISMISSED_KEY = 'pocketed:welcomeDismissed';
+
 function Shell() {
   const [page, setPage] = useState<PageId>('dashboard');
   const { data: onboarding } = useOnboardingQuery();
+  const [dismissedLocally, setDismissedLocally] = useState(
+    () => localStorage.getItem(WELCOME_DISMISSED_KEY) === '1',
+  );
 
-  const showOnboarding = onboarding ? !onboarding.acceptedDisclaimer : false;
+  // The welcome card is an optional, dismissible hint — never a gate. The app,
+  // navigation, and all public data are usable regardless of its state.
+  const showWelcomeCard =
+    page === 'dashboard' && !dismissedLocally && (onboarding ? !onboarding.acceptedDisclaimer : false);
+
+  const dismissWelcome = () => {
+    localStorage.setItem(WELCOME_DISMISSED_KEY, '1');
+    setDismissedLocally(true);
+  };
 
   return (
     <div className="flex h-full w-full flex-col bg-pocketed-radial bg-pocketed-void">
@@ -46,12 +59,24 @@ function Shell() {
         <Sidebar page={page} setPage={setPage} />
         <main className="relative flex flex-1 flex-col overflow-hidden">
           <TopBar />
-          <div className="flex-1 overflow-hidden bg-pocketed-radial-r">
-            <PageRouter page={page} setPage={setPage} />
+          <div className="flex flex-1 flex-col overflow-hidden bg-pocketed-radial-r">
+            {showWelcomeCard && (
+              <div className="shrink-0 px-4 pt-4 sm:px-6">
+                <WelcomeCard
+                  onExplore={dismissWelcome}
+                  onSetUpTrading={() => {
+                    dismissWelcome();
+                    setPage('api');
+                  }}
+                />
+              </div>
+            )}
+            <div className="flex-1 overflow-hidden">
+              <PageRouter page={page} setPage={setPage} />
+            </div>
           </div>
         </main>
       </div>
-      {showOnboarding && <OnboardingModal onDone={() => setPage('api')} />}
     </div>
   );
 }

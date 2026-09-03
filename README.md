@@ -102,7 +102,8 @@ as a local smoke test — not production-ready unattended trading — until the 
 
 Running the full stack locally (three processes) — only needed if you want to exercise the
 session-key/smart-account flow; the app runs fine without any of these three (see
-[Quick start](#quick-start-development)):
+[Quick web development](#quick-web-development), and [Full ERC-4337 development stack](#full-erc-4337-development-stack)
+for the complete three-process walkthrough):
 ```bash
 # 1. bundler
 cd infra/bundler && docker compose up -d
@@ -258,58 +259,94 @@ pocketed/
 └─ package.json          Frontend build config
 ```
 
-## Quick start (development)
+## Quick web development
 
 **Prerequisites:** [Node.js](https://nodejs.org) 18+ and [Python](https://python.org) 3.10+ on PATH
 (`py`, `python`, or `python3`).
 
-Two processes, in separate terminals:
-
 ```bash
-# 1. the FastAPI gateway (webserver/) — spawns your per-wallet Python worker
-cd webserver
-python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-POCKETED_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload --port 8000
-```
-(Run uvicorn from the repo root, not from inside `webserver/`, so the `webserver` package resolves —
-see `webserver/tests/manual_client.py` for a runnable end-to-end smoke test against a live instance.)
-
-```bash
-# 2. the React dev server (repo root) — proxies /auth, /config, /ws, etc. to the gateway above on :8000
 git clone <this-repo-url>
 cd pocketed
 npm install
-npm run dev          # `predev` auto-creates python/.venv and installs backend deps (~30s, one-time)
+npm run dev
 ```
+
+That's it — one command. `npm run dev` (`scripts/dev.mjs`) bootstraps `webserver/.venv` (one-time,
+~30s), starts the FastAPI gateway (`uvicorn webserver.main:app --reload` on `:8000`), waits for
+`GET /health` to come up, then starts the Vite dev server on `:5180`, which proxies `/auth`, `/config`,
+`/ws`, etc. to the gateway. If the gateway fails to start, `npm run dev` prints the reason and exits —
+it will not silently leave you with a broken `/ws`.
 
 Open the URL Vite prints, connect a wallet (SIWE sign-in), then **Wallet** to connect your Polymarket
 credentials (currently gated, see [Custody & session keys](#custody--session-keys)) or **Session Key**
 for the intended unattended-trading path. Every engine starts **off**; nothing trades until you enable
 it — and once enabled it places **real orders** (there is no paper mode).
 
-Bootstrap just the Python venv without launching the app: `npm run py:setup`.
+No `.env` file is required for this path: the dev launcher supplies an insecure, clearly-labeled
+`POCKETED_SESSION_SECRET` fallback and the gateway starts fine with **no ERC-4337 config at all** —
+`/aa/*` and `/session-key/*` routes just return `503` until you configure that separately (see below).
+Override the fallback secret by setting `POCKETED_SESSION_SECRET` yourself before running `npm run dev`.
 
-## Deploy / production build
+Bootstrap just the Python worker venv without launching the app: `npm run py:setup`. Run only the
+frontend against a gateway you're already running elsewhere: `npm run dev:web-only` (plain `vite`).
+
+## Full ERC-4337 development stack
+
+Only needed if you want to exercise the session-key/smart-account flow end to end — the web app (auth,
+config, profiles, dashboard, scripts, `/ws`) runs fine without any of this, per
+[Quick web development](#quick-web-development) above. Three extra processes:
+
+```bash
+# 1. bundler
+cd infra/bundler && docker compose up -d
+
+# 2. aa-service (all four env vars are required — it refuses to start
+#    without them; POLYGON_RPC_URL/BUNDLER_RPC_URL below point at Polygon
+#    Amoy testnet, swap for your own RPC provider; PAYMASTER_PRIVATE_KEY is
+#    aa-service's own operational signing key, never a user's wallet key.
+#    CHAIN_ID must match the bundler above, 80002 = Amoy, 137 = Polygon mainnet)
+cd aa-service && npm install
+POLYGON_RPC_URL=https://rpc-amoy.polygon.technology \
+  BUNDLER_RPC_URL=http://localhost:4337 \
+  CHAIN_ID=80002 \
+  PAYMASTER_PRIVATE_KEY=0xyour_aa_service_operational_private_key \
+  PAYMASTER_DAILY_GAS_CAP_WEI=1000000000000000000 \
+  npm run dev
+
+# 3. point the gateway at it — either run `npm run dev` with the env var
+#    already exported, or start the gateway manually:
+cd webserver && POCKETED_SESSION_SECRET=dev-secret \
+  POCKETED_AA_SERVICE_URL=http://localhost:4001 \
+  .venv/Scripts/python -m uvicorn webserver.main:app --reload
+```
+
+## Production deployment
 
 ```bash
 npm run build         # produces dist/ (the built React app)
-cd webserver && POCKETED_SESSION_SECRET=<a-real-secret> \
+cd webserver && APP_ENV=production POCKETED_SESSION_SECRET=<a-real-secret> \
   .venv/Scripts/python -m uvicorn webserver.main:app --host 0.0.0.0 --port 8000
 ```
 
-`webserver/` serves the built `dist/` itself (same-origin with the API/WS routes — see
-`webserver/main.py`'s "Frontend static serving" section), so this one process is the whole deployment.
-Point `POCKETED_WEBAPP_DIST`/`POCKETED_WEBAPP_DATA`/`POCKETED_AA_SERVICE_URL` at your own paths/services
-if you're not running everything from a single checkout. There is currently no packaged installer or
-Docker image — this is a from-source deployment only.
+`APP_ENV=production` is required in production: with it set, the gateway refuses to start without a
+real `POCKETED_SESSION_SECRET` (the insecure dev fallback only ever applies when `APP_ENV` is unset or
+not `production`). `webserver/` serves the built `dist/` itself (same-origin with the API/WS routes —
+see `webserver/main.py`'s "Frontend static serving" section), so this one process is the whole
+deployment. Point `POCKETED_WEBAPP_DIST`/`POCKETED_WEBAPP_DATA` at your own paths, and
+`POCKETED_AA_SERVICE_URL` at your `aa-service` if you're running the ERC-4337 stack (production still
+works fine without it — AA routes just 503). `GET /health` (liveness) and `GET /ready` (liveness +
+`aa_configured`/worker-count) are available for your process supervisor / load balancer; neither depends
+on ERC-4337 being configured. There is currently no packaged installer or Docker image — this is a
+from-source deployment only.
 
 ## Testing
 
 ```bash
 npm run py:test                      # Python backend tests (pytest)
-cd webserver && .venv/Scripts/python -m pytest tests/ -q   # gateway tests (auth, config, WS, AA, session-key routes)
+npm run test:gateway                 # FastAPI gateway tests (auth, config, WS, health, AA, session-key routes)
 npm test                             # frontend tests (vitest)
 npm run typecheck                    # TypeScript
+npm run build                        # production build
 ```
 
 Three separate suites, one per layer: the Python trading engine (`python/tests/`), the FastAPI gateway
@@ -363,7 +400,7 @@ Still open:
 ## File locations
 
 Data lives wherever the `webserver/` process runs — your own machine if you self-host it (the default
-for [Quick start](#quick-start-development)), or wherever you deploy it otherwise. Each logged-in wallet
+for [Quick web development](#quick-web-development)), or wherever you deploy it otherwise. Each logged-in wallet
 gets its own isolated directory under `POCKETED_WEBAPP_DATA` (default: `python/data/webapp/` in this
 checkout), and its own worker's SQLite DB under `POCKETED_USERDATA` (set per-worker by the gateway, not
 by you directly).

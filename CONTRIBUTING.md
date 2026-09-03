@@ -8,24 +8,26 @@ keep changes small, tested, and easy to review.
 **Prerequisites:** Node.js 18+ and Python 3.10+ on PATH.
 
 ```bash
-cd webserver && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
-POCKETED_SESSION_SECRET=dev-secret .venv/Scripts/python -m uvicorn webserver.main:app --reload --port 8000
-
-# in a second terminal, from the repo root
 npm install
-npm run dev           # vite dev server, proxies API/WS calls to the gateway above; `predev` sets up python/.venv
+npm run dev   # starts both the FastAPI gateway (webserver/) and the Vite dev server — see README.md
 ```
+
+`npm run dev` (`scripts/dev.mjs`) bootstraps `webserver/.venv`, starts uvicorn, waits for it to report
+healthy on `/health`, then starts Vite. No manual second terminal, no `.env` required — see the
+[README's Quick web development](./README.md#quick-web-development) section for details and the
+optional full ERC-4337 stack.
 
 ## Before you open a PR
 
 ```bash
-npm run typecheck                                            # TypeScript must pass
-npm run py:test                                               # Python backend tests must pass
-(cd webserver && .venv/Scripts/python -m pytest tests/ -q)   # gateway tests must pass
-npm test                                                       # frontend tests must pass
+npm run typecheck       # TypeScript must pass
+npm run py:test          # Python backend tests must pass
+npm run test:gateway     # FastAPI gateway tests must pass
+npm test                 # frontend tests must pass
+npm run build            # production build must pass
 ```
 
-All four are also enforced by CI on every pull request.
+All five are also enforced by CI on every pull request.
 
 ## Guidelines
 

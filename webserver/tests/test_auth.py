@@ -8,14 +8,18 @@ from siwe import SiweMessage
 from webserver import auth
 
 
-def _build_signed_message(account, nonce: str) -> tuple[str, str]:
+_DOMAIN = "localhost"
+
+
+def _build_signed_message(account, nonce: str, *, domain: str = _DOMAIN, chain_id: int = 137,
+                           uri: str | None = None) -> tuple[str, str]:
     msg = SiweMessage(
-        domain="localhost",
+        domain=domain,
         address=account.address,
         statement="Sign in to Pocketed",
-        uri="http://localhost/auth",
+        uri=uri or f"http://{domain}/auth",
         version="1",
-        chain_id=137,
+        chain_id=chain_id,
         nonce=nonce,
         issued_at=datetime.now(timezone.utc).isoformat(),
     )
@@ -29,7 +33,7 @@ def test_verify_siwe_accepts_valid_signature():
     nonce = auth.generate_nonce()
     message, signature = _build_signed_message(account, nonce)
 
-    address = auth.verify_siwe(message, signature)
+    address = auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
 
     assert address.lower() == account.address.lower()
 
@@ -38,10 +42,10 @@ def test_verify_siwe_rejects_reused_nonce():
     account = Account.create()
     nonce = auth.generate_nonce()
     message, signature = _build_signed_message(account, nonce)
-    auth.verify_siwe(message, signature)
+    auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
 
     with pytest.raises(auth.AuthError):
-        auth.verify_siwe(message, signature)
+        auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
 
 
 def test_verify_siwe_rejects_unknown_nonce():
@@ -49,7 +53,7 @@ def test_verify_siwe_rejects_unknown_nonce():
     message, signature = _build_signed_message(account, "0" * 32)
 
     with pytest.raises(auth.AuthError):
-        auth.verify_siwe(message, signature)
+        auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
 
 
 def test_verify_siwe_rejects_garbage_signature():
@@ -58,7 +62,7 @@ def test_verify_siwe_rejects_garbage_signature():
     message, _ = _build_signed_message(account, nonce)
 
     with pytest.raises(auth.AuthError):
-        auth.verify_siwe(message, "0x" + "00" * 65)
+        auth.verify_siwe(message, "0x" + "00" * 65, expected_domain=_DOMAIN)
 
 
 def test_verify_siwe_rejects_wrong_signer():
@@ -69,7 +73,38 @@ def test_verify_siwe_rejects_wrong_signer():
     _, wrong_signature = _build_signed_message(other, nonce)
 
     with pytest.raises(auth.AuthError):
-        auth.verify_siwe(message, wrong_signature)
+        auth.verify_siwe(message, wrong_signature, expected_domain=_DOMAIN)
+
+
+def test_verify_siwe_rejects_domain_mismatch():
+    """A message validly signed for a *different* site must not authenticate
+    here — this is what stops a relayed/phished SIWE signature from another
+    origin being replayed against Pocketed's gateway."""
+    account = Account.create()
+    nonce = auth.generate_nonce()
+    message, signature = _build_signed_message(account, nonce, domain="evil.example",
+                                                 uri="http://evil.example/auth")
+
+    with pytest.raises(auth.AuthError):
+        auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
+
+
+def test_verify_siwe_rejects_uri_host_not_matching_domain():
+    account = Account.create()
+    nonce = auth.generate_nonce()
+    message, signature = _build_signed_message(account, nonce, uri="http://attacker.example/auth")
+
+    with pytest.raises(auth.AuthError):
+        auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
+
+
+def test_verify_siwe_rejects_unsupported_chain_id():
+    account = Account.create()
+    nonce = auth.generate_nonce()
+    message, signature = _build_signed_message(account, nonce, chain_id=1)  # Ethereum mainnet, not Polygon
+
+    with pytest.raises(auth.AuthError):
+        auth.verify_siwe(message, signature, expected_domain=_DOMAIN)
 
 
 _TEST_SECRET = "test-secret-at-least-32-bytes-long-for-hs256"

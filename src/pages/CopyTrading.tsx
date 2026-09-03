@@ -8,6 +8,7 @@ import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
 import { usePositionsQuery } from '../hooks/useAccountData';
 import { useCopyStatusQuery } from '../hooks/useCopyTrading';
+import { useDisclaimerGate } from '../hooks/useOnboarding';
 
 const isAddr = (s: string): boolean => /^0x[0-9a-fA-F]{40}$/.test(s.trim());
 
@@ -21,6 +22,7 @@ export function CopyTradingPage() {
   const [addr, setAddr] = useState('');
   const [busy, setBusy] = useState(false);
   const [saveProfileOpen, setSaveProfileOpen] = useState(false);
+  const requireDisclaimer = useDisclaimerGate();
 
   const update = async (patch: Partial<TraderConfig>): Promise<void> => {
     setBusy(true);
@@ -44,12 +46,12 @@ export function CopyTradingPage() {
   );
 
   const toggleEnabled = async (next: boolean): Promise<void> => {
-    if (next && !window.confirm(
+    if (next && !(await requireDisclaimer(
       'Enable copy trading?\n\nIt will place REAL orders with your Polymarket balance '
       + 'whenever a followed wallet enters a position — and sell when they exit — as soon '
       + 'as your wallet is connected. This runs independently of the main bot. There is no '
       + 'paper mode.',
-    )) return;
+    ))) return;
     await update({ copyEnabled: next });
   };
 

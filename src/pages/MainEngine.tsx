@@ -11,6 +11,7 @@ import { useConfigQuery, usePatchConfigMutation, useResetConfigMutation } from '
 import { useStrategiesQuery, useApplyStrategyMutation } from '../hooks/useStrategies';
 import { useSaveProfileMutation } from '../hooks/useProfiles';
 import { useAuthStatusQuery, useSetTradingEnabledMutation } from '../hooks/useTrading';
+import { useDisclaimerGate } from '../hooks/useOnboarding';
 
 const MARKET_CATEGORIES: { id: string; label: string; Icon: typeof Trophy }[] = [
   { id: 'sports', label: 'Sports', Icon: Trophy },
@@ -43,6 +44,7 @@ function matchesPreset(cfg: TraderConfig, preset: TraderConfig): boolean {
 
 export function MainEnginePage() {
   const { data: authStatus } = useAuthStatusQuery();
+  const requireDisclaimer = useDisclaimerGate();
   const { data: config } = useConfigQuery();
   const { data: strategies = [] } = useStrategiesQuery();
   const patchConfig = usePatchConfigMutation();
@@ -61,12 +63,12 @@ export function MainEnginePage() {
 
   const toggleTrading = async (): Promise<void> => {
     const next = !tradingOn;
-    if (next && !window.confirm(
+    if (next && !(await requireDisclaimer(
       'Start the MAIN engine?\n\nIt will place REAL orders with your '
       + 'Polymarket balance following whale + momentum signals. This is not a '
       + 'simulation.\n\nThe Crypto, Copy Trading and Scripts engines are '
       + 'separate and are not affected.',
-    )) return;
+    ))) return;
     try {
       await setTradingEnabled.mutateAsync(next);
       toast.success(next ? 'Main engine started' : 'Main engine paused');

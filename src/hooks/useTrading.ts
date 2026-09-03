@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TradingStatus } from '@shared/types';
-import { useWsClient } from '../state/WsProvider';
+import { useWsClient, useWsConnectionState } from '../state/WsProvider';
 import { usePatchConfigMutation } from './useConfig';
 
 export function useTradingStatusQuery() {
@@ -43,8 +43,9 @@ export function useRunOnceMutation() {
 }
 
 export function useBackendConnectionStatus(): boolean {
-  const client = useWsClient();
-  return client.connected;
+  // Reactive (useSyncExternalStore-backed via WsProvider), not a one-time
+  // snapshot of client.connected — re-renders on every real transition.
+  return useWsConnectionState() === 'open';
 }
 
 // Read-only cache subscription: populated purely by the `backend:authChanged`

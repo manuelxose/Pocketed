@@ -11,6 +11,7 @@ import { Page, Card } from '../components/common';
 import { useToast } from '../state/ToastProvider';
 import { cls, fmtUsd } from '../utils/format';
 import { useConfigQuery, usePatchConfigMutation } from '../hooks/useConfig';
+import { useDisclaimerGate } from '../hooks/useOnboarding';
 import {
   useScriptsListQuery, useSaveScriptMutation, useDeleteScriptMutation,
   useSetScriptEnabledMutation, useSetScriptAssetsMutation, useSetScriptDryRunMutation,
@@ -72,6 +73,7 @@ export function ScriptsPage() {
   const { data: config } = useConfigQuery();
   const patchConfig = usePatchConfigMutation();
   const toast = useToast();
+  const requireDisclaimer = useDisclaimerGate();
 
   const { data: listData } = useScriptsListQuery();
   const scripts = useMemo(() => listData?.scripts ?? [], [listData]);
@@ -344,7 +346,15 @@ export function ScriptsPage() {
           <div className="flex items-center gap-3">
             <Toggle
               checked={!!config?.scriptsLiveEnabled}
-              onChange={(v) => void patchConfig.mutateAsync({ scriptsLiveEnabled: v })}
+              onChange={(v) => {
+                void (async () => {
+                  if (v && !(await requireDisclaimer(
+                    'Turn on "Scripts live"?\n\nArmed scripts (not in dry-run) will start '
+                    + 'placing REAL orders with your Polymarket balance. There is no paper mode.',
+                  ))) return;
+                  await patchConfig.mutateAsync({ scriptsLiveEnabled: v });
+                })();
+              }}
             />
             <div>
               <div className="text-sm font-semibold text-white">Scripts live</div>

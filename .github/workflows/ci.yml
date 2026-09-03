@@ -43,3 +43,47 @@ jobs:
 
       - name: Run frontend tests
         run: npm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Node dependencies
+        run: npm install
+
+      # Only the gateway's own deps are needed — the E2E harness points every
+      # spawned worker at webserver/tests/fixtures/dummy_worker.py (via
+      # POCKETED_WORKER_SCRIPT, set in e2e/playwright.config.ts), never at
+      # python/service.py, so python/requirements-dev.txt's real trading
+      # dependencies (py_clob_client_v2, keyring, ...) aren't needed here.
+      - name: Install webserver dependencies
+        run: pip install -r webserver/requirements.txt
+
+      - name: Install Playwright's Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Deterministic, publicly-known test-only wallet + a short-lived
+      # gateway/frontend pair on non-default ports (see
+      # e2e/fixtures/test-wallet.ts and e2e/playwright.config.ts) — no
+      # secrets, no real network, no manual interaction.
+      - name: Run wallet -> SIWE -> WSS -> RPC E2E suite
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14

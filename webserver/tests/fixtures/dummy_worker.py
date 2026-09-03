@@ -11,7 +11,7 @@ def _send(obj: dict) -> None:
 
 
 def main() -> None:
-    _send({"type": "event", "name": "backend:ready", "data": {}})
+    _send({"type": "event", "event": "backend:ready", "data": {}})
     for line in sys.stdin:
         line = line.strip()
         if not line:

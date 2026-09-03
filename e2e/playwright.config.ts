@@ -11,6 +11,12 @@ const webserverVenvPy = path.join(
 const GATEWAY_PORT = process.env.POCKETED_E2E_GATEWAY_PORT || '8901';
 const FRONTEND_PORT = process.env.POCKETED_E2E_FRONTEND_PORT || '5901';
 
+// Read by e2e/tests/malicious-origin.spec.ts to know which second-origin
+// server to navigate to; set here (rather than only in webServer.env, which
+// only reaches the spawned server subprocess) so worker processes — which
+// inherit this config file's process.env — see it too.
+process.env.POCKETED_E2E_MALICIOUS_ORIGIN_URL = 'http://localhost:5902';
+
 // Shared secret/config env for the two webServers below AND for the tests
 // themselves (see e2e/tests/*.spec.ts reading process.env.POCKETED_E2E_*).
 // All test-only: never set POCKETED_WORKER_SCRIPT in a real deployment.
@@ -28,6 +34,11 @@ const sharedEnv = {
 
 export default defineConfig({
   testDir: './tests',
+  // auth-ws-tls.spec.ts is HTTPS/WSS-only (playwright.tls.config.ts owns
+  // it) — without this it would also match here by Playwright's default
+  // *.spec.ts glob and fail every run against this plain-HTTP project's
+  // http:// gateway (no Secure cookie, no wss://).
+  testIgnore: ['auth-ws-tls.spec.ts'],
   fullyParallel: false, // one shared gateway/worker-supervisor process per run
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
@@ -57,6 +68,21 @@ export default defineConfig({
       url: `http://localhost:${FRONTEND_PORT}`,
       reuseExistingServer: false,
       timeout: 30_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      // Second, unrelated origin used by malicious-origin.spec.ts to prove
+      // the gateway rejects a WS handshake whose real Origin header is not
+      // Pocketed's own.
+      command:
+        `node "${path.join(ROOT, 'e2e', 'fixtures', 'malicious-origin-server.mjs')}" ` +
+        `--port 5902 --target ws://localhost:${FRONTEND_PORT}/ws`,
+      cwd: ROOT,
+      env: { ...process.env },
+      url: `http://localhost:5902`,
+      reuseExistingServer: false,
+      timeout: 15_000,
       stdout: 'pipe',
       stderr: 'pipe',
     },

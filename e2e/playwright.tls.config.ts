@@ -11,6 +11,12 @@ const webserverVenvPy = path.join(
 
 const GATEWAY_PORT = process.env.POCKETED_E2E_TLS_GATEWAY_PORT || '8903';
 const FRONTEND_PORT = process.env.POCKETED_E2E_TLS_FRONTEND_PORT || '5903';
+const MALICIOUS_PORT = process.env.POCKETED_E2E_TLS_MALICIOUS_PORT || '5904';
+
+// See the matching comment in playwright.config.ts — read by
+// e2e/tests/malicious-origin.spec.ts, shared between the HTTP and TLS
+// projects.
+process.env.POCKETED_E2E_MALICIOUS_ORIGIN_URL = `https://localhost:${MALICIOUS_PORT}`;
 
 const certs = ensureCerts();
 
@@ -24,15 +30,9 @@ const sharedEnv = {
   POCKETED_TLS_KEY_FILE: certs.leafKey,
 };
 
-// NOTE: Task 12 adds a third webServer entry (a malicious-origin WSS server,
-// e2e/fixtures/malicious-origin-server.mjs) and extends testMatch to include
-// malicious-origin.spec.ts once that fixture exists. Until then, only this
-// task's uvicorn + Vite servers and auth-ws-tls.spec.ts are wired up —
-// Playwright starts every webServer entry regardless of test filtering, so
-// referencing a not-yet-created script here would fail every run.
 export default defineConfig({
   testDir: './tests',
-  testMatch: ['auth-ws-tls.spec.ts'],
+  testMatch: ['auth-ws-tls.spec.ts', 'malicious-origin.spec.ts'],
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI
@@ -69,6 +69,27 @@ export default defineConfig({
       reuseExistingServer: false,
       ignoreHTTPSErrors: true,
       timeout: 30_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    {
+      // Second, unrelated HTTPS origin used by malicious-origin.spec.ts to
+      // prove the gateway rejects a WSS handshake whose real Origin header
+      // is not Pocketed's own — TLS counterpart of the HTTP entry in
+      // playwright.config.ts, reusing the same generated leaf cert/key.
+      command:
+        `node "${path.join(ROOT, 'e2e', 'fixtures', 'malicious-origin-server.mjs')}" ` +
+        // --tls takes an explicit value (rather than being a bare flag)
+        // because malicious-origin-server.mjs's parseArgs() consumes argv
+        // strictly in --key/value pairs.
+        `--tls true --port ${MALICIOUS_PORT} --target wss://localhost:${FRONTEND_PORT}/ws ` +
+        `--cert "${certs.leafCert}" --key "${certs.leafKey}"`,
+      cwd: ROOT,
+      env: { ...process.env },
+      url: `https://localhost:${MALICIOUS_PORT}`,
+      reuseExistingServer: false,
+      ignoreHTTPSErrors: true,
+      timeout: 15_000,
       stdout: 'pipe',
       stderr: 'pipe',
     },

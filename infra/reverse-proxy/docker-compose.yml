@@ -13,11 +13,18 @@ services:
       POCKETED_ALLOWED_ORIGINS: "https://localhost:8443"
     expose:
       - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
 
   nginx:
     image: nginx:1.27-alpine
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ../../e2e/certs/.gen:/certs:ro

@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -207,6 +208,80 @@ def test_open_ws_is_closed_when_its_session_is_revoked(client, monkeypatch):
             for _ in range(50):
                 ws.receive_json()
         assert excinfo.value.code == main_module.SESSION_REVOKED_CLOSE_CODE
+
+
+def _raise_sqlite_locked(*_args, **_kwargs):
+    """Stand-in for `auth.session_is_active`/`switch_active_wallet` that
+    raises the kind of connectivity error a real store backend can raise
+    (sqlite3.OperationalError past busy_timeout, redis ConnectionError) —
+    see webserver/main.py's `STORE_CONNECTIVITY_ERRORS`."""
+    raise sqlite3.OperationalError("database is locked")
+
+
+def test_require_wallet_address_maps_store_failure_to_503(client, monkeypatch):
+    """A store-connectivity failure inside require_wallet_address's
+    session_is_active check must surface as 503 (spec's "session store
+    unavailable" contract), not propagate as an uncaught 500."""
+    _wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    monkeypatch.setattr(main_module.auth, "session_is_active", _raise_sqlite_locked)
+
+    resp = client.get("/config")
+
+    assert resp.status_code == 503
+    assert resp.json()["detail"] == "session store unavailable"
+
+
+def test_auth_session_route_maps_store_failure_to_503(client, monkeypatch):
+    _wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    monkeypatch.setattr(main_module.auth, "session_is_active", _raise_sqlite_locked)
+
+    resp = client.get("/auth/session")
+
+    assert resp.status_code == 503
+    assert resp.json()["detail"] == "session store unavailable"
+
+
+def test_auth_switch_route_maps_store_failure_to_503(client, monkeypatch):
+    wallet_address, session_cookie = _login(client)
+    client.cookies.set(main_module.SESSION_COOKIE_NAME, session_cookie)
+    monkeypatch.setattr(main_module.auth, "switch_active_wallet", _raise_sqlite_locked)
+
+    resp = client.post("/auth/switch", json={"address": wallet_address})
+
+    assert resp.status_code == 503
+    assert resp.json()["detail"] == "session store unavailable"
+
+
+def test_ws_connect_time_store_failure_closes_with_1011(client, monkeypatch):
+    """A store failure discovered at connect time (right after decode, once
+    the socket is already accept()ed) must close with 1011, distinct from
+    the 4401 used for "no session"/revoked — matching the spec's WS-1011
+    contract for store-down, not conflating it with an auth failure."""
+    _, session_cookie = _login(client)
+    monkeypatch.setattr(main_module.auth, "session_is_active", _raise_sqlite_locked)
+
+    with client.websocket_connect("/ws", headers=_ws_cookie_header(session_cookie)) as ws:
+        with pytest.raises(WebSocketDisconnect) as excinfo:
+            ws.receive_json()
+        assert excinfo.value.code == 1011
+
+
+def test_open_ws_is_closed_with_1011_when_store_fails_during_revocation_poll(client, monkeypatch):
+    """A store failure discovered later, inside watch_revocation's polling
+    loop, must close the already-open socket with 1011 (matching the
+    WorkerStartError pattern) instead of leaving the background task to die
+    silently and the socket open but permanently unmonitored."""
+    monkeypatch.setattr(main_module, "SESSION_REVOCATION_POLL_SECONDS", 0.05)
+    _, session_cookie = _login(client)
+
+    with client.websocket_connect("/ws", headers=_ws_cookie_header(session_cookie)) as ws:
+        monkeypatch.setattr(main_module.auth, "session_is_active", _raise_sqlite_locked)
+        with pytest.raises(WebSocketDisconnect) as excinfo:
+            for _ in range(50):
+                ws.receive_json()
+        assert excinfo.value.code == 1011
 
 
 def test_ws_worker_start_error_uses_event_field_not_name(client, monkeypatch):

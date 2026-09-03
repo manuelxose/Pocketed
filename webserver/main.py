@@ -4,10 +4,12 @@ import asyncio
 import json
 import logging
 import os
+import sqlite3
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
+import redis.exceptions
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -253,9 +255,37 @@ async def switch_wallet(
         token = auth.switch_active_wallet(kpb_session, body.address, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=403, detail=str(e)) from e
+    except STORE_CONNECTIVITY_ERRORS as e:
+        raise HTTPException(status_code=503, detail="session store unavailable") from e
     resp = JSONResponse({"walletAddress": body.address})
     _set_session_cookie(resp, token, secure=_is_request_secure(request))
     return resp
+
+
+# A session/nonce store that can't be reached must be surfaced as its own
+# distinct failure (503 on HTTP, WS close 1011 — see spec's "Error handling"
+# section), not conflated with "no session" (401) or let propagate as a
+# generic uncaught-exception 500. Deliberately narrower than bare
+# `Exception` (which would also mask real bugs in this code) but broad
+# enough to cover connectivity failures from either concrete backend
+# without needing to know which one is active at the call site:
+# `sqlite3.Error` covers a locked/unreachable SQLite file past its
+# busy_timeout (SqliteSessionStore/SqliteNonceStore), and
+# `redis.exceptions.RedisError` covers an unreachable/timed-out Redis
+# (RedisSessionStore/RedisNonceStore) — see webserver/session_store.py and
+# webserver/nonce_store.py.
+STORE_CONNECTIVITY_ERRORS = (sqlite3.Error, redis.exceptions.RedisError)
+
+
+def _session_is_active_or_503(sid: str) -> bool:
+    """`auth.session_is_active`, but a store-connectivity failure becomes an
+    HTTPException(503) instead of propagating as a raw 500. Does not touch
+    the normal True/False result — callers keep deciding what "not active"
+    means (401 today)."""
+    try:
+        return auth.session_is_active(sid)
+    except STORE_CONNECTIVITY_ERRORS as e:
+        raise HTTPException(status_code=503, detail="session store unavailable") from e
 
 
 async def require_wallet_address(kpb_session: str | None = Cookie(default=None)) -> str:
@@ -265,7 +295,7 @@ async def require_wallet_address(kpb_session: str | None = Cookie(default=None))
         payload = auth.decode_session_token(kpb_session, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
-    if not auth.session_is_active(payload["sid"]):
+    if not _session_is_active_or_503(payload["sid"]):
         raise HTTPException(status_code=401, detail="session revoked")
     return payload["active"]
 
@@ -278,7 +308,7 @@ async def get_session(kpb_session: str | None = Cookie(default=None)) -> JSONRes
         payload = auth.decode_session_token(kpb_session, secret=SESSION_SECRET)
     except auth.AuthError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
-    if not auth.session_is_active(payload["sid"]):
+    if not _session_is_active_or_503(payload["sid"]):
         raise HTTPException(status_code=401, detail="session revoked")
     return JSONResponse({"wallets": payload["wallets"], "active": payload["active"]})
 
@@ -688,9 +718,21 @@ async def ws_endpoint(
 
     try:
         payload = auth.decode_session_token(kpb_session or "", secret=SESSION_SECRET)
-        if not auth.session_is_active(payload["sid"]):
-            raise auth.AuthError("session revoked")
     except auth.AuthError:
+        await websocket.close(code=4401)
+        return
+
+    # This check happens after accept() above (unlike the origin check
+    # earlier, which closes before accept() because a pre-accept close can't
+    # deliver an app-level close code to the browser — see Task 12's E2E
+    # finding), so a store-connectivity failure here CAN be reported with
+    # the spec's WS-1011 code, distinct from 4401 ("no session" / revoked).
+    try:
+        active = auth.session_is_active(payload["sid"])
+    except STORE_CONNECTIVITY_ERRORS:
+        await websocket.close(code=1011)
+        return
+    if not active:
         await websocket.close(code=4401)
         return
     wallet_address = payload["active"]
@@ -719,7 +761,17 @@ async def ws_endpoint(
         # already-bounded blast radius of a revoked-but-still-open socket.
         while True:
             await asyncio.sleep(SESSION_REVOCATION_POLL_SECONDS)
-            if not auth.session_is_active(sid):
+            try:
+                active = auth.session_is_active(sid)
+            except STORE_CONNECTIVITY_ERRORS:
+                # A dead store means revocation can no longer be checked for
+                # the rest of this socket's life — close it (1011, matching
+                # the WorkerStartError path above) instead of letting this
+                # background task die silently and leaving the connection
+                # open but permanently unmonitored.
+                await websocket.close(code=1011)
+                return
+            if not active:
                 await websocket.close(code=SESSION_REVOKED_CLOSE_CODE)
                 return
 
